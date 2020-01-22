@@ -4,7 +4,7 @@ import chisel3._
 
 import io._
 
-class MidStage[T <: StageIO](sio: T) extends Module {
+class MidStage[T <: StageIO[T]](sio: T) extends Module {
   val io = IO(new Bundle {
     // stall control
     val stallPrev = Input(Bool())
