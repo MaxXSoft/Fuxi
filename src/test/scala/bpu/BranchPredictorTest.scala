@@ -30,28 +30,36 @@ class BpUnitTester(c: BranchPredictor) extends PeekPokeTester(c) {
     (0x00000218, false, false, 0x00000000),
     (0x0000021c, false, false, 0x00000000),
   )
-  var lastIndex = 0
+  var (lastBranch, lastTaken, lastIndex, lastPc, lastTarget) =
+      (false, false, 0, 0, 0)
   
   var i = 0
   while (i < pcSeq.length) {
     val (pc, branch, taken, target) = pcSeq(i)
-    poke(c.io.branch, branch)
-    poke(c.io.jump, false)
-    poke(c.io.taken, taken)
-    poke(c.io.index, lastIndex)
-    poke(c.io.pc, pc)
-    poke(c.io.target, target)
+    // run next cycle
+    poke(c.io.branchInfo.branch, lastBranch)
+    poke(c.io.branchInfo.jump, false)
+    poke(c.io.branchInfo.taken, lastTaken)
+    poke(c.io.branchInfo.index, lastIndex)
+    poke(c.io.branchInfo.pc, lastPc)
+    poke(c.io.branchInfo.target, lastTarget)
     poke(c.io.lookupPc, pc)
     step(1)
+    // check current status
     if (peek(c.io.predTaken) == (if (taken) 1 else 0) &&
         (!taken || (taken && peek(c.io.predTarget) == target))) {
       println(f"current: 0x$pc%x, target: 0x$target%x")
       i += 1
     }
     else {
-      println(f"current: 0x$pc%x, MISS!")
+      println(f"current: 0x$pc%x, MISS!, index: $lastIndex%d")
     }
+    // update last status
+    lastBranch = branch
+    lastTaken = taken
     lastIndex = peek(c.io.predIndex).intValue
+    lastPc = pc
+    lastTarget = target
   }
 }
 

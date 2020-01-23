@@ -2,17 +2,13 @@ package bpu
 
 import chisel3._
 
+import io.BranchInfoIO
 import consts.Constants._
 
 class BranchPredictor extends Module {
   val io = IO(new Bundle {
     // branch information (from decoder)
-    val branch      = Input(Bool())               // last inst is a b/j
-    val jump        = Input(Bool())               // is 'jal' or 'jalr'
-    val taken       = Input(Bool())               // is last branch taken
-    val index       = Input(UInt(GHR_WIDTH.W))    // last index of PHT
-    val pc          = Input(UInt(ADDR_WIDTH.W))   // last instruction PC
-    val target      = Input(UInt(ADDR_WIDTH.W))   // last branch target
+    val branchInfo  = Input(new BranchInfoIO)
     // predictor interface
     val lookupPc    = Input(UInt(ADDR_WIDTH.W))
     val predTaken   = Output(Bool())
@@ -26,22 +22,22 @@ class BranchPredictor extends Module {
   val btb = Module(new BTB)
 
   // wire GHR
-  ghr.io.branch := io.branch
-  ghr.io.taken  := io.taken
+  ghr.io.branch := io.branchInfo.branch
+  ghr.io.taken  := io.branchInfo.taken
 
   // wire PHT
   val index = io.lookupPc(GHR_WIDTH + ADDR_ALIGN_WIDTH - 1,
                           ADDR_ALIGN_WIDTH) ^ ghr.io.ghr    // G-share
-  pht.io.lastBranch := io.branch
-  pht.io.lastTaken  := io.taken
-  pht.io.lastIndex  := io.index
+  pht.io.lastBranch := io.branchInfo.branch
+  pht.io.lastTaken  := io.branchInfo.taken
+  pht.io.lastIndex  := io.branchInfo.index
   pht.io.index      := index
 
   // wire BTB
-  btb.io.branch   := io.branch
-  btb.io.jump     := io.jump
-  btb.io.pc       := io.pc
-  btb.io.target   := io.target
+  btb.io.branch   := io.branchInfo.branch
+  btb.io.jump     := io.branchInfo.jump
+  btb.io.pc       := io.branchInfo.pc
+  btb.io.target   := io.branchInfo.target
   btb.io.lookupPc := io.lookupPc
 
   // wire output signals
