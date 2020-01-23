@@ -4,6 +4,7 @@ import chisel3._
 
 import io._
 import consts.Constants._
+import consts.Instructions.NOP
 import bpu.BranchPredictor
 
 class Fetch extends Module {
@@ -21,9 +22,9 @@ class Fetch extends Module {
   })
 
   // program counter
-  val pc = RegInit(0.U(ADDR_WIDTH.W))
+  val pc = RegInit(RESET_PC - (INST_WIDTH / 8).U)
 
-  // instantiate branch predictor
+  // branch predictor
   val bpu = Module(new BranchPredictor)
   bpu.io.branchInfo <> io.branch
   bpu.io.lookupPc   := pc
@@ -42,6 +43,6 @@ class Fetch extends Module {
   io.rom.wdata  := 0.U
 
   // generate output
-  io.fetch.inst := io.rom.rdata
+  io.fetch.inst := Mux(io.rom.valid, io.rom.rdata, NOP)
   io.fetch.pc   := pc
 }
