@@ -7,7 +7,6 @@ import consts.Constants._
 
 // single line in BTB
 class BTBLine extends Bundle {
-  val valid   = Bool()
   val jump    = Bool()
   val pc      = UInt(BTB_PC_WIDTH.W)
   val target  = UInt(BTB_TARGET_WIDTH.W)
@@ -28,10 +27,9 @@ class BTB extends Module {
     val lookupTarget  = Output(UInt(ADDR_WIDTH.W))
   })
 
-  // definitions of BTB lines
-  val init  = Seq.fill(BTB_SIZE) { 0.U.asTypeOf(new BTBLine) }
-  val lines = RegInit(VecInit(init))
-  // val lines = Mem(BTB_SIZE, new BTBLine)
+  // definitions of BTB lines and valid bits
+  val valids  = RegInit(VecInit(Seq.fill(BTB_SIZE) { false.B }))
+  val lines   = Mem(BTB_SIZE, new BTBLine)
 
   // branch info for BTB lines
   val index   = io.pc(BTB_INDEX_WIDTH + ADDR_ALIGN_WIDTH - 1,
@@ -40,7 +38,7 @@ class BTB extends Module {
 
   // write to BTB lines
   when (io.branch) {
-    lines(index).valid  := true.B
+    valids(index)       := true.B
     lines(index).jump   := io.jump
     lines(index).pc     := linePc
     lines(index).target := io.target(ADDR_WIDTH - 1, ADDR_ALIGN_WIDTH)
@@ -51,7 +49,7 @@ class BTB extends Module {
                                 ADDR_ALIGN_WIDTH)
   val lookupPcSel = io.lookupPc(ADDR_WIDTH - 1,
                                 BTB_INDEX_WIDTH + ADDR_ALIGN_WIDTH)
-  val btbHit      = lines(lookupIndex).valid &&
+  val btbHit      = valids(lookupIndex) &&
                     lines(lookupIndex).pc === lookupPcSel
 
   // BTB lookup
