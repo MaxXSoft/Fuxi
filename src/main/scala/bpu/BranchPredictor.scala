@@ -21,9 +21,9 @@ class BranchPredictor extends Module {
   })
 
   // instantiate necessary modules
-  val ghr = new GHR
-  val pht = new PHT
-  val btb = new BTB
+  val ghr = Module(new GHR)
+  val pht = Module(new PHT)
+  val btb = Module(new BTB)
 
   // wire GHR
   ghr.io.branch := io.branch
