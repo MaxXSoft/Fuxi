@@ -2,7 +2,7 @@ package io
 
 import chisel3._
 
-class SramIO(addrWidth: Int, dataWidth: Int) extends Bundle {
+class SramIO(val addrWidth: Int, val dataWidth: Int) extends Bundle {
   val en    = Output(Bool())
   val valid = Input(Bool())
   val wen   = Output(UInt((dataWidth / 8).W))
