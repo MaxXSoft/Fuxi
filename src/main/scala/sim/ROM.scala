@@ -8,7 +8,7 @@ import consts.Constants._
 
 // for simulation only
 class ROM(initFile: String) extends Module {
-  var io = Flipped(new SramIO(ADDR_WIDTH, INST_WIDTH))
+  var io = IO(Flipped(new SramIO(ADDR_WIDTH, INST_WIDTH)))
 
   var rom   = Mem(256, UInt(INST_WIDTH.W))
   val data  = RegInit(0.U(INST_WIDTH.W))
