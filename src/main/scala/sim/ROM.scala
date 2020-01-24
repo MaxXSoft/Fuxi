@@ -12,10 +12,11 @@ class ROM(initFile: String) extends Module {
 
   var rom   = Mem(256, UInt(INST_WIDTH.W))
   val data  = RegInit(0.U(INST_WIDTH.W))
+  val addr  = io.addr - RESET_PC
   loadMemoryFromFile(rom, initFile)
 
   when (io.en) {
-    data := rom(io.addr(ADDR_WIDTH - 1, ADDR_ALIGN_WIDTH))
+    data := rom(addr(ADDR_WIDTH - 1, ADDR_ALIGN_WIDTH))
   } .otherwise {
     data := 0.U
   }
