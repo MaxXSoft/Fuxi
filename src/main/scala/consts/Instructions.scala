@@ -1,6 +1,6 @@
 package consts
 
-// import chisel3._
+import chisel3._
 import chisel3.util.BitPat
 
 object Instructions {
@@ -97,5 +97,5 @@ object Instructions {
   val SFENCEVMA = BitPat("b0001001??????????000000001110011")
 
   // pseudo instruction
-  val NOP = BitPat.bitPatToUInt(BitPat("b00000000000000000000000000010011"))
+  val NOP       = "b00000000000000000000000000010011".U(32.W)
 }
