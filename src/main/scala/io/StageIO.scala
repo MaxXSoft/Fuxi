@@ -15,13 +15,20 @@ class StageIO[T <: StageIO[T]] extends Bundle {
 
 // IF stage
 class FetchIO extends StageIO[FetchIO] {
-  val inst  = UInt(INST_WIDTH.W)
-  val pc    = UInt(ADDR_WIDTH.W)
+  val inst      = UInt(INST_WIDTH.W)
+  val pc        = UInt(ADDR_WIDTH.W)
+  val predIndex = UInt(ADDR_WIDTH.W)
 
   override def default() = {
     val init = Wire(new FetchIO)
     init.inst := Instructions.NOP
     init.pc := 0.U
+    init.predIndex := 0.U
     init
   }
+}
+
+// ID stage
+class DecoderIO extends StageIO[DecoderIO] {
+  //
 }
