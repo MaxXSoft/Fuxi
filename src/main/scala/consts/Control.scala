@@ -28,15 +28,15 @@ object Control {
   val OPR_4     = 8.U(OPR_WIDTH.W)
 
   // branch operation
-  val BR_WIDTH  = log2Ceil(2)
+  val BR_WIDTH  = log2Ceil(8)
   val BR_N      = 0.U(BR_WIDTH.W)
   val BR_AL     = 1.U(BR_WIDTH.W)
-  val BR_EQ     = 1.U(BR_WIDTH.W)
-  val BR_NE     = 1.U(BR_WIDTH.W)
-  val BR_LT     = 1.U(BR_WIDTH.W)
-  val BR_GE     = 1.U(BR_WIDTH.W)
-  val BR_LTU    = 1.U(BR_WIDTH.W)
-  val BR_GEU    = 1.U(BR_WIDTH.W)
+  val BR_EQ     = 2.U(BR_WIDTH.W)
+  val BR_NE     = 3.U(BR_WIDTH.W)
+  val BR_LT     = 4.U(BR_WIDTH.W)
+  val BR_GE     = 5.U(BR_WIDTH.W)
+  val BR_LTU    = 6.U(BR_WIDTH.W)
+  val BR_GEU    = 7.U(BR_WIDTH.W)
 
   // table of control signals
   val DEFAULT =
