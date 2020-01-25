@@ -6,6 +6,7 @@ import chisel3.util._
 import io._
 import consts.Control._
 import consts.ExceptType._
+import consts.LsuOp.LSU_NOP
 import consts.CsrOp.CSR_NOP
 
 class Decoder extends Module {
@@ -45,7 +46,7 @@ class Decoder extends Module {
         OPR_IMMI  -> immI,
         OPR_IMMS  -> immS,
         OPR_IMMU  -> immU,
-        OPR_IMMR  -> rs2.asSInt,
+        OPR_IMMR  -> rs2.zext,
         OPR_PC    -> io.fetch.pc.asSInt,
         OPR_4     -> 4.S,
       ))
@@ -77,6 +78,10 @@ class Decoder extends Module {
   val csrData = Mux(csrOp === CSR_NOP, 0.U,
                 Mux(regEn1, io.read1.data, rs1))
 
+  // LSU related signals
+  // cancel all LSU operations after fetching illegal instructions
+  val lsuOperation = Mux(excType === EXC_ILLEG, LSU_NOP, lsuOp)
+
   // exception signal
   val exceptType = Mux(io.fetch.pageFault, EXC_IPAGE, excType)
 
@@ -99,7 +104,7 @@ class Decoder extends Module {
   io.decoder.opr1     := generateOpr(aluSrc1)
   io.decoder.opr2     := generateOpr(aluSrc2)
   io.decoder.mduOp    := mduOp
-  io.decoder.lsuOp    := lsuOp
+  io.decoder.lsuOp    := lsuOperation
   io.decoder.lsuData  := io.read2.data
   io.decoder.regWen   := regWen
   io.decoder.regWaddr := rd
