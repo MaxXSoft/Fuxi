@@ -14,6 +14,9 @@ object Constants {
   val REG_COUNT       = 32
   val REG_ADDR_WIDTH  = log2Ceil(REG_COUNT)
 
+  // CSR
+  val CSR_ADDR_WIDTH = 12
+
   // branch predictor
   val GHR_WIDTH         = 5
   val PHT_SIZE          = 1 << GHR_WIDTH
