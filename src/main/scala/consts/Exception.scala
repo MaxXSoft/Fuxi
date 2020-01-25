@@ -5,18 +5,19 @@ import chisel3.util.log2Ceil
 
 // exception type
 object ExceptType {
-  val EXC_TYPE_WIDTH = log2Ceil(10)
+  val EXC_TYPE_WIDTH = log2Ceil(11)
 
   val EXC_NONE  = 0.U(EXC_TYPE_WIDTH.W)
   val EXC_ECALL = 1.U(EXC_TYPE_WIDTH.W)
   val EXC_EBRK  = 2.U(EXC_TYPE_WIDTH.W)
   val EXC_SRET  = 3.U(EXC_TYPE_WIDTH.W)
   val EXC_MRET  = 4.U(EXC_TYPE_WIDTH.W)
-  val EXC_ILLEG = 5.U(EXC_TYPE_WIDTH.W) // illegal instruction
-  val EXC_IPAGE = 6.U(EXC_TYPE_WIDTH.W) // instruction page fault
+  val EXC_ILLEG = 5.U(EXC_TYPE_WIDTH.W)   // illegal instruction
+  val EXC_IPAGE = 6.U(EXC_TYPE_WIDTH.W)   // instruction page fault
   val EXC_LOAD  = 7.U(EXC_TYPE_WIDTH.W)
   val EXC_STAMO = 8.U(EXC_TYPE_WIDTH.W)
-  val EXC_SPRIV = 9.U(EXC_TYPE_WIDTH.W) // S-mode instruction
+  val EXC_SPRIV = 9.U(EXC_TYPE_WIDTH.W)   // S-mode instruction
+  val EXC_CSR   = 10.U(EXC_TYPE_WIDTH.W)  // CSR instruction
 }
 
 // exception cause
