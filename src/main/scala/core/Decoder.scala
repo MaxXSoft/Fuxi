@@ -100,16 +100,17 @@ class Decoder extends Module {
   io.branch.target  := branchTarget
 
   // signals to next stage
-  io.decoder.aluOp    := aluOp
-  io.decoder.opr1     := generateOpr(aluSrc1)
-  io.decoder.opr2     := generateOpr(aluSrc2)
-  io.decoder.mduOp    := mduOp
-  io.decoder.lsuOp    := lsuOperation
-  io.decoder.lsuData  := io.read2.data
-  io.decoder.regWen   := regWen
-  io.decoder.regWaddr := rd
-  io.decoder.csrOp    := csrOp
-  io.decoder.csrAddr  := immI.asUInt
-  io.decoder.csrData  := csrData
-  io.decoder.excType  := exceptType
+  io.decoder.aluOp      := aluOp
+  io.decoder.opr1       := generateOpr(aluSrc1)
+  io.decoder.opr2       := generateOpr(aluSrc2)
+  io.decoder.mduOp      := mduOp
+  io.decoder.lsuOp      := lsuOperation
+  io.decoder.lsuData    := io.read2.data
+  io.decoder.regWen     := regWen
+  io.decoder.regWaddr   := rd
+  io.decoder.csrOp      := csrOp
+  io.decoder.csrAddr    := immI.asUInt
+  io.decoder.csrData    := csrData
+  io.decoder.excType    := exceptType
+  io.decoder.currentPc  := io.fetch.pc
 }
