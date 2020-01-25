@@ -43,6 +43,7 @@ class Fetch extends Module {
   io.rom.wdata  := 0.U
 
   // generate output
-  io.fetch.inst := Mux(io.rom.valid, io.rom.rdata, NOP)
-  io.fetch.pc   := pc
+  io.fetch.inst       := Mux(io.rom.valid, io.rom.rdata, NOP)
+  io.fetch.pc         := pc
+  io.fetch.predIndex  := bpu.io.predIndex
 }
