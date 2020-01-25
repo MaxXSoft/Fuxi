@@ -43,7 +43,7 @@ object Control {
   //                     reg2
   //                  reg1| wen  aluOpr1   aluOpr2   aluOp    branch   lsuOp     csrOp     mduOp       excType
   //                   |  |  |      |         |        |        |        |         |         |            |
-                  List(N, N, N, OPR_ZERO, OPR_ZERO, ALU_ADD,  BR_N,   LSU_NOP,  CSR_NOP,  MDU_NOP,    EXC_NONE)
+                  List(N, N, N, OPR_ZERO, OPR_ZERO, ALU_ADD,  BR_N,   LSU_NOP,  CSR_NOP,  MDU_NOP,    EXC_ILLEG)
   val TABLE   = Array(
     ADD       ->  List(Y, Y, Y, OPR_REG1, OPR_REG2, ALU_ADD,  BR_N,   LSU_NOP,  CSR_NOP,  MDU_NOP,    EXC_NONE),
     ADDI      ->  List(Y, N, Y, OPR_REG1, OPR_IMMI, ALU_ADD,  BR_N,   LSU_NOP,  CSR_NOP,  MDU_NOP,    EXC_NONE),
@@ -84,12 +84,12 @@ object Control {
     SW        ->  List(Y, Y, N, OPR_REG1, OPR_IMMS, ALU_ADD,  BR_N,   LSU_SW,   CSR_NOP,  MDU_NOP,    EXC_STAMO),
     FENCE     ->  List(N, N, N, OPR_ZERO, OPR_IMMI, ALU_OR,   BR_N,   LSU_FENC, CSR_NOP,  MDU_NOP,    EXC_NONE),
     FENCEI    ->  List(N, N, N, OPR_ZERO, OPR_ZERO, ALU_ADD,  BR_N,   LSU_FENI, CSR_NOP,  MDU_NOP,    EXC_NONE),
-    CSRRW     ->  List(Y, N, Y, OPR_ZERO, OPR_ZERO, ALU_ADD,  BR_N,   LSU_NOP,  CSR_RW,   MDU_NOP,    EXC_NONE),
-    CSRRS     ->  List(Y, N, Y, OPR_ZERO, OPR_ZERO, ALU_ADD,  BR_N,   LSU_NOP,  CSR_RS,   MDU_NOP,    EXC_NONE),
-    CSRRC     ->  List(Y, N, Y, OPR_ZERO, OPR_ZERO, ALU_ADD,  BR_N,   LSU_NOP,  CSR_RC,   MDU_NOP,    EXC_NONE),
-    CSRRWI    ->  List(N, N, Y, OPR_ZERO, OPR_ZERO, ALU_ADD,  BR_N,   LSU_NOP,  CSR_RW,   MDU_NOP,    EXC_NONE),
-    CSRRSI    ->  List(N, N, Y, OPR_ZERO, OPR_ZERO, ALU_ADD,  BR_N,   LSU_NOP,  CSR_RS,   MDU_NOP,    EXC_NONE),
-    CSRRCI    ->  List(N, N, Y, OPR_ZERO, OPR_ZERO, ALU_ADD,  BR_N,   LSU_NOP,  CSR_RC,   MDU_NOP,    EXC_NONE),
+    CSRRW     ->  List(Y, N, Y, OPR_ZERO, OPR_ZERO, ALU_ADD,  BR_N,   LSU_NOP,  CSR_RW,   MDU_NOP,    EXC_CSR),
+    CSRRS     ->  List(Y, N, Y, OPR_ZERO, OPR_ZERO, ALU_ADD,  BR_N,   LSU_NOP,  CSR_RS,   MDU_NOP,    EXC_CSR),
+    CSRRC     ->  List(Y, N, Y, OPR_ZERO, OPR_ZERO, ALU_ADD,  BR_N,   LSU_NOP,  CSR_RC,   MDU_NOP,    EXC_CSR),
+    CSRRWI    ->  List(N, N, Y, OPR_ZERO, OPR_ZERO, ALU_ADD,  BR_N,   LSU_NOP,  CSR_RW,   MDU_NOP,    EXC_CSR),
+    CSRRSI    ->  List(N, N, Y, OPR_ZERO, OPR_ZERO, ALU_ADD,  BR_N,   LSU_NOP,  CSR_RS,   MDU_NOP,    EXC_CSR),
+    CSRRCI    ->  List(N, N, Y, OPR_ZERO, OPR_ZERO, ALU_ADD,  BR_N,   LSU_NOP,  CSR_RC,   MDU_NOP,    EXC_CSR),
     MUL       ->  List(Y, Y, Y, OPR_REG1, OPR_REG2, ALU_ADD,  BR_N,   LSU_NOP,  CSR_NOP,  MDU_MUL,    EXC_NONE),
     MULH      ->  List(Y, Y, Y, OPR_REG1, OPR_REG2, ALU_ADD,  BR_N,   LSU_NOP,  CSR_NOP,  MDU_MULH,   EXC_NONE),
     MULHSU    ->  List(Y, Y, Y, OPR_REG1, OPR_REG2, ALU_ADD,  BR_N,   LSU_NOP,  CSR_NOP,  MDU_MULHSU, EXC_NONE),
