@@ -47,8 +47,8 @@ class DecoderUnitTester(c: Decoder) extends PeekPokeTester(c) {
 
   def expectAlu(aluOp: BigInt, mduOp: BigInt, opr1: Int, opr2: Int) = {
     expect(c.io.decoder.aluOp, aluOp)
-    expect(c.io.decoder.opr1, opr1)
-    expect(c.io.decoder.opr2, opr2)
+    expect(c.io.decoder.opr1, BigInt(opr1.toHexString, 16))
+    expect(c.io.decoder.opr2, BigInt(opr2.toHexString, 16))
     expect(c.io.decoder.mduOp, mduOp)
   }
 

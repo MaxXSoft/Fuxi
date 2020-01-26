@@ -6,6 +6,7 @@ import chisel3.util._
 import io._
 import consts.Control._
 import consts.ExceptType._
+import consts.Constants.ADDR_WIDTH
 import consts.MduOp.MDU_NOP
 import consts.LsuOp.LSU_NOP
 import consts.CsrOp.CSR_NOP
@@ -31,22 +32,20 @@ class Decoder extends Module {
   val rs2 = inst(24, 20)
 
   // immediate
-  val immI  = inst(31, 20).asSInt
-  val immS  = Cat(inst(31, 25), inst(11, 7)).asSInt
-  val immB  = Cat(inst(31), inst(7), inst(30, 25),
-                  inst(11, 8), 0.U(1.W)).asSInt
-  val immU  = Cat(inst(31, 12), 0.U(12.W)).asSInt
-  val immJ  = Cat(inst(31), inst(19, 12), inst(20),
-                  inst(30, 21), 0.U(1.W)).asSInt
+  val immI  = inst(31, 20)
+  val immS  = Cat(inst(31, 25), inst(11, 7))
+  val immB  = Cat(inst(31), inst(7), inst(30, 25), inst(11, 8), 0.U(1.W))
+  val immU  = Cat(inst(31, 12), 0.U(12.W))
+  val immJ  = Cat(inst(31), inst(19, 12), inst(20), inst(30, 21), 0.U(1.W))
 
   // operand generator
   def generateOpr(oprSel: UInt) =
       MuxLookup(oprSel, 0.S, Seq(
         OPR_REG1  -> io.read1.data.asSInt,
         OPR_REG2  -> io.read2.data.asSInt,
-        OPR_IMMI  -> immI,
-        OPR_IMMS  -> immS,
-        OPR_IMMU  -> immU,
+        OPR_IMMI  -> immI.asSInt,
+        OPR_IMMS  -> immS.asSInt,
+        OPR_IMMU  -> immU.asSInt,
         OPR_IMMR  -> rs2.zext,
         OPR_PC    -> io.fetch.pc.asSInt,
         OPR_4     -> 4.S,
@@ -58,10 +57,11 @@ class Decoder extends Module {
        mduOp :: excType :: Nil) = ListLookup(io.fetch.inst, DEFAULT, TABLE)
   
   // branch taken/target
-  val targetJAL     = (io.fetch.pc.asSInt + immJ).asUInt
-  val targetJALR    = Cat((io.read1.data.asSInt + immI)(31, 1), 0.U)
-  val targetB       = (io.fetch.pc.asSInt + immB).asUInt
-  val branchTaken   = MuxLookup(branchFlag, false.B, Seq(
+  val targetJAL   = (io.fetch.pc.asSInt + immJ.asSInt).asUInt
+  val sumR1immI   = io.read1.data.asSInt + immI.asSInt
+  val targetJALR  = Cat(sumR1immI(ADDR_WIDTH - 1, 1), 0.U)
+  val targetB     = (io.fetch.pc.asSInt + immB.asSInt).asUInt
+  val branchTaken = MuxLookup(branchFlag, false.B, Seq(
     BR_AL   -> true.B,
     BR_EQ   -> (io.read1.data === io.read2.data),
     BR_NE   -> (io.read1.data =/= io.read2.data),
@@ -105,15 +105,15 @@ class Decoder extends Module {
 
   // signals to next stage
   io.decoder.aluOp      := aluOp
-  io.decoder.opr1       := generateOpr(aluSrc1)
-  io.decoder.opr2       := generateOpr(aluSrc2)
+  io.decoder.opr1       := generateOpr(aluSrc1).asUInt
+  io.decoder.opr2       := generateOpr(aluSrc2).asUInt
   io.decoder.mduOp      := mduOperation
   io.decoder.lsuOp      := lsuOperation
   io.decoder.lsuData    := io.read2.data
   io.decoder.regWen     := regWen
   io.decoder.regWaddr   := rd
   io.decoder.csrOp      := csrOperation
-  io.decoder.csrAddr    := immI.asUInt
+  io.decoder.csrAddr    := immI
   io.decoder.csrData    := csrData
   io.decoder.excType    := exceptType
   io.decoder.currentPc  := io.fetch.pc
