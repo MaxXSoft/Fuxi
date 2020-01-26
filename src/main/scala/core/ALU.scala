@@ -15,7 +15,6 @@ class ALU extends Module {
     // MDU interface
     val mduFlush  = Input(Bool())
     val mduBusy   = Output(Bool())
-    val mdu       = Flipped(new MduIO)
     // to next stage
     val alu       = Output(new AluIO)
   })
@@ -32,19 +31,21 @@ class ALU extends Module {
     ALU_XOR   -> (opr1 ^ opr2),
     ALU_OR    -> (opr1 | opr2),
     ALU_AND   -> (opr1 & opr2),
-    ALU_SLT   -> (opr1 < opr2),
-    ALU_SLTU  -> (opr1.asUInt < opr2.asUInt),
+    ALU_SLT   -> (opr1.asSInt < opr2.asSInt).asUInt,
+    ALU_SLTU  -> (opr1 < opr2),
     ALU_SLL   -> (opr1 << shamt),
-    ALU_SRL   -> (opr1.asUInt >> shamt),
-    ALU_SRA   -> (opr1 >> shamt),
+    ALU_SRL   -> (opr1 >> shamt),
+    ALU_SRA   -> (opr1.asSInt >> shamt).asUInt,
   ))
 
   // multiplication & division unit
-  val mdu       = new MDU
-  io.mdu        <> mdu.io
-  io.mdu.flush  := io.mduFlush
-  io.mduBusy    := !io.mdu.valid
-  val mduResult = Mux(io.mdu.valid, io.mdu.result, 0.U)
+  val mdu       = Module(new MDU)
+  mdu.io.flush  := io.mduFlush
+  mdu.io.op     := io.decoder.mduOp
+  io.mduBusy    := !mdu.io.valid
+  mdu.io.opr1   := opr1.asUInt
+  mdu.io.opr2   := opr2.asUInt
+  val mduResult = Mux(mdu.io.valid, mdu.io.result, 0.U)
 
   // final result
   val result = Mux(io.decoder.mduOp === MDU_NOP, aluResult, mduResult)
