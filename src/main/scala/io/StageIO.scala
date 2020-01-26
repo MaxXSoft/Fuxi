@@ -40,8 +40,8 @@ class FetchIO extends StageIO[FetchIO] {
 class DecoderIO extends StageIO[DecoderIO] {
   // to ALU/MDU
   val aluOp     = UInt(ALU_OP_WIDTH.W)
-  val opr1      = SInt(DATA_WIDTH.W)
-  val opr2      = SInt(DATA_WIDTH.W)
+  val opr1      = UInt(DATA_WIDTH.W)
+  val opr2      = UInt(DATA_WIDTH.W)
   val mduOp     = UInt(MDU_OP_WIDTH.W)
   // to Mem (LSU)
   val lsuOp     = UInt(LSU_OP_WIDTH.W)
