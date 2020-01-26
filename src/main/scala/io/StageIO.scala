@@ -67,6 +67,7 @@ class AluIO extends StageIO[AluIO] {
   // to write back
   val regWen    = Bool()
   val regWaddr  = UInt(REG_ADDR_WIDTH.W)
+  val result    = UInt(DATA_WIDTH.W)
   // to CSR
   val csrOp     = UInt(CSR_OP_WIDTH.W)
   val csrAddr   = UInt(CSR_ADDR_WIDTH.W)
