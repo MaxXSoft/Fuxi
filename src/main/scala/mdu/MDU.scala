@@ -47,8 +47,9 @@ class MDU extends Module {
 
   // multiplier
   val mul       = Module(new Multiplier(DATA_WIDTH))
-  val mulOut    = Mux(hiRem, mul.io.hi, mul.io.lo)
-  val mulAns    = Mux(isAnsNeg, -mulOut, mulOut)
+  val mulOut    = Mux(isAnsNeg, -mul.io.result, mul.io.result)
+  val mulAns    = Mux(hiRem, mulOut(DATA_WIDTH * 2 - 1, DATA_WIDTH),
+                             mulOut(DATA_WIDTH - 1, 0))
   mul.io.en    := mulEn
   mul.io.flush := io.flush
   mul.io.opr1  := opr1
@@ -74,6 +75,6 @@ class MDU extends Module {
   div.io.divisor   := opr2
 
   // output signals
-  io.valid  := Mux(mulEn, mul.io.done, Mux(divEn, div.io.done, false.B))
+  io.valid  := Mux(mulEn, mul.io.done, Mux(divEn, div.io.done, true.B))
   io.result := Mux(mulEn, mulAns, Mux(divEn, divAns, 0.U))
 }
