@@ -8,6 +8,7 @@ class Divider(val oprWidth: Int) extends Module {
   val io = IO(new Bundle {
     // control signals
     val en        = Input(Bool())
+    val flush     = Input(Bool())
     val divZero   = Output(Bool())
     val done      = Output(Bool())
     // operands & results
@@ -47,43 +48,49 @@ class Divider(val oprWidth: Int) extends Module {
                     lastDivisor =/= io.divisor
 
   // finite state machine
-  switch (state) {
-    is (sIdle) {
-      when (io.en && startFlag) {
-        // start calculation
-        lastDivident  := io.divident
-        lastDivisor   := io.divisor
-        // switch to next state
-        when (io.divisor === 0.U) {
-          state   := sZero
-        } .otherwise {
-          state   := sRunning
-          result  := Cat(0.U(oprWidth.W), io.divident, 0.U(1.W))
-          divisor := Cat(0.U(1.W), io.divisor, 0.U(oprWidth.W))
-          counter := 0.U
-          isDiv0  := false.B
+  when (io.flush) {
+    state   := sIdle
+    result  := 0.U
+    isDiv0  := false.B
+  } .otherwise {
+    switch (state) {
+      is (sIdle) {
+        when (io.en && startFlag) {
+          // start calculation
+          lastDivident  := io.divident
+          lastDivisor   := io.divisor
+          // switch to next state
+          when (io.divisor === 0.U) {
+            state   := sZero
+          } .otherwise {
+            state   := sRunning
+            result  := Cat(0.U(oprWidth.W), io.divident, 0.U(1.W))
+            divisor := Cat(0.U(1.W), io.divisor, 0.U(oprWidth.W))
+            counter := 0.U
+            isDiv0  := false.B
+          }
         }
       }
-    }
-    is (sZero) {
-      // mark as divided by zero
-      isDiv0  := true.B
-      state   := sIdle
-    }
-    is (sRunning) {
-      // generate result
-      when (result >= maxDivisor) {
-        result := ((result - maxDivisor) << 2) | "b11".U
-      } .elsewhen (result < maxDivisor && result >= divisor) {
-        result := ((result - divisor) << 2) | "b10".U
-      } .elsewhen (result < divisor && result >= minDivisor) {
-        result := ((result - minDivisor) << 2) | "b01".U
-      } .otherwise {
-        result := result << 2
+      is (sZero) {
+        // mark as divided by zero
+        isDiv0  := true.B
+        state   := sIdle
       }
-      // increase/check counter
-      counter := counter + 1.U
-      when (counter === (cycleCount - 1).U) { state := sIdle }
+      is (sRunning) {
+        // generate result
+        when (result >= maxDivisor) {
+          result := ((result - maxDivisor) << 2) | "b11".U
+        } .elsewhen (result < maxDivisor && result >= divisor) {
+          result := ((result - divisor) << 2) | "b10".U
+        } .elsewhen (result < divisor && result >= minDivisor) {
+          result := ((result - minDivisor) << 2) | "b01".U
+        } .otherwise {
+          result := result << 2
+        }
+        // increase/check counter
+        counter := counter + 1.U
+        when (counter === (cycleCount - 1).U) { state := sIdle }
+      }
     }
   }
 
