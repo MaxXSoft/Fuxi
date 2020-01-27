@@ -18,19 +18,20 @@ class MultiplierUnitTester(c: Multiplier) extends PeekPokeTester(c) {
     poke(c.io.opr2, opr2)
     do {
       step(1)
-      poke(c.io.en, false)
+      if (peek(c.io.done) == 0) poke(c.io.en, false)
     } while (peek(c.io.done) == 0)
     expect(c.io.lo, lo)
     expect(c.io.hi, hi)
   }
 
+  // normal
   for (i <- 0 until 20) {
     testMult()
   }
 }
 
 object MultiplierTest extends App {
-  Driver.execute(args, () => new Multiplier(32, 2)) {
+  Driver.execute(args, () => new Multiplier(32, 3)) {
     (c) => new MultiplierUnitTester(c)
   }
 }

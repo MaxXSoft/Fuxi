@@ -12,6 +12,7 @@ class DividerUnitTester(c: Divider) extends PeekPokeTester(c) {
     val remainder = divident % divisor
     // poke & expect
     poke(c.io.en, true)
+    poke(c.io.flush, false)
     poke(c.io.divident, divident)
     poke(c.io.divisor, divisor)
     do {
