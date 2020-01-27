@@ -7,14 +7,13 @@ import chisel3.util._
 class Multiplier(val oprWidth: Int, val latency: Int = 0) extends Module {
   val io = IO(new Bundle {
     // control signals
-    val en    = Input(Bool())
-    val flush = Input(Bool())
-    val done  = Output(Bool())
+    val en      = Input(Bool())
+    val flush   = Input(Bool())
+    val done    = Output(Bool())
     // operands & results
-    val opr1  = Input(UInt(oprWidth.W))
-    val opr2  = Input(UInt(oprWidth.W))
-    val lo    = Output(UInt(oprWidth.W))
-    val hi    = Output(UInt(oprWidth.W))
+    val opr1    = Input(UInt(oprWidth.W))
+    val opr2    = Input(UInt(oprWidth.W))
+    val result  = Output(UInt((oprWidth * 2).W))
   })
 
   require(latency >= 0,
@@ -37,6 +36,5 @@ class Multiplier(val oprWidth: Int, val latency: Int = 0) extends Module {
   // generate output
   val (en, data)  = generatePipe(io.en, result, latency)
   io.done        := en
-  io.lo          := data(oprWidth - 1, 0)
-  io.hi          := data(oprWidth * 2 - 1, oprWidth)
+  io.result      := data
 }

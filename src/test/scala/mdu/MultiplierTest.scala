@@ -10,8 +10,6 @@ class MultiplierUnitTester(c: Multiplier) extends PeekPokeTester(c) {
     val opr1    = BigInt(rnd.nextInt.toHexString, 16)
     val opr2    = BigInt(rnd.nextInt.toHexString, 16)
     val result  = opr1 * opr2
-    val lo      = result & mask
-    val hi      = (result >> 32) & mask
     // test multiplier
     poke(c.io.en, true)
     poke(c.io.opr1, opr1)
@@ -20,8 +18,7 @@ class MultiplierUnitTester(c: Multiplier) extends PeekPokeTester(c) {
       step(1)
       if (peek(c.io.done) == 0) poke(c.io.en, false)
     } while (peek(c.io.done) == 0)
-    expect(c.io.lo, lo)
-    expect(c.io.hi, hi)
+    expect(c.io.result, result)
   }
 
   // normal
