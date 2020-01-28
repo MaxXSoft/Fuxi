@@ -8,6 +8,7 @@ import consts.MduOp.MDU_OP_WIDTH
 import consts.LsuOp.LSU_OP_WIDTH
 import consts.CsrOp.CSR_OP_WIDTH
 import consts.ExceptType.EXC_TYPE_WIDTH
+import lsu.LsuDecode.LS_DATA_WIDTH
 
 // interface of stage's IO
 class StageIO[T <: StageIO[T]] extends Bundle {
@@ -74,6 +75,28 @@ class AluIO extends StageIO[AluIO] {
   val csrData   = UInt(DATA_WIDTH.W)
   // exception type
   val excType   = UInt(EXC_TYPE_WIDTH.W)
+  // debug
+  val currentPc = UInt(ADDR_WIDTH.W)
+}
+
+// MEM stage
+class MemIO extends StageIO[MemIO] {
+  // to write back
+  val regWen    = Bool()
+  val regWaddr  = UInt(REG_ADDR_WIDTH.W)
+  val result    = UInt(DATA_WIDTH.W)
+  val memLoad   = Bool()
+  val memSigned = Bool()
+  val memSel    = UInt(ADDR_ALIGN_WIDTH.W)
+  val memWidth  = UInt(LS_DATA_WIDTH.W)
+  // to CSR
+  val csrOp     = UInt(CSR_OP_WIDTH.W)
+  val csrAddr   = UInt(CSR_ADDR_WIDTH.W)
+  val csrData   = UInt(DATA_WIDTH.W)
+  // to exclusive monitor
+  val emSet     = Bool()
+  val emClear   = Bool()
+  val emAddr    = UInt(ADDR_WIDTH.W)
   // debug
   val currentPc = UInt(ADDR_WIDTH.W)
 }
