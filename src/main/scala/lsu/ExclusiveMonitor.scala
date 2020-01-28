@@ -7,10 +7,13 @@ import consts.Constants._
 // for LR & SC instructions
 class ExclusiveMonitor extends Module {
   val io = IO(new Bundle {
-    val set   = Input(Bool())
-    val clear = Input(Bool())
-    val addr  = Input(UInt(ADDR_WIDTH.W))
-    val valid = Output(Bool())
+    // write channel
+    val set       = Input(Bool())
+    val clear     = Input(Bool())
+    val addrSet   = Input(UInt(ADDR_WIDTH.W))
+    // check channel
+    val addrCheck = Input(UInt(ADDR_WIDTH.W))
+    val valid     = Output(Bool())
   })
 
   val flag  = RegInit(false.B)
@@ -21,8 +24,8 @@ class ExclusiveMonitor extends Module {
     addr  := 0.U
   } .elsewhen (io.set) {
     flag  := true.B
-    addr  := io.addr
+    addr  := io.addrSet
   }
 
-  io.valid := flag && addr === io.addr
+  io.valid := flag && addr === io.addrCheck
 }
