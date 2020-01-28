@@ -10,15 +10,16 @@ import bpu.BranchPredictor
 class Fetch extends Module {
   val io = IO(new Bundle {
     // pipeline control signals
-    val flush   = Input(Bool())
-    val stall   = Input(Bool())
-    val excPc   = Input(UInt(ADDR_WIDTH.W))
+    val flush     = Input(Bool())
+    val stall     = Input(Bool())
+    val stallReq  = Output(Bool())
+    val excPc     = Input(UInt(ADDR_WIDTH.W))
     // ROM interface
-    val rom     = new SramIO(ADDR_WIDTH, DATA_WIDTH)
+    val rom       = new SramIO(ADDR_WIDTH, DATA_WIDTH)
     // branch information (from decoder)
-    val branch  = Input(new BranchInfoIO)
+    val branch    = Input(new BranchInfoIO)
     // to next stage
-    val fetch   = Output(new FetchIO)
+    val fetch     = Output(new FetchIO)
   })
 
   // program counter
@@ -36,13 +37,16 @@ class Fetch extends Module {
                    pc + (INST_WIDTH / 8).U)))
   pc := nextPc
 
-  // generate ROM signals
+  // pipeline control signals
+  io.stallReq := !io.rom.valid
+
+  // ROM control signals
   io.rom.en     := true.B
   io.rom.wen    := 0.U
   io.rom.addr   := nextPc
   io.rom.wdata  := 0.U
 
-  // generate output
+  // output signals
   io.fetch.inst       := Mux(io.rom.valid && !io.rom.fault,
                              io.rom.rdata, NOP)
   io.fetch.pc         := pc
