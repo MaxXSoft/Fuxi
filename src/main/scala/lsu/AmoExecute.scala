@@ -11,9 +11,10 @@ class AmoExecute extends Module {
     // control signals
     val op        = Input(UInt(AMO_OP_WIDTH.W))
     val flush     = Input(Bool())
-    val done      = Output(Bool())
-    // data from regfile (lsuData)
+    val ready     = Output(Bool())
+    // data from/to regfile (lsuData/result)
     val regOpr    = Input(UInt(DATA_WIDTH.W))
+    val regWdata  = Output(UInt(DATA_WIDTH.W))
     // RAM control
     val ramValid  = Input(Bool())
     val ramWen    = Output(Bool())
@@ -65,7 +66,8 @@ class AmoExecute extends Module {
   }
 
   // output signals
-  io.done     := state === sIdle
+  io.ready    := state === sIdle
+  io.regWdata := io.ramRdata
   io.ramWen   := state === sStore
   io.ramWdata := result
 }
