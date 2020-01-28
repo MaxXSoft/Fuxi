@@ -4,8 +4,7 @@ import chisel3._
 import chisel3.util._
 
 import consts.Constants._
-import consts.Control.{Y, N}
-import consts.MduOp._
+import consts.MduOp.MDU_OP_WIDTH
 
 class MDU extends Module {
   val io = IO(new Bundle {
@@ -20,23 +19,8 @@ class MDU extends Module {
   })
 
   // decode operation to divider & multiplier control signals
-  val default =
-  //                              den hi/rm rsn
-  //                            men |  | lsn |
-  //                             |  |  |  |  |
-                            List(N, N, N, N, N)
-  val table   = Array(
-    BitPat(MDU_MUL)     ->  List(Y, N, N, N, N),
-    BitPat(MDU_MULH)    ->  List(Y, N, Y, Y, Y),
-    BitPat(MDU_MULHSU)  ->  List(Y, N, Y, Y, N),
-    BitPat(MDU_MULHU)   ->  List(Y, N, Y, N, N),
-    BitPat(MDU_DIV)     ->  List(N, Y, N, Y, Y),
-    BitPat(MDU_DIVU)    ->  List(N, Y, N, N, N),
-    BitPat(MDU_REM)     ->  List(N, Y, Y, Y, Y),
-    BitPat(MDU_REMU)    ->  List(N, Y, Y, N, N),
-  )
   val mulEn :: divEn :: hiRem :: lhsSigned :: rhsSigned :: Nil =
-      ListLookup(io.op, default, table)
+      ListLookup(io.op, MduDecode.DEFAULT, MduDecode.TABLE)
 
   // operands
   val isOpr1Neg = lhsSigned && io.opr1(DATA_WIDTH - 1)
