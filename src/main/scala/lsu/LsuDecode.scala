@@ -42,7 +42,7 @@ object LsuDecode {
     BitPat(LSU_SH)    ->  List(Y, Y, LS_DATA_HALF, N, N, N, AMO_OP_NOP,  N, N, N, N),
     BitPat(LSU_SW)    ->  List(Y, Y, LS_DATA_WORD, N, N, N, AMO_OP_NOP,  N, N, N, N),
     BitPat(LSU_LR)    ->  List(Y, N, LS_DATA_WORD, N, Y, N, AMO_OP_NOP,  N, N, N, N),
-    BitPat(LSU_SC)    ->  List(Y, Y, LS_DATA_WORD, N, N, Y, AMO_OP_NOP,  N, N, N, N),
+    BitPat(LSU_SC)    ->  List(Y, N, LS_DATA_WORD, N, N, Y, AMO_OP_NOP,  N, N, N, N),
     BitPat(LSU_SWAP)  ->  List(Y, N, LS_DATA_WORD, N, N, N, AMO_OP_SWAP, N, N, N, N),
     BitPat(LSU_ADD)   ->  List(Y, N, LS_DATA_WORD, N, N, N, AMO_OP_ADD,  N, N, N, N),
     BitPat(LSU_XOR)   ->  List(Y, N, LS_DATA_WORD, N, N, N, AMO_OP_XOR,  N, N, N, N),
