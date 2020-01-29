@@ -6,6 +6,7 @@ import chisel3.util.MuxLookup
 import io._
 import consts.AluOp._
 import consts.MduOp.MDU_NOP
+import consts.LsuOp.LSU_NOP
 import mdu.MDU
 
 class ALU extends Module {
@@ -47,18 +48,20 @@ class ALU extends Module {
   mdu.io.opr2   := opr2.asUInt
   val mduResult = Mux(mdu.io.valid, mdu.io.result, 0.U)
 
-  // final result
+  // commit to write back
   val result = Mux(io.decoder.mduOp === MDU_NOP, aluResult, mduResult)
+  val load   = io.decoder.lsuOp =/= LSU_NOP && io.decoder.regWen
 
   // signals to next stage
-  io.alu.lsuOp      := io.decoder.lsuOp
-  io.alu.lsuData    := io.decoder.lsuData
-  io.alu.regWen     := io.decoder.regWen
-  io.alu.regWaddr   := io.decoder.regWaddr
-  io.alu.result     := result
-  io.alu.csrOp      := io.decoder.csrOp
-  io.alu.csrAddr    := io.decoder.csrAddr
-  io.alu.csrData    := io.decoder.csrData
-  io.alu.excType    := io.decoder.excType
-  io.alu.currentPc  := io.decoder.currentPc
+  io.alu.lsuOp        := io.decoder.lsuOp
+  io.alu.lsuData      := io.decoder.lsuData
+  io.alu.commit.en    := io.decoder.regWen
+  io.alu.commit.addr  := io.decoder.regWaddr
+  io.alu.commit.data  := result
+  io.alu.commit.load  := load
+  io.alu.csrOp        := io.decoder.csrOp
+  io.alu.csrAddr      := io.decoder.csrAddr
+  io.alu.csrData      := io.decoder.csrData
+  io.alu.excType      := io.decoder.excType
+  io.alu.currentPc    := io.decoder.currentPc
 }
