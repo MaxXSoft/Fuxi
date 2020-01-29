@@ -91,10 +91,6 @@ class MemIO extends StageIO[MemIO] {
   val csrOp     = UInt(CSR_OP_WIDTH.W)
   val csrAddr   = UInt(CSR_ADDR_WIDTH.W)
   val csrData   = UInt(DATA_WIDTH.W)
-  // to exclusive monitor
-  val emSet     = Bool()
-  val emClear   = Bool()
-  val emAddr    = UInt(ADDR_WIDTH.W)
   // debug
   val currentPc = UInt(ADDR_WIDTH.W)
 }
