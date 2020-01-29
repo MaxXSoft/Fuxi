@@ -2,7 +2,7 @@ package io
 
 import chisel3._
 
-import consts.Constants._
+import consts.Parameters._
 
 class RegReadIO extends Bundle {
   val en    = Output(Bool())

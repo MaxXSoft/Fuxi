@@ -3,7 +3,7 @@ package bpu
 import chisel3._
 import chisel3.util.Cat
 
-import consts.Constants._
+import consts.Parameters._
 
 // single line in BTB
 class BTBLine extends Bundle {

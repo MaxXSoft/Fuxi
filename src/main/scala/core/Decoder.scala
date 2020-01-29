@@ -6,7 +6,7 @@ import chisel3.util._
 import io._
 import consts.Control._
 import consts.ExceptType._
-import consts.Constants.ADDR_WIDTH
+import consts.Parameters.ADDR_WIDTH
 import consts.MduOp.MDU_NOP
 import consts.LsuOp.LSU_NOP
 import consts.CsrOp.CSR_NOP

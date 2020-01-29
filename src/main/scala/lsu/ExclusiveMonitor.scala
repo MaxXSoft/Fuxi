@@ -2,7 +2,7 @@ package lsu
 
 import chisel3._
 
-import consts.Constants._
+import consts.Parameters._
 
 // for LR & SC instructions
 class ExclusiveMonitor extends Module {

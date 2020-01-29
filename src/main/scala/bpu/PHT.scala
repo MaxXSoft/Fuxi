@@ -2,7 +2,7 @@ package bpu
 
 import chisel3._
 
-import consts.Constants.{GHR_WIDTH, PHT_SIZE}
+import consts.Parameters.{GHR_WIDTH, PHT_SIZE}
 
 // pattern history table
 class PHT extends Module {

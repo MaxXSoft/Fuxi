@@ -4,7 +4,7 @@ import chisel3._
 import chisel3.util._
 
 import LsuDecode._
-import consts.Constants._
+import consts.Parameters._
 
 class AmoExecute extends Module {
   val io = IO(new Bundle {

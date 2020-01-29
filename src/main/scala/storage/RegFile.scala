@@ -3,7 +3,7 @@ package storage
 import chisel3._
 
 import io._
-import consts.Constants._
+import consts.Parameters._
 
 class RegFile extends Module {
   val io = IO(new Bundle {

@@ -2,7 +2,7 @@ package io
 
 import chisel3._
 
-import consts.Constants._
+import consts.Parameters._
 import consts.AluOp.ALU_OP_WIDTH
 import consts.MduOp.MDU_OP_WIDTH
 import consts.LsuOp.LSU_OP_WIDTH

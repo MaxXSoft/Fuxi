@@ -3,7 +3,7 @@ package bpu
 import chisel3._
 import chisel3.util.Cat
 
-import consts.Constants.GHR_WIDTH
+import consts.Parameters.GHR_WIDTH
 
 // global history register
 class GHR extends Module {

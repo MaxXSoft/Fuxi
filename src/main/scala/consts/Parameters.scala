@@ -3,7 +3,7 @@ package consts
 import chisel3._
 import chisel3.util.log2Ceil
 
-object Constants {
+object Parameters {
   // general bus width
   val ADDR_WIDTH        = 32
   val ADDR_ALIGN_WIDTH  = log2Ceil(ADDR_WIDTH / 8)

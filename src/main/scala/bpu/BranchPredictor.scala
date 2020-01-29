@@ -3,7 +3,7 @@ package bpu
 import chisel3._
 
 import io.BranchInfoIO
-import consts.Constants._
+import consts.Parameters._
 
 class BranchPredictor extends Module {
   val io = IO(new Bundle {

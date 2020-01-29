@@ -2,7 +2,7 @@ package io
 
 import chisel3._
 
-import consts.Constants.{GHR_WIDTH, ADDR_WIDTH}
+import consts.Parameters.{GHR_WIDTH, ADDR_WIDTH}
 
 class BranchInfoIO extends Bundle {
   val branch  = Bool()              // last inst is a b/j

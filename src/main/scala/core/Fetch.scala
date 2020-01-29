@@ -3,7 +3,7 @@ package core
 import chisel3._
 
 import io._
-import consts.Constants._
+import consts.Parameters._
 import consts.Instructions.NOP
 import bpu.BranchPredictor
 

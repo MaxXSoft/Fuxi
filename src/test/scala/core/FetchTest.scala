@@ -4,7 +4,7 @@ import chisel3._
 import chisel3.iotesters.{Driver, PeekPokeTester}
 
 import io._
-import consts.Constants._
+import consts.Parameters._
 import sim.ROM
 import utils.ArgParser
 

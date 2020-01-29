@@ -3,7 +3,7 @@ package mdu
 import chisel3._
 import chisel3.util._
 
-import consts.Constants._
+import consts.Parameters._
 import consts.MduOp.MDU_OP_WIDTH
 
 class MDU extends Module {

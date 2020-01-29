@@ -2,7 +2,7 @@ package io
 
 import chisel3._
 
-import consts.Constants._
+import consts.Parameters._
 
 class DebugIO extends Bundle {
   val regWen    = Output(Bool())

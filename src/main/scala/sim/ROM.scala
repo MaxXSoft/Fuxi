@@ -4,7 +4,7 @@ import chisel3._
 import chisel3.util.experimental.loadMemoryFromFile
 
 import io.SramIO
-import consts.Constants._
+import consts.Parameters._
 
 // for simulation only
 class ROM(initFile: String) extends Module {
