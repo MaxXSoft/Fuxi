@@ -63,5 +63,6 @@ class ALU extends Module {
   io.alu.csrAddr      := io.decoder.csrAddr
   io.alu.csrData      := io.decoder.csrData
   io.alu.excType      := io.decoder.excType
+  io.alu.inst         := io.decoder.inst
   io.alu.currentPc    := io.decoder.currentPc
 }

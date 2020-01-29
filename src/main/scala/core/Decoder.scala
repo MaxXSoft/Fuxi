@@ -116,5 +116,6 @@ class Decoder extends Module {
   io.decoder.csrAddr    := immI
   io.decoder.csrData    := csrData
   io.decoder.excType    := exceptType
+  io.decoder.inst       := inst
   io.decoder.currentPc  := io.fetch.pc
 }
