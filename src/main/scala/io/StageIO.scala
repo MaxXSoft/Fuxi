@@ -7,6 +7,7 @@ import consts.AluOp.ALU_OP_WIDTH
 import consts.MduOp.MDU_OP_WIDTH
 import consts.LsuOp.LSU_OP_WIDTH
 import consts.CsrOp.CSR_OP_WIDTH
+import consts.CSR.CSR_ADDR_WIDTH
 import consts.ExceptType.EXC_TYPE_WIDTH
 import lsu.LsuDecode.LS_DATA_WIDTH
 
