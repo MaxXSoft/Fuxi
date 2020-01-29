@@ -7,15 +7,19 @@ import io._
 import consts.AluOp._
 import consts.MduOp.MDU_NOP
 import consts.LsuOp.LSU_NOP
+import consts.CsrOp.CSR_NOP
+import consts.ExceptType.EXC_ILLEG
 import mdu.MDU
 
 class ALU extends Module {
   val io = IO(new Bundle {
     // from decoder
     val decoder   = Input(new DecoderIO)
-    // MDU interface
+    // MDU control
     val mduFlush  = Input(Bool())
     val mduBusy   = Output(Bool())
+    // CSR read channel
+    val csrRead   = new CsrReadIO
     // to next stage
     val alu       = Output(new AluIO)
   })
@@ -48,9 +52,19 @@ class ALU extends Module {
   mdu.io.opr2   := opr2.asUInt
   val mduResult = Mux(mdu.io.valid, mdu.io.result, 0.U)
 
+  // CSR control & exception type
+  val csrEn = io.decoder.csrOp =/= CSR_NOP
+  val excType = Mux(csrEn && !io.csrRead.valid,
+                    EXC_ILLEG, io.decoder.excType)
+
   // commit to write back
-  val result = Mux(io.decoder.mduOp === MDU_NOP, aluResult, mduResult)
-  val load   = io.decoder.lsuOp =/= LSU_NOP && io.decoder.regWen
+  val result  = Mux(csrEn, io.csrRead.data,
+                Mux(io.decoder.mduOp =/= MDU_NOP, mduResult, aluResult))
+  val load    = io.decoder.lsuOp =/= LSU_NOP && io.decoder.regWen
+
+  // read data from CSR
+  io.csrRead.en   := csrEn
+  io.csrRead.addr := io.decoder.csrAddr
 
   // signals to next stage
   io.alu.lsuOp      := io.decoder.lsuOp
@@ -62,7 +76,7 @@ class ALU extends Module {
   io.alu.csr.op     := io.decoder.csrOp
   io.alu.csr.addr   := io.decoder.csrAddr
   io.alu.csr.data   := io.decoder.csrData
-  io.alu.excType    := io.decoder.excType
+  io.alu.excType    := excType
   io.alu.inst       := io.decoder.inst
   io.alu.currentPc  := io.decoder.currentPc
 }
