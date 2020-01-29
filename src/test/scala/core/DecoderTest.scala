@@ -170,7 +170,7 @@ class DecoderUnitTester(c: Decoder) extends PeekPokeTester(c) {
   expectAlu(ALU_ADD, MDU_NOP, 0, 0)
   expectLsu(LSU_NOP, 0)
   expectCsr(CSR_RW, 0x340, reg1u)
-  expectExc(EXC_CSR)
+  expectExc(EXC_NONE)
 
   // csrrsi zero, mstatus, 8
   pokeDecoder(0x30046073)
@@ -180,7 +180,7 @@ class DecoderUnitTester(c: Decoder) extends PeekPokeTester(c) {
   expectAlu(ALU_ADD, MDU_NOP, 0, 0)
   expectLsu(LSU_NOP, 0)
   expectCsr(CSR_RS, 0x300, 8)
-  expectExc(EXC_CSR)
+  expectExc(EXC_NONE)
 
   // mul a2, a0, a1
   pokeDecoder(0x02b50633)
