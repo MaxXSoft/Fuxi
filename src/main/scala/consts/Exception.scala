@@ -17,7 +17,6 @@ object ExceptType {
   val EXC_LOAD  = 7.U(EXC_TYPE_WIDTH.W)
   val EXC_STAMO = 8.U(EXC_TYPE_WIDTH.W)
   val EXC_SPRIV = 9.U(EXC_TYPE_WIDTH.W)   // S-mode instruction
-  val EXC_CSR   = 10.U(EXC_TYPE_WIDTH.W)  // CSR instruction
 }
 
 // exception cause
