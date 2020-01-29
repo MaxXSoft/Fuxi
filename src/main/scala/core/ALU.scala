@@ -53,16 +53,16 @@ class ALU extends Module {
   val load   = io.decoder.lsuOp =/= LSU_NOP && io.decoder.regWen
 
   // signals to next stage
-  io.alu.lsuOp        := io.decoder.lsuOp
-  io.alu.lsuData      := io.decoder.lsuData
-  io.alu.commit.en    := io.decoder.regWen
-  io.alu.commit.addr  := io.decoder.regWaddr
-  io.alu.commit.data  := result
-  io.alu.commit.load  := load
-  io.alu.csrOp        := io.decoder.csrOp
-  io.alu.csrAddr      := io.decoder.csrAddr
-  io.alu.csrData      := io.decoder.csrData
-  io.alu.excType      := io.decoder.excType
-  io.alu.inst         := io.decoder.inst
-  io.alu.currentPc    := io.decoder.currentPc
+  io.alu.lsuOp      := io.decoder.lsuOp
+  io.alu.lsuData    := io.decoder.lsuData
+  io.alu.reg.en     := io.decoder.regWen
+  io.alu.reg.addr   := io.decoder.regWaddr
+  io.alu.reg.data   := result
+  io.alu.reg.load   := load
+  io.alu.csr.op     := io.decoder.csrOp
+  io.alu.csr.addr   := io.decoder.csrAddr
+  io.alu.csr.data   := io.decoder.csrData
+  io.alu.excType    := io.decoder.excType
+  io.alu.inst       := io.decoder.inst
+  io.alu.currentPc  := io.decoder.currentPc
 }

@@ -28,7 +28,7 @@ class AluUnitTester(c: ALU) extends PeekPokeTester(c) {
     poke(c.io.decoder.opr1, opr1)
     poke(c.io.decoder.opr2, opr2)
     step(1)
-    expect(c.io.alu.commit.data, BigInt(result.toHexString, 16))
+    expect(c.io.alu.reg.data, BigInt(result.toHexString, 16))
   }
 
   for (i <- 0 until 20) {

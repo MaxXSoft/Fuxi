@@ -68,11 +68,9 @@ class AluIO extends StageIO[AluIO] {
   val lsuOp     = UInt(LSU_OP_WIDTH.W)
   val lsuData   = UInt(DATA_WIDTH.W)
   // to write back
-  val commit    = new RegCommitIO
+  val reg       = new RegCommitIO
   // to CSR
-  val csrOp     = UInt(CSR_OP_WIDTH.W)
-  val csrAddr   = UInt(CSR_ADDR_WIDTH.W)
-  val csrData   = UInt(DATA_WIDTH.W)
+  val csr       = new CsrCommitIO
   // exception type
   val excType   = UInt(EXC_TYPE_WIDTH.W)
   // instruction info
@@ -83,14 +81,12 @@ class AluIO extends StageIO[AluIO] {
 // MEM stage
 class MemIO extends StageIO[MemIO] {
   // to write back
-  val commit    = new RegCommitIO
+  val reg       = new RegCommitIO
   val memSigned = Bool()
   val memSel    = UInt(ADDR_ALIGN_WIDTH.W)
   val memWidth  = UInt(LS_DATA_WIDTH.W)
   // to CSR
-  val csrOp     = UInt(CSR_OP_WIDTH.W)
-  val csrAddr   = UInt(CSR_ADDR_WIDTH.W)
-  val csrData   = UInt(DATA_WIDTH.W)
+  val csr       = new CsrCommitIO
   // debug
   val currentPc = UInt(ADDR_WIDTH.W)
 }

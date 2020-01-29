@@ -42,9 +42,9 @@ class Mem extends Module {
        (flushDt: Bool) :: Nil) = ListLookup(io.alu.lsuOp, DEFAULT, TABLE)
 
   // address of memory accessing
-  val addr  = Cat(io.alu.commit.data(ADDR_WIDTH - 1, ADDR_ALIGN_WIDTH),
+  val addr  = Cat(io.alu.reg.data(ADDR_WIDTH - 1, ADDR_ALIGN_WIDTH),
                   0.U(ADDR_ALIGN_WIDTH.W))
-  val sel   = io.alu.commit.data(ADDR_ALIGN_WIDTH - 1, 0)
+  val sel   = io.alu.reg.data(ADDR_ALIGN_WIDTH - 1, 0)
 
   // AMO execute unit
   val amo = Module(new AmoExecute)
@@ -80,8 +80,8 @@ class Mem extends Module {
 
   // write back data
   val data = Mux(checkExcMon, Mux(excMon.io.valid, 0.U, 1.U),
-             Mux(amoOp =/= AMO_OP_NOP, amo.io.regWdata, io.alu.commit.data))
-  
+             Mux(amoOp =/= AMO_OP_NOP, amo.io.regWdata, io.alu.reg.data))
+
   // exception related signals
   // signals about memory accessing
   val memAddr   = MuxLookup(width, false.B, Seq(
@@ -121,7 +121,7 @@ class Mem extends Module {
   val excPc     = io.alu.currentPc
   val excValue  = Mux(io.alu.excType === EXC_ILLEG, io.alu.inst,
                   Mux(memExcept || instAddr || instPage,
-                      io.alu.commit.data, 0.U))
+                      io.alu.reg.data, 0.U))
 
   // pipeline control
   io.stallReq := stallReq
@@ -148,15 +148,13 @@ class Mem extends Module {
   io.except.excValue  := excValue
 
   // output signals
-  io.mem.commit.en    := io.alu.commit.en
-  io.mem.commit.addr  := io.alu.commit.addr
-  io.mem.commit.data  := data
-  io.mem.commit.load  := io.alu.commit.load
-  io.mem.memSigned    := signed
-  io.mem.memSel       := sel
-  io.mem.memWidth     := width
-  io.mem.csrOp        := io.alu.csrOp
-  io.mem.csrAddr      := io.alu.csrAddr
-  io.mem.csrData      := io.alu.csrData
-  io.mem.currentPc    := io.alu.currentPc
+  io.mem.reg.en     := io.alu.reg.en
+  io.mem.reg.addr   := io.alu.reg.addr
+  io.mem.reg.data   := data
+  io.mem.reg.load   := io.alu.reg.load
+  io.mem.memSigned  := signed
+  io.mem.memSel     := sel
+  io.mem.memWidth   := width
+  io.mem.csr        <> io.alu.csr
+  io.mem.currentPc  := io.alu.currentPc
 }
