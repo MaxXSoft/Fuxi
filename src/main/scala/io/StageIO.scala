@@ -87,6 +87,8 @@ class MemIO extends StageIO[MemIO] {
   val memWidth  = UInt(LS_DATA_WIDTH.W)
   // to CSR
   val csr       = new CsrCommitIO
+  // to exclusive monitor
+  val excMon    = new ExcMonCommitIO
   // debug
   val currentPc = UInt(ADDR_WIDTH.W)
 }
