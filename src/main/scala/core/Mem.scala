@@ -71,7 +71,8 @@ class Mem extends Module {
   val wdata = Mux(wen || checkExcMon, io.alu.lsuData, amo.io.ramWdata)
 
   // stall request
-  val stallReq  = Mux(amoOp =/= AMO_OP_NOP, !amo.io.ready, !io.ram.valid)
+  val stallReq  = Mux(amoOp =/= AMO_OP_NOP, !amo.io.ready,
+                      en && !io.ram.valid)
 
   // write back data
   val data = Mux(checkExcMon, Mux(io.excMon.valid, 0.U, 1.U),
@@ -85,12 +86,14 @@ class Mem extends Module {
     LS_DATA_WORD  -> (sel(1, 0) =/= 0.U),
   ))
   val memExcept = memAddr || io.ram.fault
-  // signals about instruction fetching
+  // signals about instruction exceptions
+  val illgSret  = io.alu.excType === EXC_SRET && io.csrMode === CSR_MODE_U
+  val illgMret  = io.alu.excType === EXC_MRET && io.csrMode =/= CSR_MODE_M
+  val illgSpriv = io.alu.excType === EXC_SPRIV && io.csrMode === CSR_MODE_U
   val instAddr  = io.alu.currentPc(ADDR_ALIGN_WIDTH - 1, 0) =/= 0.U
   val instPage  = io.alu.excType === EXC_IPAGE
   val instIllg  = io.alu.excType === EXC_ILLEG ||
-                  (io.alu.excType === EXC_SPRIV &&
-                   io.csrMode === CSR_MODE_U)
+                  illgSret || illgMret || illgSpriv
   // whether exception occurred
   val excMem    = io.alu.excType === EXC_LOAD ||
                   io.alu.excType === EXC_STAMO
@@ -101,8 +104,8 @@ class Mem extends Module {
   val hasExcept = instAddr || instIllg || instPage ||
                   (excMem && memExcept) || excOther
   // trap return instructions & interruptions
-  val isSret    = io.alu.excType === EXC_SRET
-  val isMret    = io.alu.excType === EXC_MRET
+  val isSret    = io.alu.excType === EXC_SRET && !instIllg
+  val isMret    = io.alu.excType === EXC_MRET && !instIllg
   val isInt     = io.csrHasInt
   // exception cause
   // NOTE: priority is important
@@ -118,9 +121,9 @@ class Mem extends Module {
                   Mux(instAddr, EXC_INST_ADDR, cause)))
   // exception pc & value
   val excPc     = io.alu.currentPc
-  val excValue  = Mux(io.alu.excType === EXC_ILLEG, io.alu.inst,
-                  Mux(memExcept || instAddr || instPage,
-                      io.alu.reg.data, 0.U))
+  val excValue  = Mux(instIllg, io.alu.inst,
+                  Mux(instPage, io.alu.currentPc,
+                  Mux(memExcept || instAddr, io.alu.reg.data, 0.U)))
 
   // pipeline control
   io.stallReq := stallReq
