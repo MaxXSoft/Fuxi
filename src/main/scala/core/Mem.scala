@@ -29,6 +29,8 @@ class Mem extends Module {
     // CSR status
     val csrHasInt = Input(Bool())
     val csrMode   = Input(UInt(CSR_MODE_WIDTH.W))
+    // exclusive monitor check channel
+    val excMon    = new ExcMonCheckIO
     // exception information
     val except    = Output(new ExceptInfoIO)
     // to next stage
@@ -54,13 +56,6 @@ class Mem extends Module {
   amo.io.ramValid := io.ram.valid
   amo.io.ramRdata := io.ram.rdata
 
-  // exclusive monitor
-  val excMon  = Module(new ExclusiveMonitor)
-  excMon.io.flush := io.flush
-  excMon.io.set   := setExcMon
-  excMon.io.clear := checkExcMon
-  excMon.io.addr  := addr
-
   // write enable
   val selWord = "b1111".U((DATA_WIDTH / 8).W)
   val writeEn = MuxLookup(width, 0.U, Seq(
@@ -68,7 +63,7 @@ class Mem extends Module {
     LS_DATA_HALF -> ("b11".U((DATA_WIDTH / 8).W) << sel),
     LS_DATA_WORD -> selWord,
   ))
-  val scWen   = Mux(excMon.io.valid, selWord, 0.U)
+  val scWen   = Mux(io.excMon.valid, selWord, 0.U)
   val amoWen  = Mux(amo.io.ramWen, selWord, 0.U)
   val ramWen  = Mux(wen, writeEn, Mux(checkExcMon, scWen, amoWen))
 
@@ -79,7 +74,7 @@ class Mem extends Module {
   val stallReq  = Mux(amoOp =/= AMO_OP_NOP, !amo.io.ready, !io.ram.valid)
 
   // write back data
-  val data = Mux(checkExcMon, Mux(excMon.io.valid, 0.U, 1.U),
+  val data = Mux(checkExcMon, Mux(io.excMon.valid, 0.U, 1.U),
              Mux(amoOp =/= AMO_OP_NOP, amo.io.regWdata, io.alu.reg.data))
 
   // exception related signals
@@ -99,8 +94,12 @@ class Mem extends Module {
   // whether exception occurred
   val excMem    = io.alu.excType === EXC_LOAD ||
                   io.alu.excType === EXC_STAMO
-  val hasExcept = instAddr || instIllg || (excMem && memExcept) ||
-                  io.alu.excType =/= EXC_NONE
+  val excOther  = io.alu.excType === EXC_ECALL ||
+                  io.alu.excType === EXC_EBRK ||
+                  io.alu.excType === EXC_SRET ||
+                  io.alu.excType === EXC_MRET
+  val hasExcept = instAddr || instIllg || instPage ||
+                  (excMem && memExcept) || excOther
   // trap return instructions & interruptions
   val isSret    = io.alu.excType === EXC_SRET
   val isMret    = io.alu.excType === EXC_MRET
@@ -138,6 +137,9 @@ class Mem extends Module {
   io.flushIt  := Mux(hasExcept, false.B, flushIt)
   io.flushDt  := Mux(hasExcept, false.B, flushDt)
 
+  // exclusive monitor check signals
+  io.excMon.addr  := addr
+
   // exception information
   io.except.hasExcept := hasExcept
   io.except.isSret    := isSret
@@ -148,13 +150,16 @@ class Mem extends Module {
   io.except.excValue  := excValue
 
   // output signals
-  io.mem.reg.en     := io.alu.reg.en
-  io.mem.reg.addr   := io.alu.reg.addr
-  io.mem.reg.data   := data
-  io.mem.reg.load   := io.alu.reg.load
-  io.mem.memSigned  := signed
-  io.mem.memSel     := sel
-  io.mem.memWidth   := width
-  io.mem.csr        <> io.alu.csr
-  io.mem.currentPc  := io.alu.currentPc
+  io.mem.reg.en       := io.alu.reg.en
+  io.mem.reg.addr     := io.alu.reg.addr
+  io.mem.reg.data     := data
+  io.mem.reg.load     := io.alu.reg.load
+  io.mem.memSigned    := signed
+  io.mem.memSel       := sel
+  io.mem.memWidth     := width
+  io.mem.csr          <> io.alu.csr
+  io.mem.excMon.addr  := addr
+  io.mem.excMon.set   := setExcMon
+  io.mem.excMon.clear := checkExcMon
+  io.mem.currentPc    := io.alu.currentPc
 }
