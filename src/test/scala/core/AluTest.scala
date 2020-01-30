@@ -4,6 +4,7 @@ import chisel3.UInt
 import chisel3.iotesters.{Driver, PeekPokeTester}
 
 import consts.AluOp._
+import consts.MduOp._
 
 class AluUnitTester(c: ALU) extends PeekPokeTester(c) {
   def unsignedCompare(i : Long, j : Long) = (i < j) ^ (i < 0) ^ (j < 0)
@@ -31,6 +32,7 @@ class AluUnitTester(c: ALU) extends PeekPokeTester(c) {
     expect(c.io.alu.reg.data, BigInt(result.toHexString, 16))
   }
 
+  // test ALU
   for (i <- 0 until 20) {
     testAlu(ALU_ADD)
     testAlu(ALU_SUB)
@@ -43,6 +45,16 @@ class AluUnitTester(c: ALU) extends PeekPokeTester(c) {
     testAlu(ALU_SRL)
     testAlu(ALU_SRA)
   }
+
+  // test division
+  poke(c.io.decoder.mduOp, MDU_DIV)
+  poke(c.io.decoder.opr1, 0x123456)
+  poke(c.io.decoder.opr2, 0x123)
+  while (peek(c.io.stallReq) != 0) {
+    step(1)
+  }
+  expect(c.io.alu.reg.data, 0x123456 / 0x123)
+  step(1)
 }
 
 object AluTest extends App {
