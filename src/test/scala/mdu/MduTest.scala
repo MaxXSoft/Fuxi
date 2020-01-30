@@ -48,10 +48,11 @@ class MduUnitTester(c: MDU) extends PeekPokeTester(c) {
     poke(c.io.op, op)
     poke(c.io.opr1, opr1)
     poke(c.io.opr2, opr2)
-    do {
+    while (peek(c.io.valid) == 0) {
       step(1)
-    } while (peek(c.io.valid) == 0)
+    }
     expect(c.io.result, ans)
+    step(1)
   }
 
   for (i <- 0 until 20) {

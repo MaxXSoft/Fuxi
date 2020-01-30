@@ -15,11 +15,12 @@ class DividerUnitTester(c: Divider) extends PeekPokeTester(c) {
     poke(c.io.flush, false)
     poke(c.io.divident, divident)
     poke(c.io.divisor, divisor)
-    do {
+    while (peek(c.io.done) == 0) {
       step(1)
-    } while (peek(c.io.done).toInt == 0)
+    }
     expect(c.io.quotient, quotient)
     expect(c.io.remainder, remainder)
+    step(1)
   }
 
   for (i <- 0 until 20) {

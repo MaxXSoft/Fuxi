@@ -14,11 +14,12 @@ class MultiplierUnitTester(c: Multiplier) extends PeekPokeTester(c) {
     poke(c.io.en, true)
     poke(c.io.opr1, opr1)
     poke(c.io.opr2, opr2)
-    do {
+    while (peek(c.io.done) == 0) {
       step(1)
-      if (peek(c.io.done) == 0) poke(c.io.en, false)
-    } while (peek(c.io.done) == 0)
+      poke(c.io.en, false)
+    }
     expect(c.io.result, result)
+    step(1)
   }
 
   // normal
