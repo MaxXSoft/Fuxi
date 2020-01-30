@@ -23,7 +23,7 @@ class Divider(val oprWidth: Int) extends Module {
   val cycleCount  = (oprWidth / 2f).ceil.toInt
 
   // state of finite state machine
-  val sIdle :: sZero :: sRunning :: Nil = Enum(3)
+  val sIdle :: sZero :: sRunning :: sEnd :: Nil = Enum(4)
   val state = RegInit(sIdle)
 
   // some data registers
@@ -74,7 +74,7 @@ class Divider(val oprWidth: Int) extends Module {
       is (sZero) {
         // mark as divided by zero
         isDiv0  := true.B
-        state   := sIdle
+        state   := sEnd
       }
       is (sRunning) {
         // generate result
@@ -89,14 +89,17 @@ class Divider(val oprWidth: Int) extends Module {
         }
         // increase/check counter
         counter := counter + 1.U
-        when (counter === (cycleCount - 1).U) { state := sIdle }
+        when (counter === (cycleCount - 1).U) { state := sEnd }
+      }
+      is (sEnd) {
+        state := sIdle
       }
     }
   }
 
   // generate output signals
   io.divZero    := isDiv0
-  io.done       := state === sIdle
+  io.done       := state === sEnd
   io.quotient   := result(oprWidth - 1, 0)
   io.remainder  := result(resultWidth - 1, oprWidth + 1)
 }
