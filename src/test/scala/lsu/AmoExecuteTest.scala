@@ -32,6 +32,7 @@ class AmoExecuteUnitTester(c: AmoExecute) extends PeekPokeTester(c) {
     simulateLatency()
     expect(c.io.ready, true)
     expect(c.io.regWdata, opr1)
+    step(1)
   }
 
   for (i <- 0 until 20) {
