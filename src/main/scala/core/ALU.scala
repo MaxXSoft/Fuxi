@@ -15,9 +15,9 @@ class ALU extends Module {
   val io = IO(new Bundle {
     // from decoder
     val decoder   = Input(new DecoderIO)
-    // MDU control
-    val mduFlush  = Input(Bool())
-    val mduBusy   = Output(Bool())
+    // pipeline control
+    val flush     = Input(Bool())
+    val stallReq  = Output(Bool())
     // CSR read channel
     val csrRead   = new CsrReadIO
     // to next stage
@@ -45,9 +45,8 @@ class ALU extends Module {
 
   // multiplication & division unit
   val mdu       = Module(new MDU)
-  mdu.io.flush  := io.mduFlush
+  mdu.io.flush  := io.flush
   mdu.io.op     := io.decoder.mduOp
-  io.mduBusy    := !mdu.io.valid
   mdu.io.opr1   := opr1.asUInt
   mdu.io.opr2   := opr2.asUInt
   val mduResult = Mux(mdu.io.valid, mdu.io.result, 0.U)
@@ -61,6 +60,9 @@ class ALU extends Module {
   val result  = Mux(csrEn, io.csrRead.data,
                 Mux(io.decoder.mduOp =/= MDU_NOP, mduResult, aluResult))
   val load    = io.decoder.lsuOp =/= LSU_NOP && io.decoder.regWen
+
+  // pipeline control signals
+  io.stallReq := !mdu.io.valid
 
   // read data from CSR
   io.csrRead.en   := csrEn
