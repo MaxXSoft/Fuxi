@@ -23,7 +23,7 @@ class AmoExecute extends Module {
   })
   
   // state of finite state machine
-  val sIdle :: sStore :: Nil = Enum(2)
+  val sIdle :: sStore :: sEnd :: Nil = Enum(3)
   val state = RegInit(sIdle)
 
   // operands
@@ -60,13 +60,17 @@ class AmoExecute extends Module {
       // store result to RAM
       is (sStore) {
         // switch to next state
+        state := sEnd
+      }
+      // take a breath
+      is (sEnd) {
         state := sIdle
       }
     }
   }
 
   // output signals
-  io.ready    := state === sIdle
+  io.ready    := state === sEnd
   io.regWdata := io.ramRdata
   io.ramWen   := state === sStore
   io.ramWdata := result
