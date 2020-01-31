@@ -8,27 +8,31 @@ import consts.Parameters._
 class PipelineController extends Module {
   val io = IO(new Bundle {
     // stall request from pipeline stages
-    val fetch   = Input(Bool())
-    val alu     = Input(Bool())
-    val mem     = Input(Bool())
+    val fetch     = Input(Bool())
+    val alu       = Input(Bool())
+    val mem       = Input(Bool())
+    // flush request from decoder
+    val flushReq  = Input(Bool())
+    val target    = Input(UInt(ADDR_WIDTH.W))
     // hazard flags
-    val load    = Input(Bool())
-    val csr     = Input(Bool())
+    val load      = Input(Bool())
+    val csr       = Input(Bool())
     // exception information
-    val except  = Input(new ExceptInfoIO)
+    val except    = Input(new ExceptInfoIO)
     // CSR status
-    val csrSepc = Input(UInt(ADDR_WIDTH.W))
-    val csrMepc = Input(UInt(ADDR_WIDTH.W))
-    val csrTvec = Input(UInt(ADDR_WIDTH.W))
+    val csrSepc   = Input(UInt(ADDR_WIDTH.W))
+    val csrMepc   = Input(UInt(ADDR_WIDTH.W))
+    val csrTvec   = Input(UInt(ADDR_WIDTH.W))
     // stall signals to each mig-stages
-    val stallIf = Output(Bool())
-    val stallId = Output(Bool())
-    val stallEx = Output(Bool())
-    val stallMm = Output(Bool())
-    val stallWb = Output(Bool())
+    val stallIf   = Output(Bool())
+    val stallId   = Output(Bool())
+    val stallEx   = Output(Bool())
+    val stallMm   = Output(Bool())
+    val stallWb   = Output(Bool())
     // flush signals
-    val flush   = Output(Bool())
-    val excPc   = Output(UInt(ADDR_WIDTH.W))
+    val flush     = Output(Bool())
+    val flushIf   = Output(Bool())
+    val flushPc   = Output(UInt(ADDR_WIDTH.W))
   })
 
   // stall signals (If -> Wb)
@@ -37,9 +41,10 @@ class PipelineController extends Module {
               Mux(io.load,          "b11000".U(5.W),
               Mux(io.fetch,         "b10000".U(5.W), 0.U))))
 
-  // exception PC
-  val excPc = Mux(io.except.isSret, io.csrSepc,
-              Mux(io.except.isMret, io.csrMepc, io.csrTvec))
+  // fetch stage flush PC
+  val excPc   = Mux(io.except.isSret, io.csrSepc,
+                Mux(io.except.isMret, io.csrMepc, io.csrTvec))
+  val flushPc = Mux(io.except.hasExcept, excPc, io.target)
 
   // stall signals
   io.stallIf  := stall(4)
@@ -49,6 +54,7 @@ class PipelineController extends Module {
   io.stallWb  := stall(0)
 
   // flush signals
-  io.flush  := io.except.hasExcept
-  io.excPc  := excPc
+  io.flush    := io.except.hasExcept
+  io.flushIf  := io.except.hasExcept || io.flushReq
+  io.flushPc  := flushPc
 }
