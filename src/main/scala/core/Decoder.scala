@@ -15,6 +15,9 @@ class Decoder extends Module {
   val io = IO(new Bundle {
     // from fetch stage
     val fetch   = Input(new FetchIO)
+    // pipeline control
+    val flushIf = Output(Bool())
+    val flushPc = Output(UInt(ADDR_WIDTH.W))
     // regfile read channels
     val read1   = new RegReadIO
     val read2   = new RegReadIO
@@ -57,6 +60,8 @@ class Decoder extends Module {
        mduOp :: excType :: Nil) = ListLookup(io.fetch.inst, DEFAULT, TABLE)
   
   // branch taken/target
+  val isBranch    = branchFlag =/= BR_N
+  val isJump      = branchFlag === BR_AL
   val targetJAL   = (io.fetch.pc.asSInt + immJ.asSInt).asUInt
   val sumR1immI   = io.read1.data.asSInt + immI.asSInt
   val targetJALR  = Cat(sumR1immI(ADDR_WIDTH - 1, 1), 0.U)
@@ -74,6 +79,8 @@ class Decoder extends Module {
                       Mux(branchFlag === BR_AL,
                           Mux(regEn1, targetJALR, targetJAL),
                           targetB))
+  val branchHit = io.fetch.taken === branchTaken &&
+                  io.fetch.target === branchTarget
 
   // CSR related signals
   val csrData = Mux(csrOp === CSR_NOP, 0.U,
@@ -89,6 +96,10 @@ class Decoder extends Module {
   val lsuOperation  = Mux(illegalFetch, LSU_NOP, lsuOp)
   val csrOperation  = Mux(illegalFetch, CSR_NOP, csrOp)
 
+  // pipeline control
+  io.flushIf  := !branchHit
+  io.flushPc  := branchTarget
+
   // regfile read signals
   io.read1.en   := regEn1
   io.read1.addr := rs1
@@ -96,8 +107,8 @@ class Decoder extends Module {
   io.read2.addr := rs2
 
   // branch information
-  io.branch.branch  := branchFlag =/= BR_N
-  io.branch.jump    := branchFlag === BR_AL
+  io.branch.branch  := isBranch
+  io.branch.jump    := isJump
   io.branch.taken   := branchTaken
   io.branch.index   := io.fetch.predIndex
   io.branch.pc      := io.fetch.pc
