@@ -12,7 +12,7 @@ class FetchWrapper(initFile: String) extends Module {
   val io = IO(new Bundle {
     val flush   = Input(Bool())
     val stall   = Input(Bool())
-    val excPc   = Input(UInt(ADDR_WIDTH.W))
+    val flushPc = Input(UInt(ADDR_WIDTH.W))
     val branch  = Input(new BranchInfoIO)
     val fetch   = Output(new FetchIO)
   })
@@ -20,19 +20,19 @@ class FetchWrapper(initFile: String) extends Module {
   val fetch = Module(new Fetch)
   val rom   = Module(new ROM(initFile))
 
-  fetch.io.flush  := io.flush
-  fetch.io.stall  := io.stall
-  fetch.io.excPc  := io.excPc
-  fetch.io.rom    <> rom.io
-  fetch.io.branch <> io.branch
-  fetch.io.fetch  <> io.fetch
+  fetch.io.flush    := io.flush
+  fetch.io.stall    := io.stall
+  fetch.io.flushPc  := io.flushPc
+  fetch.io.rom      <> rom.io
+  fetch.io.branch   <> io.branch
+  fetch.io.fetch    <> io.fetch
 }
 
 class FetchUnitTester(c: FetchWrapper) extends PeekPokeTester(c) {
   def testNormal(inst: BigInt, pc: BigInt) = {
     poke(c.io.flush, false)
     poke(c.io.stall, false)
-    poke(c.io.excPc, 0)
+    poke(c.io.flushPc, 0)
     poke(c.io.branch.branch, false)
     poke(c.io.branch.jump, false)
     poke(c.io.branch.taken, false)
@@ -47,7 +47,7 @@ class FetchUnitTester(c: FetchWrapper) extends PeekPokeTester(c) {
   def testStall(inst: BigInt, pc: BigInt) = {
     poke(c.io.flush, false)
     poke(c.io.stall, true)
-    poke(c.io.excPc, 0)
+    poke(c.io.flushPc, 0)
     poke(c.io.branch.branch, false)
     poke(c.io.branch.jump, false)
     poke(c.io.branch.taken, false)
@@ -62,7 +62,7 @@ class FetchUnitTester(c: FetchWrapper) extends PeekPokeTester(c) {
   def testFlush(inst: BigInt, pc: BigInt) = {
     poke(c.io.flush, true)
     poke(c.io.stall, false)
-    poke(c.io.excPc, pc)
+    poke(c.io.flushPc, pc)
     poke(c.io.branch.branch, false)
     poke(c.io.branch.jump, false)
     poke(c.io.branch.taken, false)
