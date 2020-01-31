@@ -27,7 +27,7 @@ class WriteBack extends Module {
     val d = io.ramData((i + 1) * w - 1, i * w)
     val sext = Wire(SInt(DATA_WIDTH.W))
     sext := d.asSInt
-    i.U -> Mux(io.mem.memSigned, sext.asUInt, d)
+    (i * w / 8).U -> Mux(io.mem.memSigned, sext.asUInt, d)
   }
 
   // data from RAM
