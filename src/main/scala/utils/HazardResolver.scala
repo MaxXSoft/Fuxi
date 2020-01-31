@@ -5,7 +5,7 @@ import chisel3._
 import io._
 import consts.CsrOp.CSR_NOP
 
-class HazardSolver extends Module {
+class HazardResolver extends Module {
   val io = IO(new Bundle {
     // regfile read channel from decoder
     val regRead1  = Flipped(new RegReadIO)
@@ -65,13 +65,13 @@ class HazardSolver extends Module {
     }
   }
 
-  def solveLoadHazard(read: RegReadIO) = {
+  def resolveLoadHazard(read: RegReadIO) = {
     val aluLoad = io.aluReg.load && read.en && read.addr === io.aluReg.addr
     val memLoad = io.memReg.load && read.en && read.addr === io.memReg.addr
     aluLoad || memLoad
   }
 
-  def solveCsrHazard(read: CsrReadIO) = {
+  def resolveCsrHazard(read: CsrReadIO) = {
     val memCsr  = io.memCsr.op =/= CSR_NOP && read.en &&
                   read.addr === io.memCsr.addr
     val wbCsr   = io.wbCsr.op =/= CSR_NOP && read.en &&
@@ -87,9 +87,9 @@ class HazardSolver extends Module {
   forwardExcMon(io.check, io.excMon)
 
   // hazard flags
-  val loadHazard1 = solveLoadHazard(io.regRead1)
-  val loadHazard2 = solveLoadHazard(io.regRead2)
-  val csrHazard   = solveCsrHazard(io.csrRead)
+  val loadHazard1 = resolveLoadHazard(io.regRead1)
+  val loadHazard2 = resolveLoadHazard(io.regRead2)
+  val csrHazard   = resolveCsrHazard(io.csrRead)
 
   // regfile read signals
   io.rf1.en   := io.regRead1.en
