@@ -13,7 +13,7 @@ class Fetch extends Module {
     val flush     = Input(Bool())
     val stall     = Input(Bool())
     val stallReq  = Output(Bool())
-    val excPc     = Input(UInt(ADDR_WIDTH.W))
+    val flushPc   = Input(UInt(ADDR_WIDTH.W))
     // ROM interface
     val rom       = new SramIO(ADDR_WIDTH, DATA_WIDTH)
     // branch information (from decoder)
@@ -31,7 +31,7 @@ class Fetch extends Module {
   bpu.io.lookupPc   := pc
 
   // update PC
-  val nextPc = Mux(io.flush, io.excPc,
+  val nextPc = Mux(io.flush, io.flushPc,
                Mux(io.stall || !io.rom.valid, pc,
                Mux(bpu.io.predTaken, bpu.io.predTarget,
                    pc + (INST_WIDTH / 8).U)))
@@ -50,6 +50,8 @@ class Fetch extends Module {
   io.fetch.inst       := Mux(io.rom.valid && !io.rom.fault,
                              io.rom.rdata, NOP)
   io.fetch.pc         := pc
+  io.fetch.taken      := bpu.io.predTaken
+  io.fetch.target     := bpu.io.predTarget
   io.fetch.predIndex  := bpu.io.predIndex
   io.fetch.pageFault  := io.rom.fault
 }
