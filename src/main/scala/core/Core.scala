@@ -42,12 +42,12 @@ class Core extends Module {
   val control = Module(new PipelineController)
 
   // fetch stage
-  fetch.io.flush    := control.io.flush
+  fetch.io.flush    := control.io.flushIf
   fetch.io.stall    := control.io.stallIf
-  fetch.io.excPc    := control.io.excPc
+  fetch.io.flushPc  := control.io.flushPc
   fetch.io.rom      <> io.rom
   fetch.io.branch   <> decoder.io.branch
-  ifid.io.flush     := control.io.flush
+  ifid.io.flush     := control.io.flushIf
   ifid.io.stallPrev := control.io.stallIf
   ifid.io.stallNext := control.io.stallId
   ifid.io.prev      <> fetch.io.fetch
@@ -122,6 +122,8 @@ class Core extends Module {
   control.io.fetch    := fetch.io.stallReq
   control.io.alu      := alu.io.stallReq
   control.io.mem      := mem.io.stallReq
+  control.io.flushReq := decoder.io.flushIf
+  control.io.target   := decoder.io.flushPc
   control.io.load     := resolve.io.loadFlag
   control.io.csr      := resolve.io.csrFlag
   control.io.except   <> mem.io.except
