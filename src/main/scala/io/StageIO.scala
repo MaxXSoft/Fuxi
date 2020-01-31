@@ -23,15 +23,22 @@ class StageIO[T <: StageIO[T]] extends Bundle {
 class FetchIO extends StageIO[FetchIO] {
   import consts.Instructions.NOP
 
+  // instruction info
   val inst      = UInt(INST_WIDTH.W)
   val pc        = UInt(ADDR_WIDTH.W)
-  val predIndex = UInt(ADDR_WIDTH.W)
+  // branch prediction result
+  val taken     = Bool()
+  val target    = UInt(ADDR_WIDTH.W)
+  val predIndex = UInt(GHR_WIDTH.W)
+  // instruction fetch page fault
   val pageFault = Bool()
 
   override def default() = {
     val init = Wire(new FetchIO)
     init.inst := NOP
     init.pc := 0.U
+    init.taken := false.B
+    init.target := 0.U
     init.predIndex := 0.U
     init.pageFault := false.B
     init
