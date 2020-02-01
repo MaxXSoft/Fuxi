@@ -65,10 +65,12 @@ object LsuOp {
 
 // all operations that supported by CSR
 object CsrOp {
-  val CSR_OP_WIDTH = log2Ceil(4)
+  val CSR_OP_WIDTH = log2Ceil(6)
 
   val CSR_NOP = 0.U(CSR_OP_WIDTH.W)
-  val CSR_RW  = 1.U(CSR_OP_WIDTH.W)
-  val CSR_RS  = 2.U(CSR_OP_WIDTH.W)
-  val CSR_RC  = 3.U(CSR_OP_WIDTH.W)
+  val CSR_R   = 1.U(CSR_OP_WIDTH.W)
+  val CSR_W   = 2.U(CSR_OP_WIDTH.W)
+  val CSR_RW  = 3.U(CSR_OP_WIDTH.W)
+  val CSR_RS  = 4.U(CSR_OP_WIDTH.W)
+  val CSR_RC  = 5.U(CSR_OP_WIDTH.W)
 }
