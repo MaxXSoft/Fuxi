@@ -7,7 +7,7 @@ import consts.CSR.CSR_ADDR_WIDTH
 import consts.CsrOp.CSR_OP_WIDTH
 
 class CsrReadIO extends Bundle {
-  val en    = Output(Bool())
+  val op    = Output(UInt(CSR_OP_WIDTH.W))
   val valid = Input(Bool())
   val addr  = Output(UInt(CSR_ADDR_WIDTH.W))
   val data  = Input(UInt(DATA_WIDTH.W))
