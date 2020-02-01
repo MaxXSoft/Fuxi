@@ -23,7 +23,7 @@ class Divider(val oprWidth: Int) extends Module {
   val cycleCount  = (oprWidth / 2f).ceil.toInt
 
   // state of finite state machine
-  val sIdle :: sZero :: sRunning :: sEnd :: Nil = Enum(4)
+  val sIdle :: sRunning :: sEnd :: Nil = Enum(3)
   val state = RegInit(sIdle)
 
   // some data registers
@@ -55,26 +55,27 @@ class Divider(val oprWidth: Int) extends Module {
   } .otherwise {
     switch (state) {
       is (sIdle) {
-        when (io.en && startFlag) {
-          // start calculation
-          lastDivident  := io.divident
-          lastDivisor   := io.divisor
-          // switch to next state
-          when (io.divisor === 0.U) {
-            state   := sZero
+        when (io.en) {
+          when (startFlag) {
+            // start new calculation
+            lastDivident  := io.divident
+            lastDivisor   := io.divisor
+            // switch to next state
+            when (io.divisor === 0.U) {
+              state   := sEnd
+              isDiv0  := true.B
+            } .otherwise {
+              state   := sRunning
+              result  := Cat(0.U(oprWidth.W), io.divident, 0.U(1.W))
+              divisor := Cat(0.U(1.W), io.divisor, 0.U(oprWidth.W))
+              counter := 0.U
+              isDiv0  := false.B
+            }
           } .otherwise {
-            state   := sRunning
-            result  := Cat(0.U(oprWidth.W), io.divident, 0.U(1.W))
-            divisor := Cat(0.U(1.W), io.divisor, 0.U(oprWidth.W))
-            counter := 0.U
-            isDiv0  := false.B
+            // reuse previous results
+            state := sEnd
           }
         }
-      }
-      is (sZero) {
-        // mark as divided by zero
-        isDiv0  := true.B
-        state   := sEnd
       }
       is (sRunning) {
         // generate result
