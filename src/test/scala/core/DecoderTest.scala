@@ -182,6 +182,26 @@ class DecoderUnitTester(c: Decoder) extends PeekPokeTester(c) {
   expectCsr(CSR_RS, 0x300, 8)
   expectExc(EXC_NONE)
 
+  // csrr a0, mepc
+  pokeDecoder(0x34102573)
+  step(1)
+  expectBranch(false, false, false, 0)
+  expectReg(Some(10), Some(0), None)
+  expectAlu(ALU_ADD, MDU_NOP, 0, 0)
+  expectLsu(LSU_NOP, 0)
+  expectCsr(CSR_R, 0x341, reg1u)
+  expectExc(EXC_NONE)
+
+  // csrw mepc, a0
+  pokeDecoder(0x34151073)
+  step(1)
+  expectBranch(false, false, false, 0)
+  expectReg(Some(0), Some(10), None)
+  expectAlu(ALU_ADD, MDU_NOP, 0, 0)
+  expectLsu(LSU_NOP, 0)
+  expectCsr(CSR_W, 0x341, reg1u)
+  expectExc(EXC_NONE)
+
   // mul a2, a0, a1
   pokeDecoder(0x02b50633)
   step(1)

@@ -6,10 +6,10 @@ import chisel3.util._
 import io._
 import consts.Control._
 import consts.ExceptType._
+import consts.CsrOp._
 import consts.Parameters.ADDR_WIDTH
 import consts.MduOp.MDU_NOP
 import consts.LsuOp.LSU_NOP
-import consts.CsrOp.CSR_NOP
 
 class Decoder extends Module {
   val io = IO(new Bundle {
@@ -83,8 +83,13 @@ class Decoder extends Module {
                   io.fetch.target === branchTarget
 
   // CSR related signals
-  val csrData = Mux(csrOp === CSR_NOP, 0.U,
-                Mux(regEn1, io.read1.data, rs1))
+  val csrActOp  = MuxLookup(csrOp, CSR_NOP, Seq(
+    CSR_RW  -> Mux(rd === 0.U, CSR_W, CSR_RW),
+    CSR_RS  -> Mux(rs1 === 0.U, CSR_R, CSR_RS),
+    CSR_RC  -> Mux(rs1 === 0.U, CSR_R, CSR_RC),
+  ))
+  val csrData   = Mux(csrActOp === CSR_NOP, 0.U,
+                  Mux(regEn1, io.read1.data, rs1))
 
   // exception signal
   val exceptType = Mux(io.fetch.pageFault, EXC_IPAGE, excType)
@@ -94,7 +99,7 @@ class Decoder extends Module {
   val illegalFetch  = exceptType === EXC_ILLEG || exceptType === EXC_IPAGE
   val mduOperation  = Mux(illegalFetch, MDU_NOP, mduOp)
   val lsuOperation  = Mux(illegalFetch, LSU_NOP, lsuOp)
-  val csrOperation  = Mux(illegalFetch, CSR_NOP, csrOp)
+  val csrOperation  = Mux(illegalFetch, CSR_NOP, csrActOp)
 
   // pipeline control
   io.flushIf  := !branchHit
