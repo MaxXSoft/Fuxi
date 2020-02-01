@@ -67,7 +67,7 @@ class ALU extends Module {
   io.stallReq := !mdu.io.valid
 
   // read data from CSR
-  io.csrRead.en   := csrEn
+  io.csrRead.op   := io.decoder.csrOp
   io.csrRead.addr := io.decoder.csrAddr
 
   // signals to next stage
