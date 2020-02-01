@@ -12,15 +12,13 @@ import consts.ExceptType.EXC_TYPE_WIDTH
 import lsu.LsuDecode.LS_DATA_WIDTH
 
 // interface of stage's IO
-class StageIO[T <: StageIO[T]] extends Bundle {
-  this: T =>
-
+class StageIO extends Bundle {
   // for initializing flip-flops in mid-stage
   def default() = 0.U.asTypeOf(this)
 }
 
 // IF stage
-class FetchIO extends StageIO[FetchIO] {
+class FetchIO extends StageIO {
   import consts.Instructions.NOP
 
   // instruction info
@@ -46,7 +44,7 @@ class FetchIO extends StageIO[FetchIO] {
 }
 
 // ID stage
-class DecoderIO extends StageIO[DecoderIO] {
+class DecoderIO extends StageIO {
   // to ALU/MDU
   val aluOp     = UInt(ALU_OP_WIDTH.W)
   val opr1      = UInt(DATA_WIDTH.W)
@@ -70,7 +68,7 @@ class DecoderIO extends StageIO[DecoderIO] {
 }
 
 // EX stage
-class AluIO extends StageIO[AluIO] {
+class AluIO extends StageIO {
   // to Mem (LSU)
   val lsuOp     = UInt(LSU_OP_WIDTH.W)
   val lsuData   = UInt(DATA_WIDTH.W)
@@ -86,7 +84,7 @@ class AluIO extends StageIO[AluIO] {
 }
 
 // MEM stage
-class MemIO extends StageIO[MemIO] {
+class MemIO extends StageIO {
   // to write back
   val reg       = new RegCommitIO
   val memSigned = Bool()
