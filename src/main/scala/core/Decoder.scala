@@ -79,8 +79,9 @@ class Decoder extends Module {
                       Mux(branchFlag === BR_AL,
                           Mux(regEn1, targetJALR, targetJAL),
                           targetB))
-  val branchHit = io.fetch.taken === branchTaken &&
-                  io.fetch.target === branchTarget
+  val branchMiss  = io.fetch.taken =/= branchTaken ||
+                    (branchTaken && io.fetch.target =/= branchTarget)
+  val flushPc     = Mux(branchTaken, branchTarget, io.fetch.pc + 4.U)
 
   // CSR related signals
   val csrActOp  = MuxLookup(csrOp, CSR_NOP, Seq(
@@ -102,8 +103,8 @@ class Decoder extends Module {
   val csrOperation  = Mux(illegalFetch, CSR_NOP, csrActOp)
 
   // pipeline control
-  io.flushIf  := !branchHit
-  io.flushPc  := branchTarget
+  io.flushIf  := branchMiss
+  io.flushPc  := flushPc
 
   // regfile read signals
   io.read1.en   := regEn1
