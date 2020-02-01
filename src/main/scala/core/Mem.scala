@@ -38,9 +38,9 @@ class Mem extends Module {
   })
 
   // decode load store unit operation
-  val ((en: Bool) :: (wen: Bool) :: width :: (signed: Bool) ::
-       (setExcMon: Bool) :: (checkExcMon: Bool) :: amoOp ::
-       (flushIc: Bool) :: (flushDc: Bool) :: (flushIt: Bool) ::
+  val ((en: Bool) :: (wen: Bool) :: (load: Bool) :: width ::
+       (signed: Bool) :: (setExcMon: Bool) :: (checkExcMon: Bool) ::
+       amoOp :: (flushIc: Bool) :: (flushDc: Bool) :: (flushIt: Bool) ::
        (flushDt: Bool) :: Nil) = ListLookup(io.alu.lsuOp, DEFAULT, TABLE)
 
   // address of memory accessing
@@ -156,7 +156,7 @@ class Mem extends Module {
   io.mem.reg.en       := io.alu.reg.en
   io.mem.reg.addr     := io.alu.reg.addr
   io.mem.reg.data     := data
-  io.mem.reg.load     := io.alu.reg.load
+  io.mem.reg.load     := load
   io.mem.memSigned    := signed
   io.mem.memSel       := sel
   io.mem.memWidth     := width

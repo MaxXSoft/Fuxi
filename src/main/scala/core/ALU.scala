@@ -5,8 +5,8 @@ import chisel3.util.MuxLookup
 
 import io._
 import consts.AluOp._
-import consts.LsuOp._
 import consts.MduOp.MDU_NOP
+import consts.LsuOp.LSU_NOP
 import consts.CsrOp.CSR_NOP
 import consts.ExceptType.EXC_ILLEG
 import mdu.MDU
@@ -59,9 +59,7 @@ class ALU extends Module {
   // commit to write back
   val result  = Mux(csrEn, io.csrRead.data,
                 Mux(io.decoder.mduOp =/= MDU_NOP, mduResult, aluResult))
-  val load    = Seq(LSU_LB, LSU_LH, LSU_LW, LSU_LBU, LSU_LHU, LSU_LR) map {
-    i => io.decoder.lsuOp === i
-  } reduce(_||_)
+  val load    = io.decoder.lsuOp =/= LSU_NOP && io.decoder.regWen
 
   // pipeline control signals
   io.stallReq := !mdu.io.valid
