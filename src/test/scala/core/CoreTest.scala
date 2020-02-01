@@ -21,6 +21,8 @@ class CoreWrapper(initFile: String) extends Module {
 
 class CoreUnitTester(c: CoreWrapper, traceFile: String)
       extends PeekPokeTester(c) {
+  val endFlag = BigInt("deadc0de", 16)
+
   def runTrace(source: Source) = {
     for (line <- source.getLines) {
       val pc :: addr :: data :: Nil = line.split(' ').toList
@@ -35,17 +37,17 @@ class CoreUnitTester(c: CoreWrapper, traceFile: String)
 
   def printTrace() = {
     step(1)
-    println(f"pc:   0x${peek(c.io.pc)}%x")
-    println(f"wen:  ${peek(c.io.regWen)}%d")
-    println(f"addr: ${peek(c.io.regWaddr)}%d")
-    println(f"data: 0x${peek(c.io.regWdata)}%x")
-    println("")
+    println(s"cycle: $t")
+    println(f"    pc:   0x${peek(c.io.pc)}%x")
+    println(f"    wen:  ${peek(c.io.regWen)}%d")
+    println(f"    addr: ${peek(c.io.regWaddr)}%d")
+    println(f"    data: 0x${peek(c.io.regWdata)}%x")
   }
 
   if (traceFile.isEmpty) {
-    for (i <- 0 until 10) {
+    do {
       printTrace()
-    }
+    } while (peek(c.io.regWen) == 0 || peek(c.io.regWdata) != endFlag)
   }
   else {
     runTrace(Source.fromFile(traceFile))
