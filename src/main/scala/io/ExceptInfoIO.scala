@@ -9,7 +9,6 @@ class ExceptInfoIO extends Bundle {
   val hasExcept = Bool()
   val isSret    = Bool()
   val isMret    = Bool()
-  val isInt     = Bool()
   val excCause  = UInt(EXC_CAUSE_WIDTH.W)
   val excPc     = UInt(ADDR_WIDTH.W)
   val excValue  = UInt(DATA_WIDTH.W)
