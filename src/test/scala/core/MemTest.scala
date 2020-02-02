@@ -72,11 +72,10 @@ class MemUnitTester(c: Mem) extends PeekPokeTester(c) {
     expect(c.io.ram.en, true)
   }
 
-  def expectExc(sret: Boolean, mret: Boolean, int: Boolean, pc: Int) = {
+  def expectExc(sret: Boolean, mret: Boolean, pc: Int) = {
     expect(c.io.except.hasExcept, 1)
     expect(c.io.except.isSret, if (sret) 1 else 0)
     expect(c.io.except.isMret, if (mret) 1 else 0)
-    expect(c.io.except.isInt, if (int) 1 else 0)
     expect(c.io.except.excPc, pc)
   }
 
@@ -84,7 +83,6 @@ class MemUnitTester(c: Mem) extends PeekPokeTester(c) {
     expect(c.io.except.hasExcept, true)
     expect(c.io.except.isSret, false)
     expect(c.io.except.isMret, false)
-    expect(c.io.except.isInt, false)
     expect(c.io.except.excCause, cause)
     expect(c.io.except.excPc, pc)
     expect(c.io.except.excValue, excVal)
@@ -94,7 +92,6 @@ class MemUnitTester(c: Mem) extends PeekPokeTester(c) {
     expect(c.io.except.hasExcept, true)
     expect(c.io.except.isSret, false)
     expect(c.io.except.isMret, false)
-    expect(c.io.except.isInt, false)
     expect(c.io.except.excCause, cause)
     expect(c.io.except.excPc, pc)
   }
@@ -291,11 +288,11 @@ class MemUnitTester(c: Mem) extends PeekPokeTester(c) {
   pokeExc(EXC_EBRK, 0x00000200, false, false)
   expectExc(EXC_BRK_POINT, 0x00000200)
   pokeExc(EXC_SRET, 0x00000200, false, false)
-  expectExc(true, false, false, 0x00000200)
+  expectExc(true, false, 0x00000200)
   pokeExc(EXC_SRET, 0x00000200, false, true)
   expectExc(EXC_ILL_INST, 0x00000200, inst)
   pokeExc(EXC_MRET, 0x00000200, false, false)
-  expectExc(false, true, false, 0x00000200)
+  expectExc(false, true, 0x00000200)
   pokeExc(EXC_MRET, 0x00000200, false, true)
   expectExc(EXC_ILL_INST, 0x00000200, inst)
   pokeExc(EXC_ILLEG, 0x00000200, false, false)

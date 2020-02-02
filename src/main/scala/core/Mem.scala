@@ -106,7 +106,6 @@ class Mem extends Module {
   // trap return instructions & interruptions
   val isSret    = io.alu.excType === EXC_SRET && !instIllg
   val isMret    = io.alu.excType === EXC_MRET && !instIllg
-  val isInt     = io.csrHasInt
   // exception cause
   // NOTE: priority is important
   val cause     = MuxLookup(io.alu.excType, 0.U, Seq(
@@ -147,7 +146,6 @@ class Mem extends Module {
   io.except.hasExcept := hasExcept
   io.except.isSret    := isSret
   io.except.isMret    := isMret
-  io.except.isInt     := isInt
   io.except.excCause  := excCause
   io.except.excPc     := excPc
   io.except.excValue  := excValue
