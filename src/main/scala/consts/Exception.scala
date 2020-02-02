@@ -24,8 +24,11 @@ object ExceptCause {
   val EXC_CAUSE_WIDTH = 32
 
   // interruptions
+  val EXC_S_SOFT_INT  = "h80000001".U(EXC_CAUSE_WIDTH.W)
   val EXC_M_SOFT_INT  = "h80000003".U(EXC_CAUSE_WIDTH.W)
+  val EXC_S_TIMER_INT = "h80000005".U(EXC_CAUSE_WIDTH.W)
   val EXC_M_TIMER_INT = "h80000007".U(EXC_CAUSE_WIDTH.W)
+  val EXC_S_EXT_INT   = "h80000009".U(EXC_CAUSE_WIDTH.W)
   val EXC_M_EXT_INT   = "h8000000b".U(EXC_CAUSE_WIDTH.W)
 
   // exceptions
