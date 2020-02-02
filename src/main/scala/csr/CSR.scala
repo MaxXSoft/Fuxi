@@ -95,8 +95,6 @@ class SipCsr extends CsrBundle {
 
   override def <=(data: UInt) = {
     requireWidth(data)
-    seip  := data(9)
-    stip  := data(5)
     ssip  := data(1)
   }
 }
@@ -233,6 +231,16 @@ object MisaCsr extends CsrObject[MisaCsr] {
 // machine exception delegation register
 class MedelegCsr extends CsrBundle {
   val data  = UInt(32.W)
+
+  override def <=(d: UInt) = {
+    requireWidth(d)
+    data(15)      := d(15)
+    data(13, 12)  := d(13, 12)
+    data(9, 8)    := d(9, 8)
+    data(6)       := d(6)
+    data(4, 2)    := d(4, 2)
+    data(0)       := d(0)
+  }
 }
 
 object MedelegCsr extends CsrObject[MedelegCsr] {
@@ -242,6 +250,16 @@ object MedelegCsr extends CsrObject[MedelegCsr] {
 // machine interrupt delegation register
 class MidelegCsr extends CsrBundle {
   val data  = UInt(32.W)
+
+  override def <=(d: UInt) = {
+    requireWidth(d)
+    data(11)  := d(11)
+    data(9)   := d(9)
+    data(7)   := d(7)
+    data(5)   := d(5)
+    data(3)   := d(3)
+    data(1)   := d(1)
+  }
 }
 
 object MidelegCsr extends CsrObject[MidelegCsr] {
@@ -297,11 +315,8 @@ class MipCsr extends CsrBundle {
 
   override def <=(data: UInt) = {
     requireWidth(data)
-    meip  := data(11)
     seip  := data(9)
-    mtip  := data(7)
     stip  := data(5)
-    msip  := data(3)
     ssip  := data(1)
   }
 }
