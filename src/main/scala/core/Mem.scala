@@ -101,8 +101,8 @@ class Mem extends Module {
                   io.alu.excType === EXC_EBRK ||
                   io.alu.excType === EXC_SRET ||
                   io.alu.excType === EXC_MRET
-  val hasExcept = instAddr || instIllg || instPage ||
-                  (excMem && memExcept) || excOther
+  val hasTrap   = instAddr || instIllg || instPage ||
+                  (excMem && memExcept) || excOther || io.csrHasInt
   // trap return instructions & interruptions
   val isSret    = io.alu.excType === EXC_SRET && !instIllg
   val isMret    = io.alu.excType === EXC_MRET && !instIllg
@@ -128,7 +128,7 @@ class Mem extends Module {
   io.stallReq := stallReq
 
   // RAM control signals
-  io.ram.en     := Mux(hasExcept, false.B, en)
+  io.ram.en     := Mux(hasTrap, false.B, en)
   io.ram.wen    := ramWen
   io.ram.addr   := addr
   io.ram.wdata  := wdata
@@ -136,14 +136,14 @@ class Mem extends Module {
   // cache/TLB control signals
   io.flushIc  := flushIc
   io.flushDc  := flushDc
-  io.flushIt  := Mux(hasExcept, false.B, flushIt)
-  io.flushDt  := Mux(hasExcept, false.B, flushDt)
+  io.flushIt  := Mux(hasTrap, false.B, flushIt)
+  io.flushDt  := Mux(hasTrap, false.B, flushDt)
 
   // exclusive monitor check signals
   io.excMon.addr  := addr
 
   // exception information
-  io.except.hasExcept := hasExcept
+  io.except.hasTrap   := hasTrap
   io.except.isSret    := isSret
   io.except.isMret    := isMret
   io.except.excCause  := excCause

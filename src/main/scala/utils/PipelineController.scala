@@ -44,7 +44,7 @@ class PipelineController extends Module {
   // fetch stage flush PC
   val excPc   = Mux(io.except.isSret, io.csrSepc,
                 Mux(io.except.isMret, io.csrMepc, io.csrTvec))
-  val flushPc = Mux(io.except.hasExcept, excPc, io.target)
+  val flushPc = Mux(io.except.hasTrap, excPc, io.target)
 
   // stall signals
   io.stallIf  := stall(4)
@@ -54,7 +54,7 @@ class PipelineController extends Module {
   io.stallWb  := stall(0)
 
   // flush signals
-  io.flush    := io.except.hasExcept
-  io.flushIf  := io.except.hasExcept || io.flushReq
+  io.flush    := io.except.hasTrap
+  io.flushIf  := io.except.hasTrap || io.flushReq
   io.flushPc  := flushPc
 }

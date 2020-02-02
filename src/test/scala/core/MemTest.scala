@@ -73,14 +73,14 @@ class MemUnitTester(c: Mem) extends PeekPokeTester(c) {
   }
 
   def expectExc(sret: Boolean, mret: Boolean, pc: Int) = {
-    expect(c.io.except.hasExcept, 1)
+    expect(c.io.except.hasTrap, 1)
     expect(c.io.except.isSret, if (sret) 1 else 0)
     expect(c.io.except.isMret, if (mret) 1 else 0)
     expect(c.io.except.excPc, pc)
   }
 
   def expectExc(cause: BigInt, pc: Int, excVal: BigInt) = {
-    expect(c.io.except.hasExcept, true)
+    expect(c.io.except.hasTrap, true)
     expect(c.io.except.isSret, false)
     expect(c.io.except.isMret, false)
     expect(c.io.except.excCause, cause)
@@ -89,7 +89,7 @@ class MemUnitTester(c: Mem) extends PeekPokeTester(c) {
   }
 
   def expectExc(cause: BigInt, pc: Int) = {
-    expect(c.io.except.hasExcept, true)
+    expect(c.io.except.hasTrap, true)
     expect(c.io.except.isSret, false)
     expect(c.io.except.isMret, false)
     expect(c.io.except.excCause, cause)
@@ -97,7 +97,7 @@ class MemUnitTester(c: Mem) extends PeekPokeTester(c) {
   }
 
   def expectExc() = {
-    expect(c.io.except.hasExcept, false)
+    expect(c.io.except.hasTrap, false)
   }
 
   def expectEm(addr: Int, isSet: Boolean) = {
