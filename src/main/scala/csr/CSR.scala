@@ -17,14 +17,13 @@ abstract class CsrBundle extends Bundle {
 
 trait CsrObject[T <: CsrBundle] {
   def apply(): T
+  def default(): T = 0.U.asTypeOf(apply())
 
   def apply[U <: Data](data: U): T = {
-    val init = Wire(apply())
+    val init = Wire(default())
     init <= data.asUInt
     init
   }
-
-  def default(): T = 0.U.asTypeOf(apply())
 }
 
 // supervisor status register
@@ -123,44 +122,44 @@ object StvecCsr extends CsrObject[StvecCsr] {
 }
 
 // supervisor scratch register
-class SscratchScr extends CsrBundle {
+class SscratchCsr extends CsrBundle {
   val data  = UInt(32.W)
 }
 
-object SscratchScr extends CsrObject[SscratchScr] {
-  def apply() = new SscratchScr
+object SscratchCsr extends CsrObject[SscratchCsr] {
+  def apply() = new SscratchCsr
 }
 
 // supervisor exception program counter register
-class SepcScr extends CsrBundle {
+class SepcCsr extends CsrBundle {
   val data  = UInt(32.W)
 }
 
-object SepcScr extends CsrObject[SepcScr] {
-  def apply() = new SepcScr
+object SepcCsr extends CsrObject[SepcCsr] {
+  def apply() = new SepcCsr
 }
 
 // supervisor exception cause register
-class ScauseScr extends CsrBundle {
+class ScauseCsr extends CsrBundle {
   val int   = Bool()
   val code  = UInt(31.W)
 }
 
-object ScauseScr extends CsrObject[ScauseScr] {
-  def apply() = new ScauseScr
+object ScauseCsr extends CsrObject[ScauseCsr] {
+  def apply() = new ScauseCsr
 }
 
 // supervisor trap value register
-class StvalScr extends CsrBundle {
+class StvalCsr extends CsrBundle {
   val data  = UInt(32.W)
 }
 
-object StvalScr extends CsrObject[StvalScr] {
-  def apply() = new StvalScr
+object StvalCsr extends CsrObject[StvalCsr] {
+  def apply() = new StvalCsr
 }
 
 // supervisor address translation and protection register
-class SatpScr extends CsrBundle {
+class SatpCsr extends CsrBundle {
   val mode  = Bool()
   val asid  = UInt(9.W)
   val ppn   = UInt(22.W)
@@ -172,8 +171,8 @@ class SatpScr extends CsrBundle {
   }
 }
 
-object SatpScr extends CsrObject[SatpScr] {
-  def apply() = new SatpScr
+object SatpCsr extends CsrObject[SatpCsr] {
+  def apply() = new SatpCsr
 }
 
 // machine status register
@@ -218,7 +217,7 @@ object MstatusCsr extends CsrObject[MstatusCsr] {
 }
 
 // machine ISA register
-class MisaScr extends CsrBundle {
+class MisaCsr extends CsrBundle {
   val mxl   = UInt(2.W)
   val wlrl  = UInt(4.W)
   val ext   = UInt(26.W)
@@ -226,27 +225,27 @@ class MisaScr extends CsrBundle {
   override def <=(data: UInt) = {}
 }
 
-object MisaScr extends CsrObject[MisaScr] {
-  def apply() = new MisaScr
+object MisaCsr extends CsrObject[MisaCsr] {
+  def apply() = new MisaCsr
   override def default() = "h40141101".U.asTypeOf(apply())
 }
 
 // machine exception delegation register
-class MedelegScr extends CsrBundle {
+class MedelegCsr extends CsrBundle {
   val data  = UInt(32.W)
 }
 
-object MedelegScr extends CsrObject[MedelegScr] {
-  def apply() = new MedelegScr
+object MedelegCsr extends CsrObject[MedelegCsr] {
+  def apply() = new MedelegCsr
 }
 
 // machine interrupt delegation register
-class MidelegScr extends CsrBundle {
+class MidelegCsr extends CsrBundle {
   val data  = UInt(32.W)
 }
 
-object MidelegScr extends CsrObject[MidelegScr] {
-  def apply() = new MidelegScr
+object MidelegCsr extends CsrObject[MidelegCsr] {
+  def apply() = new MidelegCsr
 }
 
 // machine interrupt-enable register
@@ -328,56 +327,56 @@ object MtvecCsr extends CsrObject[MtvecCsr] {
 }
 
 // machine scratch register
-class MscratchScr extends CsrBundle {
+class MscratchCsr extends CsrBundle {
   val data  = UInt(32.W)
 }
 
-object MscratchScr extends CsrObject[MscratchScr] {
-  def apply() = new MscratchScr
+object MscratchCsr extends CsrObject[MscratchCsr] {
+  def apply() = new MscratchCsr
 }
 
 // machine exception program counter register
-class MepcScr extends CsrBundle {
+class MepcCsr extends CsrBundle {
   val data  = UInt(32.W)
 }
 
-object MepcScr extends CsrObject[MepcScr] {
-  def apply() = new MepcScr
+object MepcCsr extends CsrObject[MepcCsr] {
+  def apply() = new MepcCsr
 }
 
 // machine exception cause register
-class McauseScr extends CsrBundle {
+class McauseCsr extends CsrBundle {
   val int   = Bool()
   val code  = UInt(31.W)
 }
 
-object McauseScr extends CsrObject[McauseScr] {
-  def apply() = new McauseScr
+object McauseCsr extends CsrObject[McauseCsr] {
+  def apply() = new McauseCsr
 }
 
 // machine trap value register
-class MtvalScr extends CsrBundle {
+class MtvalCsr extends CsrBundle {
   val data  = UInt(32.W)
 }
 
-object MtvalScr extends CsrObject[MtvalScr] {
-  def apply() = new MtvalScr
+object MtvalCsr extends CsrObject[MtvalCsr] {
+  def apply() = new MtvalCsr
 }
 
 // machine cycle counter (64-bit)
-class McycleScr extends CsrBundle {
+class McycleCsr extends CsrBundle {
   val data  = UInt(64.W)
 }
 
-object McycleScr extends CsrObject[McycleScr] {
-  def apply() = new McycleScr
+object McycleCsr extends CsrObject[McycleCsr] {
+  def apply() = new McycleCsr
 }
 
 // machine instructions-retired counter (64-bit)
-class MinstretScr extends CsrBundle {
+class MinstretCsr extends CsrBundle {
   val data  = UInt(64.W)
 }
 
-object MinstretScr extends CsrObject[MinstretScr] {
-  def apply() = new MinstretScr
+object MinstretCsr extends CsrObject[MinstretCsr] {
+  def apply() = new MinstretCsr
 }
