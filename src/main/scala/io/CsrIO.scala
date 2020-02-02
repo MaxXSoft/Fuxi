@@ -14,13 +14,17 @@ class CsrReadIO extends Bundle {
 }
 
 class CsrWriteIO extends Bundle {
-  val op    = Output(UInt(CSR_OP_WIDTH.W))
-  val addr  = Output(UInt(CSR_ADDR_WIDTH.W))
-  val data  = Output(UInt(DATA_WIDTH.W))
+  val op      = Output(UInt(CSR_OP_WIDTH.W))
+  val addr    = Output(UInt(CSR_ADDR_WIDTH.W))
+  val data    = Output(UInt(DATA_WIDTH.W))
+  // instruction retired flag
+  val retired = Output(Bool())
 }
 
 class CsrCommitIO extends Bundle {
-  val op    = UInt(CSR_OP_WIDTH.W)
-  val addr  = UInt(CSR_ADDR_WIDTH.W)
-  val data  = UInt(DATA_WIDTH.W)
+  val op      = UInt(CSR_OP_WIDTH.W)
+  val addr    = UInt(CSR_ADDR_WIDTH.W)
+  val data    = UInt(DATA_WIDTH.W)
+  // instruction retired flag
+  val retired = Bool()
 }
