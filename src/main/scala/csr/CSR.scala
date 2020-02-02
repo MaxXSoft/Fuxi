@@ -17,6 +17,13 @@ abstract class CsrBundle extends Bundle {
 
 trait CsrObject[T <: CsrBundle] {
   def apply(): T
+
+  def apply[U <: Data](data: U): T = {
+    val init = Wire(apply())
+    init <= data.asUInt
+    init
+  }
+
   def default(): T = 0.U.asTypeOf(apply())
 }
 
