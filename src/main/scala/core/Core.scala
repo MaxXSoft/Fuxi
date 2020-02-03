@@ -5,10 +5,16 @@ import chisel3._
 import io._
 import consts.Parameters._
 import utils._
+import csr.CsrFile
 import lsu.ExclusiveMonitor
 
 class Core extends Module {
   val io = IO(new Bundle {
+    // interrupt request
+    val irq   = new InterruptIO
+    // TLB/cache control
+    val tlb   = new TlbControlIO(ADDR_WIDTH)
+    val cache = new CacheControlIO
     // ROM interface (I-cache)
     val rom   = new SramIO(ADDR_WIDTH, DATA_WIDTH)
     // RAM interface (D-cache)
@@ -31,8 +37,8 @@ class Core extends Module {
   // register file
   val regfile = Module(new RegFile)
 
-  // CSR
-  // TODO
+  // CSR file
+  var csrfile = Module(new CsrFile)
 
   // exclusive monitor
   val excMon  = Module(new ExclusiveMonitor)
@@ -74,10 +80,8 @@ class Core extends Module {
   mem.io.alu          <> exmem.io.next
   mem.io.flush        := control.io.flush
   mem.io.ram          <> io.ram
-  // TODO: CSR status
-  mem.io.csrHasInt    := false.B
-  mem.io.csrMode      := 0.U
-  // END TODO
+  mem.io.csrHasInt    := csrfile.io.hasInt
+  mem.io.csrMode      := csrfile.io.mode
   mem.io.excMon       <> resolve.io.check
   memwb.io.flush      := control.io.flush
   memwb.io.stallPrev  := control.io.stallMm
@@ -97,7 +101,13 @@ class Core extends Module {
   regfile.io.write.data := wb.io.reg.data
 
   // CSR
-  // TODO
+  csrfile.io.read           <> resolve.io.csr
+  csrfile.io.write.op       := wb.io.csr.op
+  csrfile.io.write.addr     := wb.io.csr.addr
+  csrfile.io.write.data     := wb.io.csr.data
+  csrfile.io.write.retired  := wb.io.csr.retired
+  csrfile.io.irq            <> io.irq
+  csrfile.io.except         <> mem.io.except
 
   // exclusive monitor
   excMon.io.flush         := control.io.flush
@@ -107,16 +117,12 @@ class Core extends Module {
   excMon.io.update.clear  := wb.io.excMon.clear
 
   // hazard resolver
-  resolve.io.aluReg    <> alu.io.alu.reg
-  resolve.io.memReg    <> mem.io.mem.reg
-  resolve.io.memCsr    <> mem.io.mem.csr
-  resolve.io.wbReg     <> wb.io.reg
-  resolve.io.wbCsr     <> wb.io.csr
-  resolve.io.wbExcMon  <> wb.io.excMon
-  // TODO: CSR read channel
-  resolve.io.csr.valid := false.B
-  resolve.io.csr.data  := 0.U
-  // END TODO
+  resolve.io.aluReg   <> alu.io.alu.reg
+  resolve.io.memReg   <> mem.io.mem.reg
+  resolve.io.memCsr   <> mem.io.mem.csr
+  resolve.io.wbReg    <> wb.io.reg
+  resolve.io.wbCsr    <> wb.io.csr
+  resolve.io.wbExcMon <> wb.io.excMon
 
   // pipeline controller
   control.io.fetch    := fetch.io.stallReq
@@ -127,9 +133,15 @@ class Core extends Module {
   control.io.load     := resolve.io.loadFlag
   control.io.csr      := resolve.io.csrFlag
   control.io.except   <> mem.io.except
-  // TODO: CSR status
-  control.io.csrSepc  := 0.U
-  control.io.csrMepc  := 0.U
-  control.io.csrTvec  := 0.U
-  // END TODO
+  control.io.csrSepc  := csrfile.io.sepc
+  control.io.csrMepc  := csrfile.io.mepc
+  control.io.csrTvec  := csrfile.io.trapVec
+
+  // TLB/cache control
+  io.tlb.en           := csrfile.io.pageEn
+  io.tlb.flushInst    := mem.io.flushIt
+  io.tlb.flushData    := mem.io.flushDt
+  io.tlb.base         := csrfile.io.base
+  io.cache.flushInst  := mem.io.flushIc
+  io.cache.flushData  := mem.io.flushDc
 }
