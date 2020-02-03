@@ -31,6 +31,7 @@ class CsrFile extends Module {
     // paging signals
     val pageEn  = Output(Bool())
     val base    = Output(UInt(ADDR_WIDTH.W))
+    val sum     = Output(Bool())
   })
 
   // current privilege mode
@@ -281,4 +282,5 @@ class CsrFile extends Module {
   // paging signals
   io.pageEn   := satp.mode
   io.base     := satp.ppn << SV32_PAGE_SHIFT
+  io.sum      := mstatus.sum
 }
