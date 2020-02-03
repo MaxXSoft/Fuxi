@@ -14,9 +14,12 @@ class CoreWrapper(initFile: String) extends Module {
   val rom   = Module(new ROM(initFile))
   val ram   = Module(new RAM)
 
-  core.io.rom   <> rom.io
-  core.io.ram   <> ram.io
-  core.io.debug <> io
+  core.io.irq.timer   := false.B
+  core.io.irq.soft    := false.B
+  core.io.irq.extern  := false.B
+  core.io.rom         <> rom.io
+  core.io.ram         <> ram.io
+  core.io.debug       <> io
 }
 
 class CoreUnitTester(c: CoreWrapper, traceFile: String)
