@@ -192,7 +192,7 @@ class CsrFile extends Module {
   when (writeEn) {
     // handle write operation
     // NOTE: must handle CSR write first in order to
-    //       resolve RAW hazard during trap handling
+    //       resolve RAW hazard before trap handling
     when (io.write.addr === CSR_SSTATUS) {
       mstatus.castAssign(SstatusCsr(), writeData)
     }
