@@ -24,6 +24,7 @@ class CsrFile extends Module {
     val except  = Input(new ExceptInfoIO)
     // CSR status
     val hasInt  = Output(Bool())
+    val busy    = Output(Bool())
     val mode    = Output(UInt(CSR_MODE_WIDTH.W))
     val sepc    = Output(UInt(ADDR_WIDTH.W))
     val mepc    = Output(UInt(ADDR_WIDTH.W))
@@ -188,39 +189,10 @@ class CsrFile extends Module {
   }
 
   // update CSRs
-  when (io.except.hasTrap) {
-    // handle trap
-    when (io.except.isSret) {
-      // return from S-mode
-      // update 'mstatus' because 'sstatus' is just wire
-      mstatus.sie   := mstatus.spie
-      mstatus.spie  := true.B
-      mstatus.spp   := false.B
-    } .elsewhen (io.except.isMret) {
-      // return from M-mode
-      mstatus.mie   := mstatus.mpie
-      mstatus.mpie  := true.B
-      mstatus.mpp   := CSR_MODE_U
-    } .elsewhen (handIntS || handExcS) {
-      // enter S-mode
-      sepc          <= io.except.excPc
-      scause        <= cause
-      stval         <= io.except.excValue
-      // update 'mstatus' because 'sstatus' is just wire
-      mstatus.spie  := mstatus.sie
-      mstatus.sie   := false.B
-      mstatus.spp   := mode(0)
-    } .otherwise {
-      // enter M-mode
-      mepc          <= io.except.excPc
-      mcause        <= cause
-      mtval         <= io.except.excValue
-      mstatus.mpie  := mstatus.mie
-      mstatus.mie   := false.B
-      mstatus.mpp   := mode
-    }
-  } .elsewhen (writeEn) {
+  when (writeEn) {
     // handle write operation
+    // NOTE: must handle CSR write first in order to
+    //       resolve RAW hazard during trap handling
     when (io.write.addr === CSR_SSTATUS) {
       mstatus.castAssign(SstatusCsr(), writeData)
     }
@@ -258,6 +230,37 @@ class CsrFile extends Module {
     when (io.write.addr === CSR_MCAUSE)   { mcause <= writeData }
     when (io.write.addr === CSR_MTVAL)    { mtval <= writeData }
     when (io.write.addr === CSR_MIP)      { mip <= writeData }
+  } .elsewhen (io.except.hasTrap) {
+    // handle trap
+    when (io.except.isSret) {
+      // return from S-mode
+      // update 'mstatus' because 'sstatus' is just wire
+      mstatus.sie   := mstatus.spie
+      mstatus.spie  := true.B
+      mstatus.spp   := false.B
+    } .elsewhen (io.except.isMret) {
+      // return from M-mode
+      mstatus.mie   := mstatus.mpie
+      mstatus.mpie  := true.B
+      mstatus.mpp   := CSR_MODE_U
+    } .elsewhen (handIntS || handExcS) {
+      // enter S-mode
+      sepc          <= io.except.excPc
+      scause        <= cause
+      stval         <= io.except.excValue
+      // update 'mstatus' because 'sstatus' is just wire
+      mstatus.spie  := mstatus.sie
+      mstatus.sie   := false.B
+      mstatus.spp   := mode(0)
+    } .otherwise {
+      // enter M-mode
+      mepc          <= io.except.excPc
+      mcause        <= cause
+      mtval         <= io.except.excValue
+      mstatus.mpie  := mstatus.mie
+      mstatus.mie   := false.B
+      mstatus.mpp   := mode
+    }
   } .otherwise {
     // update interrupt-pending register
     mip.meip    := io.irq.extern
@@ -274,6 +277,7 @@ class CsrFile extends Module {
 
   // CSR status signals
   io.hasInt   := hasInt
+  io.busy     := writeEn
   io.mode     := mode
   io.sepc     := sepc.asUInt
   io.mepc     := mepc.asUInt
