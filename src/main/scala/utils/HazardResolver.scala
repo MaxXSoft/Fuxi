@@ -3,7 +3,7 @@ package utils
 import chisel3._
 
 import io._
-import consts.CsrOp.{CSR_NOP, CSR_R}
+import consts.CsrOp.{CSR_NOP, CSR_R, CSR_W}
 
 class HazardResolver extends Module {
   val io = IO(new Bundle {
@@ -74,10 +74,11 @@ class HazardResolver extends Module {
   }
 
   def resolveCsrHazard(read: CsrReadIO) = {
-    val memCsr  = io.memCsr.op =/= CSR_NOP && read.op =/= CSR_NOP &&
-                  read.addr === io.memCsr.addr
-    val wbCsr   = io.wbCsr.op =/= CSR_NOP && read.op =/= CSR_NOP &&
-                  read.addr === io.wbCsr.addr
+    val isRead  = read.op =/= CSR_NOP && read.op =/= CSR_W
+    val memCsr  = io.memCsr.op =/= CSR_NOP && io.memCsr.op =/= CSR_R &&
+                  isRead && read.addr === io.memCsr.addr
+    val wbCsr   = io.wbCsr.op =/= CSR_NOP && io.wbCsr.op =/= CSR_R &&
+                  isRead && read.addr === io.wbCsr.addr
     memCsr || wbCsr
   }
 
