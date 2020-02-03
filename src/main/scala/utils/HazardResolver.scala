@@ -68,18 +68,18 @@ class HazardResolver extends Module {
   }
 
   def resolveLoadHazard(read: RegReadIO) = {
-    val aluLoad = io.aluReg.load && read.en && read.addr === io.aluReg.addr
-    val memLoad = io.memReg.load && read.en && read.addr === io.memReg.addr
-    aluLoad || memLoad
+    val aluLoad = io.aluReg.load && read.addr === io.aluReg.addr
+    val memLoad = io.memReg.load && read.addr === io.memReg.addr
+    read.en && (aluLoad || memLoad)
   }
 
   def resolveCsrHazard(read: CsrReadIO) = {
     val isRead  = read.op =/= CSR_NOP && read.op =/= CSR_W
     val memCsr  = io.memCsr.op =/= CSR_NOP && io.memCsr.op =/= CSR_R &&
-                  isRead && read.addr === io.memCsr.addr
+                  read.addr === io.memCsr.addr
     val wbCsr   = io.wbCsr.op =/= CSR_NOP && io.wbCsr.op =/= CSR_R &&
-                  isRead && read.addr === io.wbCsr.addr
-    memCsr || wbCsr
+                  read.addr === io.wbCsr.addr
+    isRead && (memCsr || wbCsr)
   }
 
   // forward regfile read channels
