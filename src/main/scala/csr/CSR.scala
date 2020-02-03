@@ -131,6 +131,11 @@ object SscratchCsr extends CsrObject[SscratchCsr] {
 // supervisor exception program counter register
 class SepcCsr extends CsrBundle {
   val data  = UInt(32.W)
+
+  override def <=(d: UInt) = {
+    requireWidth(d)
+    data(31, 2) := d(31, 2)
+  }
 }
 
 object SepcCsr extends CsrObject[SepcCsr] {
@@ -353,6 +358,11 @@ object MscratchCsr extends CsrObject[MscratchCsr] {
 // machine exception program counter register
 class MepcCsr extends CsrBundle {
   val data  = UInt(32.W)
+
+  override def <=(d: UInt) = {
+    requireWidth(d)
+    data(31, 2) := d(31, 2)
+  }
 }
 
 object MepcCsr extends CsrObject[MepcCsr] {
