@@ -28,6 +28,7 @@ class Mem extends Module {
     val flushDt   = Output(Bool())
     // CSR status
     val csrHasInt = Input(Bool())
+    val csrBusy   = Input(Bool())
     val csrMode   = Input(UInt(CSR_MODE_WIDTH.W))
     // exclusive monitor check channel
     val excMon    = new ExcMonCheckIO
@@ -71,8 +72,9 @@ class Mem extends Module {
   val wdata = Mux(wen || checkExcMon, io.alu.lsuData, amo.io.ramWdata)
 
   // stall request
-  val stallReq  = Mux(amoOp =/= AMO_OP_NOP, !amo.io.ready,
+  val memStall  = Mux(amoOp =/= AMO_OP_NOP, !amo.io.ready,
                       en && !io.ram.valid)
+  val stallReq  = memStall || io.csrBusy
 
   // write back data
   val data = Mux(checkExcMon, Mux(io.excMon.valid, 0.U, 1.U),

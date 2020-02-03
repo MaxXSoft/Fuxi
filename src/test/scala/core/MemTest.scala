@@ -20,6 +20,7 @@ class MemUnitTester(c: Mem) extends PeekPokeTester(c) {
 
   def simulateLatency(checkStall: Boolean = true) = {
     val latency = rnd.nextInt(maxLatency)
+    poke(c.io.csrBusy, false)
     for (i <- 0 until latency) {
       poke(c.io.ram.valid, false)
       poke(c.io.ram.rdata, 0)
