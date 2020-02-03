@@ -10,6 +10,7 @@ import consts.ExceptCause._
 import consts.CSR._
 import consts.CsrOp._
 import consts.Control.{Y, N}
+import consts.Paging.SV32_PAGE_SHIFT
 
 class CsrFile extends Module {
   val io = IO(new Bundle {
@@ -18,9 +19,7 @@ class CsrFile extends Module {
     // write channel
     val write   = Flipped(new CsrWriteIO)
     // interrupt request
-    val timer   = Input(Bool())
-    val soft    = Input(Bool())
-    val extern  = Input(Bool())
+    val irq     = new InterruptIO
     // exception information
     val except  = Input(new ExceptInfoIO)
     // CSR status
@@ -29,7 +28,9 @@ class CsrFile extends Module {
     val sepc    = Output(UInt(ADDR_WIDTH.W))
     val mepc    = Output(UInt(ADDR_WIDTH.W))
     val trapVec = Output(UInt(ADDR_WIDTH.W))
-    val satp    = Output(UInt(DATA_WIDTH.W))
+    // paging signals
+    val pageEn  = Output(Bool())
+    val base    = Output(UInt(ADDR_WIDTH.W))
   })
 
   // current privilege mode
@@ -258,12 +259,12 @@ class CsrFile extends Module {
     when (io.write.addr === CSR_MIP)      { mip <= writeData }
   } .otherwise {
     // update interrupt-pending register
-    mip.meip    := io.extern
-    mip.seip    := io.extern
-    mip.mtip    := io.timer
-    mip.stip    := io.timer
-    mip.msip    := io.soft
-    mip.ssip    := io.soft
+    mip.meip    := io.irq.extern
+    mip.seip    := io.irq.extern
+    mip.mtip    := io.irq.timer
+    mip.stip    := io.irq.timer
+    mip.msip    := io.irq.soft
+    mip.ssip    := io.irq.soft
   }
 
   // read channel signals
@@ -276,5 +277,8 @@ class CsrFile extends Module {
   io.sepc     := sepc.asUInt
   io.mepc     := mepc.asUInt
   io.trapVec  := trapVec
-  io.satp     := satp.asUInt
+
+  // paging signals
+  io.pageEn   := satp.mode
+  io.base     := satp.ppn << SV32_PAGE_SHIFT
 }
