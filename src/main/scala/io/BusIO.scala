@@ -26,6 +26,8 @@ class TlbControlIO(val addrWidth: Int) extends Bundle {
   val flushData = Output(Bool())
   // base address of page table
   val base      = Output(UInt(addrWidth.W))
+  // permit S-mode user memory access
+  val sum       = Output(Bool())
 }
 
 // cache control
