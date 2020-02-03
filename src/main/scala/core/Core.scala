@@ -81,6 +81,7 @@ class Core extends Module {
   mem.io.flush        := control.io.flush
   mem.io.ram          <> io.ram
   mem.io.csrHasInt    := csrfile.io.hasInt
+  mem.io.csrBusy      := csrfile.io.busy
   mem.io.csrMode      := csrfile.io.mode
   mem.io.excMon       <> resolve.io.check
   memwb.io.flush      := control.io.flush
