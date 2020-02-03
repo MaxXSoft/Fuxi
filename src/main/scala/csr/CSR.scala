@@ -1,6 +1,7 @@
 package csr
 
 import chisel3._
+import chisel3.util.Cat
 
 import consts.Parameters._
 
@@ -15,7 +16,7 @@ abstract class CsrBundle extends Bundle {
   }
 
   def castAssign[T <: CsrBundle](that: T, data: UInt) = {
-    val temp = Wire(asTypeOf(that))
+    val temp = asTypeOf(that)
     temp <= data
     this <= temp.asUInt
   }
@@ -26,7 +27,7 @@ trait CsrObject[T <: CsrBundle] {
   def default(): T = 0.U.asTypeOf(apply())
 
   def apply[U <: Data](data: U): T = {
-    val init = Wire(default())
+    val init = default()
     init <= data.asUInt
     init
   }
@@ -116,8 +117,8 @@ class StvecCsr extends CsrBundle {
 
   override def <=(data: UInt) = {
     requireWidth(data)
-    base    := data(31, 2)
-    mode(0) := data(0)
+    base  := data(31, 2)
+    mode  := data(0)
   }
 }
 
@@ -140,7 +141,7 @@ class SepcCsr extends CsrBundle {
 
   override def <=(d: UInt) = {
     requireWidth(d)
-    data(31, 2) := d(31, 2)
+    data  := Cat(d(31, 2), 0.U(2.W))
   }
 }
 
@@ -152,6 +153,12 @@ object SepcCsr extends CsrObject[SepcCsr] {
 class ScauseCsr extends CsrBundle {
   val int   = Bool()
   val code  = UInt(31.W)
+
+  override def <=(data: UInt) = {
+    requireWidth(data)
+    int   := data(31)
+    code  := data(3, 0)
+  }
 }
 
 object ScauseCsr extends CsrObject[ScauseCsr] {
@@ -245,12 +252,8 @@ class MedelegCsr extends CsrBundle {
 
   override def <=(d: UInt) = {
     requireWidth(d)
-    data(15)      := d(15)
-    data(13, 12)  := d(13, 12)
-    data(9, 8)    := d(9, 8)
-    data(6)       := d(6)
-    data(4, 2)    := d(4, 2)
-    data(0)       := d(0)
+    data  := Cat(d(15), 0.U(1.W), d(13, 12), 0.U(2.W), d(9, 8),
+                 0.U(1.W), d(6), 0.U(1.W), d(4, 2), 0.U(1.W), d(0))
   }
 }
 
@@ -264,12 +267,8 @@ class MidelegCsr extends CsrBundle {
 
   override def <=(d: UInt) = {
     requireWidth(d)
-    data(11)  := d(11)
-    data(9)   := d(9)
-    data(7)   := d(7)
-    data(5)   := d(5)
-    data(3)   := d(3)
-    data(1)   := d(1)
+    data  := Cat(d(11), 0.U(1.W), d(9), 0.U(1.W), d(7), 0.U(1.W),
+                 d(5), 0.U(1.W), d(3), 0.U(1.W), d(1), 0.U(1.W))
   }
 }
 
@@ -343,8 +342,8 @@ class MtvecCsr extends CsrBundle {
 
   override def <=(data: UInt) = {
     requireWidth(data)
-    base    := data(31, 2)
-    mode(0) := data(0)
+    base  := data(31, 2)
+    mode  := data(0)
   }
 }
 
@@ -367,7 +366,7 @@ class MepcCsr extends CsrBundle {
 
   override def <=(d: UInt) = {
     requireWidth(d)
-    data(31, 2) := d(31, 2)
+    data  := Cat(d(31, 2), 0.U(2.W))
   }
 }
 
@@ -379,6 +378,12 @@ object MepcCsr extends CsrObject[MepcCsr] {
 class McauseCsr extends CsrBundle {
   val int   = Bool()
   val code  = UInt(31.W)
+
+  override def <=(data: UInt) = {
+    requireWidth(data)
+    int   := data(31)
+    code  := data(3, 0)
+  }
 }
 
 object McauseCsr extends CsrObject[McauseCsr] {
