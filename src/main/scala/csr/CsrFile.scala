@@ -168,9 +168,9 @@ class CsrFile extends Module {
   val intCause  = Mux(handIntS, intCauseS, intCauseM)
   val cause     = Mux(hasInt, Cat(true.B, intCause),
                               Cat(false.B, io.except.excCause))
-  val trapVecS  = Mux(stvec.mode =/= 0.U, (stvec.base + cause(29, 0)),
+  val trapVecS  = Mux(stvec.mode(0) && hasInt, (stvec.base + cause(29, 0)),
                       stvec.base) << 2
-  val trapVecM  = Mux(mtvec.mode =/= 0.U, (mtvec.base + cause(29, 0)),
+  val trapVecM  = Mux(mtvec.mode(0) && hasInt, (mtvec.base + cause(29, 0)),
                       mtvec.base) << 2
   val trapVec   = Mux(handIntS || handExcS, trapVecS, trapVecM)
 
