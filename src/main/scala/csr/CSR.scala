@@ -13,6 +13,12 @@ abstract class CsrBundle extends Bundle {
     requireWidth(data)
     this := data.asTypeOf(this)
   }
+
+  def castAssign[T <: CsrBundle](that: T, data: UInt) = {
+    val temp = Wire(asTypeOf(that))
+    temp <= data
+    this <= temp.asUInt
+  }
 }
 
 trait CsrObject[T <: CsrBundle] {
