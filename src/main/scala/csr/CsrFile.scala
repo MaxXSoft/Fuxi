@@ -176,11 +176,15 @@ class CsrFile extends Module {
   val trapVec   = Mux(handIntS || handExcS, trapVecS, trapVecM)
 
   // update current privilege mode
-  mode  :=  Mux(hasInt, Mux(handIntS, CSR_MODE_S, CSR_MODE_M),
-            Mux(io.except.isSret, Cat(false.B, sstatus.spp),
-            Mux(io.except.isMret, mstatus.mpp,
-            Mux(!io.except.hasTrap, mode,
-            Mux(handExcS, CSR_MODE_S, CSR_MODE_M)))))
+  val intMode   = Mux(handIntS, CSR_MODE_S, CSR_MODE_M)
+  val sretMode  = Cat(false.B, sstatus.spp)
+  val mretMode  = mstatus.mpp
+  val trapMode  = Mux(hasInt, intMode,
+                  Mux(io.except.isSret, sretMode,
+                  Mux(io.except.isMret, mretMode,
+                  Mux(handExcS, CSR_MODE_S, CSR_MODE_M))))
+  val nextMode  = Mux(io.except.hasTrap && !writeEn, trapMode, mode)
+  mode := nextMode
 
   // update performance counters
   mcycle.data := mcycle.data + 1.U
