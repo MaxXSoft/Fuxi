@@ -19,6 +19,8 @@ class Mem extends Module {
     // pipeline control
     val flush     = Input(Bool())
     val stallReq  = Output(Bool())
+    val flushReq  = Output(Bool())
+    val flushPc   = Output(UInt(ADDR_WIDTH.W))
     // RAM interface
     val ram       = new SramIO(ADDR_WIDTH, DATA_WIDTH)
     // cache/TLB control
@@ -128,6 +130,8 @@ class Mem extends Module {
 
   // pipeline control
   io.stallReq := stallReq
+  io.flushReq := flushIc || flushIt
+  io.flushPc  := io.alu.currentPc + 4.U
 
   // RAM control signals
   io.ram.en     := Mux(hasTrap, false.B, en)
@@ -136,8 +140,8 @@ class Mem extends Module {
   io.ram.wdata  := wdata
 
   // cache/TLB control signals
-  io.flushIc  := flushIc
-  io.flushDc  := flushDc
+  io.flushIc  := Mux(hasTrap, false.B, flushIc)
+  io.flushDc  := Mux(hasTrap, false.B, flushDc)
   io.flushIt  := Mux(hasTrap, false.B, flushIt)
   io.flushDt  := Mux(hasTrap, false.B, flushDt)
 
