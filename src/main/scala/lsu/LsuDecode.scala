@@ -54,6 +54,6 @@ object LsuDecode {
     BitPat(LSU_MAXU)  ->  List(Y, N, N, LS_DATA_WORD, N, N, N, AMO_OP_MAXU, N, N, N, N),
     BitPat(LSU_FENC)  ->  List(N, N, N, LS_DATA_BYTE, N, N, N, AMO_OP_NOP,  N, N, N, N),
     BitPat(LSU_FENI)  ->  List(N, N, N, LS_DATA_BYTE, N, N, N, AMO_OP_NOP,  Y, Y, N, N),
-    BitPat(LSU_FENV)  ->  List(N, N, N, LS_DATA_BYTE, N, N, N, AMO_OP_NOP,  N, N, Y, Y),
+    BitPat(LSU_FENV)  ->  List(N, N, N, LS_DATA_BYTE, N, N, N, AMO_OP_NOP,  Y, Y, Y, Y),
   )
 }
