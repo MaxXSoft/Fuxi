@@ -126,17 +126,20 @@ class Core extends Module {
   resolve.io.wbExcMon <> wb.io.excMon
 
   // pipeline controller
-  control.io.fetch    := fetch.io.stallReq
-  control.io.alu      := alu.io.stallReq
-  control.io.mem      := mem.io.stallReq
-  control.io.flushReq := decoder.io.flushIf
-  control.io.target   := decoder.io.flushPc
-  control.io.load     := resolve.io.loadFlag
-  control.io.csr      := resolve.io.csrFlag
-  control.io.except   <> mem.io.except
-  control.io.csrSepc  := csrfile.io.sepc
-  control.io.csrMepc  := csrfile.io.mepc
-  control.io.csrTvec  := csrfile.io.trapVec
+  control.io.fetch      := fetch.io.stallReq
+  control.io.alu        := alu.io.stallReq
+  control.io.mem        := mem.io.stallReq
+  control.io.decFlush   := decoder.io.flushIf
+  control.io.decTarget  := decoder.io.flushPc
+  control.io.memFlush   := mem.io.flushReq
+  control.io.memTarget  := mem.io.flushPc
+  control.io.load       := resolve.io.loadFlag
+  control.io.csr        := resolve.io.csrFlag
+  control.io.csrBusy    := csrfile.io.busy
+  control.io.except     <> mem.io.except
+  control.io.csrSepc    := csrfile.io.sepc
+  control.io.csrMepc    := csrfile.io.mepc
+  control.io.csrTvec    := csrfile.io.trapVec
 
   // TLB/cache control
   io.tlb.en           := csrfile.io.pageEn
