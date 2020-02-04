@@ -10,7 +10,7 @@ import consts.ExceptCause._
 import consts.CSR._
 import consts.CsrOp._
 import consts.Control.{Y, N}
-import consts.Paging.SV32_PAGE_SHIFT
+import consts.Paging.PAGE_SHIFT
 
 class CsrFile extends Module {
   val io = IO(new Bundle {
@@ -289,6 +289,6 @@ class CsrFile extends Module {
 
   // paging signals
   io.pageEn   := !mode(1) && satp.mode
-  io.base     := satp.ppn << SV32_PAGE_SHIFT
+  io.base     := satp.ppn << PAGE_SHIFT
   io.sum      := mstatus.sum
 }
