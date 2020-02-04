@@ -11,12 +11,15 @@ class PipelineController extends Module {
     val fetch     = Input(Bool())
     val alu       = Input(Bool())
     val mem       = Input(Bool())
-    // flush request from decoder
-    val flushReq  = Input(Bool())
-    val target    = Input(UInt(ADDR_WIDTH.W))
+    // flush request from pipeline stages
+    val decFlush  = Input(Bool())
+    val decTarget = Input(UInt(ADDR_WIDTH.W))
+    val memFlush  = Input(Bool())
+    val memTarget = Input(UInt(ADDR_WIDTH.W))
     // hazard flags
     val load      = Input(Bool())
     val csr       = Input(Bool())
+    val csrBusy   = Input(Bool())
     // exception information
     val except    = Input(new ExceptInfoIO)
     // CSR status
@@ -41,13 +44,18 @@ class PipelineController extends Module {
               Mux(io.load,          "b11000".U(5.W),
               Mux(io.fetch,         "b10000".U(5.W), 0.U))))
 
-  // fetch stage flush PC
+  // final exception PC
   val excPc   = Mux(io.except.isSret, io.csrSepc,
                 Mux(io.except.isMret, io.csrMepc, io.csrTvec))
+
+  // flush signals
+  val excFlush  = io.except.hasTrap
+  val memFlush  = io.memFlush
   // avoid CSR RAW hazard before trap handling
-  val flush   = io.except.hasTrap && !io.mem
-  val flushIf = flush || io.flushReq
-  val flushPc = Mux(flush, excPc, io.target)
+  val flushAll  = (excFlush || memFlush) && !io.csrBusy
+  val flushIf   = flushAll || io.decFlush
+  val flushPc   = Mux(excFlush, excPc,
+                  Mux(memFlush, io.memTarget, io.decTarget))
 
   // stall signals
   io.stallIf  := stall(4)
@@ -57,7 +65,7 @@ class PipelineController extends Module {
   io.stallWb  := stall(0)
 
   // flush signals
-  io.flush    := flush
+  io.flush    := flushAll
   io.flushIf  := flushIf
   io.flushPc  := flushPc
 }
