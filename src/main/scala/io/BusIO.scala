@@ -28,6 +28,7 @@ class TlbControlIO(val addrWidth: Int) extends Bundle {
   val base      = Output(UInt(addrWidth.W))
   // permit S-mode user memory access
   val sum       = Output(Bool())
+  val smode     = Output(Bool())
 }
 
 // cache control

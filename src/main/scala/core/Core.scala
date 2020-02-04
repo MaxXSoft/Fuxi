@@ -144,6 +144,7 @@ class Core extends Module {
   io.tlb.flushData    := mem.io.flushDt
   io.tlb.base         := csrfile.io.base
   io.tlb.sum          := csrfile.io.sum
+  io.tlb.smode        := csrfile.io.mode(0)
   io.cache.flushInst  := mem.io.flushIc
   io.cache.flushData  := mem.io.flushDc
 }
