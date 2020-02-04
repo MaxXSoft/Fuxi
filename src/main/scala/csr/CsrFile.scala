@@ -288,7 +288,7 @@ class CsrFile extends Module {
   io.trapVec  := trapVec
 
   // paging signals
-  io.pageEn   := satp.mode
+  io.pageEn   := !mode(1) && satp.mode
   io.base     := satp.ppn << SV32_PAGE_SHIFT
   io.sum      := mstatus.sum
 }
