@@ -7,13 +7,14 @@ import consts.Parameters._
 import utils._
 import csr.CsrFile
 import lsu.ExclusiveMonitor
+import consts.Paging.PPN_WIDTH
 
 class Core extends Module {
   val io = IO(new Bundle {
     // interrupt request
     val irq   = new InterruptIO
     // TLB/cache control
-    val tlb   = new TlbControlIO(ADDR_WIDTH)
+    val tlb   = new TlbControlIO(PPN_WIDTH)
     val cache = new CacheControlIO
     // ROM interface (I-cache)
     val rom   = new SramIO(ADDR_WIDTH, DATA_WIDTH)
@@ -145,7 +146,7 @@ class Core extends Module {
   io.tlb.en           := csrfile.io.pageEn
   io.tlb.flushInst    := mem.io.flushIt
   io.tlb.flushData    := mem.io.flushDt
-  io.tlb.base         := csrfile.io.base
+  io.tlb.basePpn      := csrfile.io.basePpn
   io.tlb.sum          := csrfile.io.sum
   io.tlb.smode        := csrfile.io.mode(0)
   io.cache.flushInst  := mem.io.flushIc

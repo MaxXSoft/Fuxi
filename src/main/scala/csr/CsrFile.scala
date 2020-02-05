@@ -10,7 +10,7 @@ import consts.ExceptCause._
 import consts.CSR._
 import consts.CsrOp._
 import consts.Control.{Y, N}
-import consts.Paging.PAGE_SHIFT
+import consts.Paging.PPN_WIDTH
 
 class CsrFile extends Module {
   val io = IO(new Bundle {
@@ -31,7 +31,7 @@ class CsrFile extends Module {
     val trapVec = Output(UInt(ADDR_WIDTH.W))
     // paging signals
     val pageEn  = Output(Bool())
-    val base    = Output(UInt(ADDR_WIDTH.W))
+    val basePpn = Output(UInt(PPN_WIDTH.W))
     val sum     = Output(Bool())
   })
 
@@ -289,6 +289,6 @@ class CsrFile extends Module {
 
   // paging signals
   io.pageEn   := !mode(1) && satp.mode
-  io.base     := satp.ppn << PAGE_SHIFT
+  io.basePpn  := satp.ppn
   io.sum      := mstatus.sum
 }
