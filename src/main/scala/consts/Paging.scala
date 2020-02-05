@@ -6,18 +6,19 @@ import chisel3.util._
 import consts.Parameters.ADDR_WIDTH
 
 object Paging {
+  // physical address & virtual address
+  val PPN_WIDTH         = 22
+  val PAGE_OFFSET_WIDTH = 12
+  val VPN_WIDTH         = ADDR_WIDTH - PAGE_OFFSET_WIDTH
+
   // address translation related constants
-  val PAGE_SHIFT  = 12
+  val PAGE_SHIFT  = PAGE_OFFSET_WIDTH
   val PAGE_SIZE   = 1 << PAGE_SHIFT
   val PTE_SHIFT   = 2
   val PTE_SIZE    = 1 << PTE_SHIFT
+  val PTE_WIDTH   = PPN_WIDTH + 10
   val LEVELS      = 2
   val LEVEL_WIDTH = log2Ceil(LEVELS)
-
-  // physical address & virtual address
-  val PPN_WIDTH         = 22
-  val PAGE_OFFSET_WIDTH = PAGE_SHIFT
-  val VPN_WIDTH         = ADDR_WIDTH - PAGE_OFFSET_WIDTH
 
   // get vpn[i]
   def getVpn(vaddr: UInt, index: UInt) =
