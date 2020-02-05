@@ -58,7 +58,7 @@ class MMU(val size: Int, val isInst: Boolean) extends Module {
   val entry = Reg(new TlbEntry)
   val addr  = Reg(UInt(ADDR_WIDTH.W))
   val level = Reg(UInt(LEVEL_WIDTH.W))
-  val pte   = io.data.rdata.asTypeOf(new PTE)
+  val pte   = io.data.rdata(PTE_WIDTH - 1, 0).asTypeOf(new PTE)
 
   // TLB
   val tlb = Module(new TLB(size))
