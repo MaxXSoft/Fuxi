@@ -6,7 +6,7 @@ import chisel3.util.Cat
 import consts.Parameters._
 
 // single line in BTB
-class BTBLine extends Bundle {
+class BtbLine extends Bundle {
   val jump    = Bool()
   val pc      = UInt(BTB_PC_WIDTH.W)
   val target  = UInt(BTB_TARGET_WIDTH.W)
@@ -29,7 +29,7 @@ class BTB extends Module {
 
   // definitions of BTB lines and valid bits
   val valids  = RegInit(VecInit(Seq.fill(BTB_SIZE) { false.B }))
-  val lines   = Mem(BTB_SIZE, new BTBLine)
+  val lines   = Mem(BTB_SIZE, new BtbLine)
 
   // branch info for BTB lines
   val index   = io.pc(BTB_INDEX_WIDTH + ADDR_ALIGN_WIDTH - 1,
