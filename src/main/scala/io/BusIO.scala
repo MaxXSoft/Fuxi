@@ -18,14 +18,14 @@ class SramIO(val addrWidth: Int, val dataWidth: Int) extends Bundle {
 }
 
 // TLB control
-class TlbControlIO(val addrWidth: Int) extends Bundle {
+class TlbControlIO(val ppnWidth: Int) extends Bundle {
   // enable address translation
   val en        = Output(Bool())
   // flush signals
   val flushInst = Output(Bool())
   val flushData = Output(Bool())
-  // base address of page table
-  val base      = Output(UInt(addrWidth.W))
+  // base PPN of page table
+  val basePpn   = Output(UInt(ppnWidth.W))
   // permit S-mode user memory access
   val sum       = Output(Bool())
   val smode     = Output(Bool())
