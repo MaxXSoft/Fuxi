@@ -32,5 +32,12 @@ object Parameters {
   val DTLB_SIZE   = 1 << DTLB_WIDTH
 
   // cache
-  //
+  val ICACHE_WIDTH      = 6
+  val ICACHE_SIZE       = 1 << ICACHE_WIDTH
+  val ICACHE_LINE_WIDTH = 6
+  val ICACHE_LINE_SIZE  = 1 << ICACHE_LINE_WIDTH
+  val DCACHE_WIDTH      = 6
+  val DCACHE_SIZE       = 1 << ICACHE_WIDTH
+  val DCACHE_LINE_WIDTH = 7
+  val DCACHE_LINE_SIZE  = 1 << ICACHE_LINE_WIDTH
 }
