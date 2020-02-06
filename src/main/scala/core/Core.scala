@@ -17,7 +17,7 @@ class Core extends Module {
     val tlb   = new TlbControlIO(PPN_WIDTH)
     val cache = new CacheControlIO
     // ROM interface (I-cache)
-    val rom   = new SramIO(ADDR_WIDTH, DATA_WIDTH)
+    val rom   = new SramIO(ADDR_WIDTH, INST_WIDTH)
     // RAM interface (D-cache)
     val ram   = new SramIO(ADDR_WIDTH, DATA_WIDTH)
     // for trace generating

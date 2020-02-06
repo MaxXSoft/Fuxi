@@ -15,7 +15,7 @@ class Fetch extends Module {
     val stallReq  = Output(Bool())
     val flushPc   = Input(UInt(ADDR_WIDTH.W))
     // ROM interface
-    val rom       = new SramIO(ADDR_WIDTH, DATA_WIDTH)
+    val rom       = new SramIO(ADDR_WIDTH, INST_WIDTH)
     // branch information (from decoder)
     val branch    = Input(new BranchInfoIO)
     // to next stage
