@@ -5,7 +5,11 @@ import chisel3.util.Decoupled
 
 // reference: NSP on https://dev.tencent.com/u/linjiav/p/NSP/git
 
-class AxiAddrChannel(val addrWidth: Int) extends Bundle {
+abstract class AxiInterface extends Bundle {
+  def init() = this := 0.U.asTypeOf(this)
+}
+
+class AxiAddrChannel(val addrWidth: Int) extends AxiInterface {
   // required fields
   val addr  = UInt(addrWidth.W)
   val id    = UInt(4.W)
@@ -18,7 +22,7 @@ class AxiAddrChannel(val addrWidth: Int) extends Bundle {
   val prot  = UInt(3.W)
 }
 
-abstract class AxiDataChannel(val dataWidth: Int) extends Bundle {
+abstract class AxiDataChannel(val dataWidth: Int) extends AxiInterface {
   val data  = UInt(dataWidth.W)
   val id    = UInt(4.W)
   val last  = Bool()
@@ -34,15 +38,27 @@ class AxiWriteDataChannel(dataWidth: Int)
   val strb  = UInt((dataWidth / 8).W)
 }
 
-class AxiWriteRespChannel extends Bundle {
+class AxiWriteRespChannel extends AxiInterface {
   val id    = UInt(4.W)
   val resp  = UInt(2.W)
 }
 
-class AxiMaster(val addrWidth: Int, val dataWidth: Int) extends Bundle {
+class AxiMaster(val addrWidth: Int, val dataWidth: Int)
+      extends AxiInterface {
   val readAddr  = Decoupled(new AxiAddrChannel(addrWidth))
   val readData  = Flipped(Decoupled(new AxiReadDataChannel(dataWidth)))
   val writeAddr = Decoupled(new AxiAddrChannel(addrWidth))
   val writeData = Decoupled(new AxiWriteDataChannel(dataWidth))
   val writeResp = Flipped(Decoupled(new AxiWriteRespChannel))
+
+  override def init() = {
+    readAddr.bits.init()
+    readAddr.valid := false.B
+    readData.ready := false.B
+    writeAddr.bits.init()
+    writeAddr.valid := false.B
+    writeData.bits.init()
+    writeData.valid := false.B
+    writeResp.ready := false.B
+  }
 }
