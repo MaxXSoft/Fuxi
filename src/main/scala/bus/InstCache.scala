@@ -51,6 +51,9 @@ class InstCache extends Module {
   val startAddr   = Cat(tagSel, lineSel, 0.U(ICACHE_LINE_WIDTH.W))
   val cacheHit    = valid(lineSel) && tag(lineSel) === tagSel
 
+  // read data from cache line
+  rdata := lines.read(lineDataSel)
+
   // main finite state machine
   when (io.flush) {
     // flush all valid bits
@@ -60,11 +63,8 @@ class InstCache extends Module {
       is (sIdle) {
         // cache idle
         when (io.sram.en) {
-          when (cacheHit) {
-            // read data from cache line
-            rdata := lines.read(lineDataSel)
-          } .otherwise {
-            // switch state
+          // cache miss, switch state
+          when (!cacheHit) {
             ren   := true.B
             raddr := startAddr
             state := sAddr
@@ -96,7 +96,6 @@ class InstCache extends Module {
         state           := sIdle
         valid(lineSel)  := true.B
         tag(lineSel)    := tagSel
-        rdata           := lines.read(lineDataSel)
       }
     }
   }
