@@ -33,10 +33,10 @@ class TLB(val size: Int) extends Module {
 
   // all TLB entries
   val valid = RegInit(VecInit(Seq.fill(size) { false.B }))
-  val data  = Reg(Vec(size, new Bundle {
+  val data  = Mem(size, new Bundle {
     val vpn   = UInt(VPN_WIDTH.W)
     val entry = new TlbEntry
-  }))
+  })
 
   // pointer to the TLB entry to be written
   val pointer = RegInit(0.U(width.W))

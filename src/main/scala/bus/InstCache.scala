@@ -31,7 +31,7 @@ class InstCache extends Module {
 
   // all cache lines
   val valid = RegInit(VecInit(Seq.fill(ICACHE_SIZE) { false.B }))
-  val tag   = Reg(Vec(ICACHE_SIZE, UInt(tagWidth.W)))
+  val tag   = Mem(ICACHE_SIZE, UInt(tagWidth.W))
   val lines = SyncReadMem(ICACHE_SIZE * dataMemSize, UInt(INST_WIDTH.W))
 
   // AXI control
