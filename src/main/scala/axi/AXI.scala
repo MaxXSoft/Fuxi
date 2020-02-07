@@ -3,7 +3,7 @@ package axi
 import chisel3._
 import chisel3.util.Decoupled
 
-// reference: NSP on https://dev.tencent.com/u/linjiav/p/NSP/git
+// reference: https://github.com/nhynes/chisel3-axi
 
 abstract class AxiInterface extends Bundle {
   def init() = this := 0.U.asTypeOf(this)
