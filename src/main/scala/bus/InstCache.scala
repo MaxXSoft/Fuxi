@@ -58,6 +58,8 @@ class InstCache extends Module {
   when (io.flush) {
     // flush all valid bits
     for (i <- 0 until ICACHE_SIZE) valid(i) := false.B
+    // reset state
+    state := sIdle
   } .otherwise {
     switch (state) {
       is (sIdle) {
