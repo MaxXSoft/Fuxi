@@ -37,7 +37,7 @@ object Parameters {
   val ICACHE_LINE_WIDTH = 6                       // 2^6 = 64 bytes/line
   val ICACHE_LINE_SIZE  = 1 << ICACHE_LINE_WIDTH
   val DCACHE_WIDTH      = 7                       // 2^7 = 128 lines
-  val DCACHE_SIZE       = 1 << ICACHE_WIDTH
+  val DCACHE_SIZE       = 1 << DCACHE_WIDTH
   val DCACHE_LINE_WIDTH = 6                       // 2^6 = 64 bytes/line
-  val DCACHE_LINE_SIZE  = 1 << ICACHE_LINE_WIDTH
+  val DCACHE_LINE_SIZE  = 1 << DCACHE_LINE_WIDTH
 }
