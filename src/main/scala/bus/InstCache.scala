@@ -95,9 +95,9 @@ class InstCache extends Module {
       }
       is (sUpdate) {
         // update cache line & make data ready
-        state           := sIdle
         valid(lineSel)  := true.B
         tag(lineSel)    := tagSel
+        state           := sIdle
       }
     }
   }
