@@ -112,7 +112,3 @@ class InstCache extends Module {
   io.axi.readAddr.bits.burst  := 1.U          // incrementing-address
   io.axi.readData.ready       := true.B
 }
-
-object InstCache extends App {
-  Driver.execute(args, () => new InstCache)
-}
