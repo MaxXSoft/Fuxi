@@ -40,4 +40,8 @@ object Parameters {
   val DCACHE_SIZE       = 1 << DCACHE_WIDTH
   val DCACHE_LINE_WIDTH = 6                       // 2^6 = 64 bytes/line
   val DCACHE_LINE_SIZE  = 1 << DCACHE_LINE_WIDTH
+
+  // uncached address space
+  val UNCACHED_ADDR_START = "h10000000".U(ADDR_WIDTH.W)
+  val UNCACHED_ADDR_END   = "h20000000".U(ADDR_WIDTH.W)
 }
