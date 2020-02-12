@@ -34,8 +34,9 @@ class DataCache extends Module {
   require(log2Ceil(burstLen) <= io.axi.readAddr.bits.len.getWidth)
 
   // states of finite state machine
-  val (sIdle :: sReadAddr :: sReadData :: sWriteAddr :: sWriteData ::
-       sFlushAddr :: sFlushData :: sUpdate :: Nil) = Enum(6)
+  val (sIdle :: sReadAddr :: sReadData :: sReadUpdate ::
+       sWriteAddr :: sWriteData ::
+       sFlushAddr :: sFlushData :: sFlushUpdate :: Nil) = Enum(9)
   val state = RegInit(sIdle)
 
   // all cache lines
@@ -47,14 +48,14 @@ class DataCache extends Module {
 
   // AXI control
   val dataOffset  = Reg(UInt(log2Ceil(dataMemSize + 1).W))
+  val dataOfsRef  = dataOffset(log2Ceil(dataMemSize) - 1, 0)
   val aren        = RegInit(false.B)
   val raddr       = Reg(UInt(ADDR_WIDTH.W))
   val awen        = RegInit(false.B)
   val waddr       = Reg(UInt(ADDR_WIDTH.W))
   val wen         = RegInit(false.B)
-  val wdata       = Reg(UInt(DATA_WIDTH.W))
+  val wdata       = WireInit(0.U(DATA_WIDTH.W))
   val wlast       = wen && dataOffset === (burstLen + 1).U
-  val rdata       = Reg(UInt(DATA_WIDTH.W))
 
   // cache line selectors
   val tagSel      = io.sram.addr(ADDR_WIDTH - 1,
@@ -63,7 +64,7 @@ class DataCache extends Module {
                                  DCACHE_LINE_WIDTH)
   val lineDataSel = io.sram.addr(DCACHE_WIDTH + DCACHE_LINE_WIDTH - 1,
                                  burstSize)
-  val dataSel     = Cat(lineSel, dataOffset)
+  val dataSel     = Cat(lineSel, dataOfsRef)
   val startRaddr  = Cat(tagSel, lineSel, 0.U(DCACHE_LINE_WIDTH.W))
   val startWaddr  = Cat(tag(lineSel), lineSel, 0.U(DCACHE_LINE_WIDTH.W))
   val lineWen     = (0 until io.sram.wen.getWidth).map(i => io.sram.wen(i))
@@ -74,10 +75,7 @@ class DataCache extends Module {
   val isDirty   = realDirty.reduce(_||_)
   val nextDirty = PriorityEncoder(realDirty)(DCACHE_WIDTH - 1, 0)
   val flushAddr = Cat(tag(nextDirty), nextDirty, 0.U(DCACHE_LINE_WIDTH.W))
-  val flushSel  = Cat(nextDirty, dataOffset)
-
-  // read data from cache line
-  rdata := Cat(lines.read(lineDataSel).reverse)
+  val flushSel  = Cat(nextDirty, dataOfsRef)
 
   // main finite state machine
   switch (state) {
@@ -109,7 +107,7 @@ class DataCache extends Module {
       aren := true.B
       raddr := startRaddr
       // switch state
-      when (io.axi.readAddr.ready) {
+      when (aren && io.axi.readAddr.ready) {
         aren := false.B
         dataOffset := 0.U
         state := sReadData
@@ -126,15 +124,19 @@ class DataCache extends Module {
         valid(lineSel) := true.B
         dirty(lineSel) := false.B
         tag(lineSel) := tagSel
-        state := sUpdate
+        state := sReadUpdate
       }
+    }
+    is (sReadUpdate) {
+      // wait for 'rdata' to be ready
+      state := sIdle
     }
     is (sWriteAddr) {
       // send write address to bus
       awen := true.B
       waddr := startWaddr
       // switch state
-      when (io.axi.writeAddr.ready) {
+      when (awen && io.axi.writeAddr.ready) {
         awen := false.B
         dataOffset := 0.U
         state := sWriteData
@@ -161,7 +163,7 @@ class DataCache extends Module {
       awen := true.B
       waddr := flushAddr
       // switch state
-      when (io.axi.writeAddr.ready) {
+      when (awen && io.axi.writeAddr.ready) {
         awen := false.B
         dataOffset := 0.U
         state := sFlushData
@@ -180,19 +182,19 @@ class DataCache extends Module {
       when (wlast) {
         wen := false.B
         valid(nextDirty) := false.B
-        state := Mux(isDirty, sFlushAddr, sIdle)
+        state := sFlushUpdate
       }
     }
-    is (sUpdate) {
-      // wait for 'rdata' to be ready
-      state := sIdle
+    is (sFlushUpdate) {
+      // determine if need to flush next line
+      state := Mux(isDirty, sFlushAddr, sIdle)
     }
   }
 
   // SRAM signals
   io.sram.valid := state === sIdle && Mux(io.flush, !isDirty, cacheHit)
   io.sram.fault := false.B
-  io.sram.rdata := rdata
+  io.sram.rdata := Cat(lines.read(lineDataSel).reverse)
 
   // AXI signals
   io.axi.init()
