@@ -37,7 +37,6 @@ class InstCache extends Module {
   // AXI control
   val ren         = RegInit(false.B)
   val raddr       = Reg(UInt(ADDR_WIDTH.W))
-  val rdata       = Reg(UInt(INST_WIDTH.W))
   val dataOffset  = Reg(UInt(log2Ceil(dataMemSize).W))
 
   // cache line selectors
@@ -50,9 +49,6 @@ class InstCache extends Module {
   val dataSel     = Cat(lineSel, dataOffset)
   val startAddr   = Cat(tagSel, lineSel, 0.U(ICACHE_LINE_WIDTH.W))
   val cacheHit    = valid(lineSel) && tag(lineSel) === tagSel
-
-  // read data from cache line
-  rdata := lines.read(lineDataSel)
 
   // main finite state machine
   when (io.flush) {
@@ -105,7 +101,7 @@ class InstCache extends Module {
   // SRAM signals
   io.sram.valid := state === sIdle && cacheHit
   io.sram.fault := false.B
-  io.sram.rdata := rdata
+  io.sram.rdata := lines.read(lineDataSel)
 
   // AXI signals
   io.axi.init()
@@ -115,4 +111,8 @@ class InstCache extends Module {
   io.axi.readAddr.bits.len    := burstLen.U   // beats per burst
   io.axi.readAddr.bits.burst  := 1.U          // incrementing-address
   io.axi.readData.ready       := true.B
+}
+
+object InstCache extends App {
+  Driver.execute(args, () => new InstCache)
 }
