@@ -32,7 +32,7 @@ class Fetch extends Module {
 
   // update PC
   val nextPc = Mux(io.flush, io.flushPc,
-               Mux(io.stall || !io.rom.valid, pc,
+               Mux(io.stall, pc,
                Mux(bpu.io.predTaken, bpu.io.predTarget,
                    pc + (INST_WIDTH / 8).U)))
   pc := nextPc
