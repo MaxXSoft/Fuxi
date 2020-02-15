@@ -4,7 +4,6 @@ import chisel3._
 
 import io._
 import consts.Parameters._
-import consts.Instructions.NOP
 import bpu.BranchPredictor
 
 class Fetch extends Module {
@@ -23,7 +22,7 @@ class Fetch extends Module {
   })
 
   // program counter
-  val pc = RegInit(RESET_PC - (INST_WIDTH / 8).U)
+  val pc = RegInit(RESET_PC)
 
   // branch predictor
   val bpu = Module(new BranchPredictor)
@@ -43,12 +42,11 @@ class Fetch extends Module {
   // ROM control signals
   io.rom.en     := true.B
   io.rom.wen    := 0.U
-  io.rom.addr   := nextPc
+  io.rom.addr   := pc
   io.rom.wdata  := 0.U
 
   // output signals
-  io.fetch.inst       := Mux(io.rom.valid && !io.rom.fault,
-                             io.rom.rdata, NOP)
+  io.fetch.valid      := io.rom.valid && !io.rom.fault
   io.fetch.pc         := pc
   io.fetch.taken      := bpu.io.predTaken
   io.fetch.target     := bpu.io.predTarget
