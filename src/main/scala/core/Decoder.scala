@@ -7,7 +7,8 @@ import io._
 import consts.Control._
 import consts.ExceptType._
 import consts.CsrOp._
-import consts.Parameters.ADDR_WIDTH
+import consts.Instructions.NOP
+import consts.Parameters.{ADDR_WIDTH, INST_WIDTH}
 import consts.MduOp.MDU_NOP
 import consts.LsuOp.LSU_NOP
 
@@ -15,7 +16,10 @@ class Decoder extends Module {
   val io = IO(new Bundle {
     // from fetch stage
     val fetch   = Input(new FetchIO)
+    // from ROM
+    val inst    = Input(UInt(INST_WIDTH.W))
     // pipeline control
+    val stallId = Input(Bool())
     val flushIf = Output(Bool())
     val flushPc = Output(UInt(ADDR_WIDTH.W))
     // regfile read channels
@@ -27,7 +31,13 @@ class Decoder extends Module {
     val decoder = Output(new DecoderIO)
   })
 
-  val inst  = io.fetch.inst
+  // fetch instruction data from ROM
+  // TODO: a little bit tricky and ugly, fix it?
+  val stallDelay  = RegNext(io.stallId)
+  val lastInst    = Reg(UInt(INST_WIDTH.W))
+  val inst        = Mux(!io.fetch.valid, NOP,
+                    Mux(stallDelay, lastInst, io.inst))
+  when (!stallDelay) { lastInst := io.inst }
 
   // regfile addresses
   val rd  = inst(11, 7)
@@ -57,7 +67,7 @@ class Decoder extends Module {
   // control signals
   val ((regEn1: Bool) :: (regEn2: Bool) :: (regWen: Bool) ::
        aluSrc1 :: aluSrc2 :: aluOp :: branchFlag :: lsuOp :: csrOp ::
-       mduOp :: excType :: Nil) = ListLookup(io.fetch.inst, DEFAULT, TABLE)
+       mduOp :: excType :: Nil) = ListLookup(inst, DEFAULT, TABLE)
   
   // branch taken/target
   val isBranch    = branchFlag =/= BR_N

@@ -16,10 +16,11 @@ class DecoderUnitTester(c: Decoder) extends PeekPokeTester(c) {
   val reg2  = 0x12345679
 
   def pokeDecoder(inst: Int) = {
-    poke(c.io.fetch.inst, inst)
+    poke(c.io.fetch.valid, true)
     poke(c.io.fetch.pc, pc)
     poke(c.io.fetch.predIndex, 0)
     poke(c.io.fetch.pageFault, false)
+    poke(c.io.inst, inst)
     poke(c.io.read1.data, reg1)
     poke(c.io.read2.data, reg2)
   }
