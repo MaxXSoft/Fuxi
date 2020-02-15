@@ -61,6 +61,8 @@ class Core extends Module {
 
   // decoder stage
   decoder.io.fetch    <> ifid.io.next
+  decoder.io.inst     := io.rom.rdata
+  decoder.io.stallId  := control.io.stallId
   decoder.io.read1    <> resolve.io.regRead1
   decoder.io.read2    <> resolve.io.regRead2
   idex.io.flush       := control.io.flush
