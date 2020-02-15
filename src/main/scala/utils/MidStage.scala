@@ -17,7 +17,7 @@ class MidStage[T <: StageIO](sio: T) extends Module {
 
   // latch stage IO in every cycle
   val ff = RegInit(sio, sio.default())
-  when (io.flush || io.stallPrev && !io.stallNext) {
+  when (io.flush || (io.stallPrev && !io.stallNext)) {
     ff := sio.default()
   } .elsewhen(!io.stallPrev) {
     ff := io.prev
