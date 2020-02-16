@@ -85,7 +85,7 @@ class InstCache extends Module {
           lines.write(dataSel, io.axi.readData.bits.data)
         }
         // switch state
-        when (io.axi.readData.bits.last) {
+        when (io.axi.readData.valid && io.axi.readData.bits.last) {
           state := sUpdate
         }
       }
