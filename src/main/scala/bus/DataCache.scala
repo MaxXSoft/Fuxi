@@ -192,7 +192,7 @@ class DataCache extends Module {
   }
 
   // SRAM signals
-  io.sram.valid := state === sIdle && cacheHit
+  io.sram.valid := state === sIdle && Mux(io.flush, !isDirty, cacheHit)
   io.sram.fault := false.B
   io.sram.rdata := Cat(lines.read(lineDataSel).reverse)
 
