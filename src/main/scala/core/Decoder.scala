@@ -113,7 +113,7 @@ class Decoder extends Module {
   val csrOperation  = Mux(illegalFetch, CSR_NOP, csrActOp)
 
   // pipeline control
-  io.flushIf  := branchMiss
+  io.flushIf  := !io.stallId && branchMiss
   io.flushPc  := flushPc
 
   // regfile read signals
