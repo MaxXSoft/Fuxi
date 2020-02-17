@@ -76,7 +76,8 @@ class Mem extends Module {
   // stall request
   val memStall  = Mux(amoOp =/= AMO_OP_NOP, !amo.io.ready,
                       en && !io.ram.valid)
-  val stallReq  = memStall || io.csrBusy
+  val fencStall = flushDc && !io.ram.valid
+  val stallReq  = memStall || fencStall || io.csrBusy
 
   // write back data
   val data = Mux(checkExcMon, Mux(io.excMon.valid, 0.U, 1.U),
