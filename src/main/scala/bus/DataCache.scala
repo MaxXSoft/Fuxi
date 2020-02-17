@@ -120,7 +120,7 @@ class DataCache extends Module {
         lines.write(dataSel, DataCache.toBytes(io.axi.readData.bits.data))
       }
       // switch state
-      when (io.axi.readAddr.valid && io.axi.readData.bits.last) {
+      when (io.axi.readData.valid && io.axi.readData.bits.last) {
         valid(lineSel) := true.B
         dirty(lineSel) := false.B
         tag(lineSel) := tagSel
