@@ -81,11 +81,11 @@ class DataCache extends Module {
   switch (state) {
     is (sIdle) {
       // cache idle
-      when (io.sram.en) {
-        when (io.flush && isDirty) {
-          // flush next dirty cache line
-          state := sFlushAddr
-        } .elsewhen (cacheHit) {
+      when (io.flush && isDirty) {
+        // flush next dirty cache line
+        state := sFlushAddr
+      } .elsewhen (io.sram.en) {
+        when (cacheHit) {
           // write data to cache line
           when (io.sram.wen =/= 0.U) {
             lines.write(lineDataSel, DataCache.toBytes(io.sram.wdata),
