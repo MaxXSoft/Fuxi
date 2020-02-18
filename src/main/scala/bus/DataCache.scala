@@ -144,9 +144,9 @@ class DataCache extends Module {
     }
     is (sWriteData) {
       // send write data to bus
+      wdata := Cat(lines.read(dataSel).reverse)
       when (io.axi.writeData.ready && !wlast) {
         wen := true.B
-        wdata := Cat(lines.read(dataSel).reverse)
         dataOffset := dataOffset + 1.U
       } .otherwise {
         wen := false.B
@@ -171,9 +171,9 @@ class DataCache extends Module {
     }
     is (sFlushData) {
       // send flush (write) data to bus
+      wdata := Cat(lines.read(flushSel).reverse)
       when (io.axi.writeData.ready && !wlast) {
         wen := true.B
-        wdata := Cat(lines.read(flushSel).reverse)
         dataOffset := dataOffset + 1.U
       } .otherwise {
         wen := false.B
