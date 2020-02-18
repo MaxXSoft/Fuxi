@@ -131,7 +131,7 @@ class Mem extends Module {
 
   // pipeline control
   io.stallReq := stallReq
-  io.flushReq := flushIc || flushIt
+  io.flushReq := !stallReq && (flushIc || flushIt)
   io.flushPc  := io.alu.currentPc + 4.U
 
   // RAM control signals
