@@ -1,4 +1,4 @@
-// an Verilog wrapper module of Fuxi
+// a Verilog wrapper module of Fuxi
 module FuxiWrapper(
   input         clk,
   input         rst,
