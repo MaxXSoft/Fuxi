@@ -40,12 +40,14 @@ class InstCache extends Module {
   val dataOffset  = Reg(UInt(log2Ceil(dataMemSize).W))
 
   // cache line selectors
-  val tagSel      = io.sram.addr(ADDR_WIDTH - 1,
-                                 ICACHE_WIDTH + ICACHE_LINE_WIDTH)
-  val lineSel     = io.sram.addr(ICACHE_WIDTH + ICACHE_LINE_WIDTH - 1,
-                                 ICACHE_LINE_WIDTH)
-  val lineDataSel = io.sram.addr(ICACHE_WIDTH + ICACHE_LINE_WIDTH - 1,
-                                 burstSize)
+  val sramAddr    = Reg(UInt(ADDR_WIDTH.W))
+  val selAddr     = Mux(state === sIdle, io.sram.addr, sramAddr)
+  val tagSel      = selAddr(ADDR_WIDTH - 1,
+                            ICACHE_WIDTH + ICACHE_LINE_WIDTH)
+  val lineSel     = selAddr(ICACHE_WIDTH + ICACHE_LINE_WIDTH - 1,
+                            ICACHE_LINE_WIDTH)
+  val lineDataSel = selAddr(ICACHE_WIDTH + ICACHE_LINE_WIDTH - 1,
+                            burstSize)
   val dataSel     = Cat(lineSel, dataOffset)
   val startAddr   = Cat(tagSel, lineSel, 0.U(ICACHE_LINE_WIDTH.W))
   val cacheHit    = valid(lineSel) && tag(lineSel) === tagSel
@@ -63,9 +65,10 @@ class InstCache extends Module {
         when (io.sram.en) {
           // cache miss, switch state
           when (!cacheHit) {
-            ren   := true.B
-            raddr := startAddr
-            state := sAddr
+            ren       := true.B
+            raddr     := startAddr
+            sramAddr  := io.sram.addr
+            state     := sAddr
           }
         }
       }
