@@ -65,8 +65,8 @@ class MemUnitTester(c: Mem) extends PeekPokeTester(c) {
     if (wen != 0) {
       expect(c.io.ram.en, true)
       expect(c.io.ram.wen, wen)
+      expect(c.io.ram.wdata, wdata)
     }
-    expect(c.io.ram.wdata, wdata)
   }
 
   def expectLsu() = {
@@ -122,19 +122,19 @@ class MemUnitTester(c: Mem) extends PeekPokeTester(c) {
   pokeLsu(LSU_SB, 0x12345679)
   pokeExc(EXC_STAMO, 0x00000200, false, false)
   simulateLatency()
-  expectLsu(2)
+  expectLsu(2, wdata << 8)
   expectEm()
   expectExc()
   pokeLsu(LSU_SB, 0x1234567a)
   pokeExc(EXC_STAMO, 0x00000200, false, false)
   simulateLatency()
-  expectLsu(4)
+  expectLsu(4, wdata << 16)
   expectEm()
   expectExc()
   pokeLsu(LSU_SB, 0x1234567b)
   pokeExc(EXC_STAMO, 0x00000200, false, false)
   simulateLatency()
-  expectLsu(8)
+  expectLsu(8, wdata << 24)
   expectEm()
   expectExc()
 
@@ -154,7 +154,7 @@ class MemUnitTester(c: Mem) extends PeekPokeTester(c) {
   pokeLsu(LSU_SH, 0x1234567a)
   pokeExc(EXC_STAMO, 0x00000200, false, false)
   simulateLatency()
-  expectLsu(12)
+  expectLsu(12, wdata << 16)
   expectEm()
   expectExc()
   pokeLsu(LSU_SH, 0x1234567b)
