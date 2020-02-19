@@ -67,6 +67,7 @@ class CoreBus extends Module {
   immu.io.basePpn := io.tlb.basePpn
   immu.io.sum     := io.tlb.sum
   immu.io.smode   := io.tlb.smode
+  immu.io.lookup  := io.rom.en
   immu.io.write   := io.rom.wen =/= 0.U
   immu.io.vaddr   := io.rom.addr
 
@@ -93,6 +94,7 @@ class CoreBus extends Module {
   dmmu.io.basePpn := io.tlb.basePpn
   dmmu.io.sum     := io.tlb.sum
   dmmu.io.smode   := io.tlb.smode
+  dmmu.io.lookup  := io.ram.en
   dmmu.io.write   := io.ram.wen =/= 0.U
   dmmu.io.vaddr   := io.ram.addr
 

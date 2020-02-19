@@ -40,7 +40,8 @@ class MMU(val size: Int, val isInst: Boolean) extends Module {
     val basePpn = Input(UInt(PPN_WIDTH.W))
     val sum     = Input(Bool())
     val smode   = Input(Bool())
-    // address channel
+    // address lookup channel
+    val lookup  = Input(Bool())
     val write   = Input(Bool())
     val vaddr   = Input(UInt(ADDR_WIDTH.W))
     val valid   = Output(Bool())
@@ -68,7 +69,7 @@ class MMU(val size: Int, val isInst: Boolean) extends Module {
   tlb.io.went   := entry
 
   // valid flag
-  val tlbHit  = tlb.io.valid && state === sIdle
+  val tlbHit  = state === sIdle && tlb.io.valid
   val valid   = !io.en || tlbHit
 
   // fault flag
@@ -95,7 +96,7 @@ class MMU(val size: Int, val isInst: Boolean) extends Module {
     switch (state) {
       is (sIdle) {
         // entry not found in TLB
-        when (!tlb.io.valid) {
+        when (io.lookup && !tlb.io.valid) {
           state := sAddr
           addr  := getPteAddr(io.basePpn, io.vaddr, (LEVELS - 1).U)
           level := (LEVELS - 1).U
