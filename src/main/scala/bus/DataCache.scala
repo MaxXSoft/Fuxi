@@ -58,12 +58,14 @@ class DataCache extends Module {
   val wlast       = wen && dataOffset === (burstLen + 1).U
 
   // cache line selectors
-  val tagSel      = io.sram.addr(ADDR_WIDTH - 1,
-                                 DCACHE_WIDTH + DCACHE_LINE_WIDTH)
-  val lineSel     = io.sram.addr(DCACHE_WIDTH + DCACHE_LINE_WIDTH - 1,
-                                 DCACHE_LINE_WIDTH)
-  val lineDataSel = io.sram.addr(DCACHE_WIDTH + DCACHE_LINE_WIDTH - 1,
-                                 burstSize)
+  val sramAddr    = Reg(UInt(ADDR_WIDTH.W))
+  val selAddr     = Mux(state === sIdle, io.sram.addr, sramAddr)
+  val tagSel      = selAddr(ADDR_WIDTH - 1,
+                            DCACHE_WIDTH + DCACHE_LINE_WIDTH)
+  val lineSel     = selAddr(DCACHE_WIDTH + DCACHE_LINE_WIDTH - 1,
+                            DCACHE_LINE_WIDTH)
+  val lineDataSel = selAddr(DCACHE_WIDTH + DCACHE_LINE_WIDTH - 1,
+                            burstSize)
   val dataSel     = Cat(lineSel, dataOfsRef)
   val startRaddr  = Cat(tagSel, lineSel, 0.U(DCACHE_LINE_WIDTH.W))
   val startWaddr  = Cat(tag(lineSel), lineSel, 0.U(DCACHE_LINE_WIDTH.W))
@@ -95,9 +97,11 @@ class DataCache extends Module {
           }
         } .elsewhen (valid(lineSel) && dirty(lineSel)) {
           // write dirty to memory and invalidate
+          sramAddr := io.sram.addr
           state := sWriteAddr
         } .otherwise {
           // read from memory
+          sramAddr := io.sram.addr
           state := sReadAddr
         }
       }
