@@ -19,7 +19,6 @@ class PipelineController extends Module {
     // hazard flags
     val load      = Input(Bool())
     val csr       = Input(Bool())
-    val csrBusy   = Input(Bool())
     // exception information
     val except    = Input(new ExceptInfoIO)
     // CSR status
@@ -52,7 +51,7 @@ class PipelineController extends Module {
   val excFlush  = io.except.hasTrap
   val memFlush  = io.memFlush
   // avoid CSR RAW hazard before trap handling
-  val flushAll  = (excFlush || memFlush) && !io.csrBusy
+  val flushAll  = excFlush || memFlush
   val flushIf   = flushAll || io.decFlush
   val flushPc   = Mux(excFlush, excPc,
                   Mux(memFlush, io.memTarget, io.decTarget))
