@@ -76,7 +76,7 @@ class MMU(val size: Int, val isInst: Boolean) extends Module {
   val rFault  = if (!isInst) !io.write && !tlb.io.rent.r else false.B
   val wFault  = io.write && !tlb.io.rent.w
   val xFault  = if (isInst) !tlb.io.rent.x else false.B
-  val uFault  = io.smode && !io.sum && !tlb.io.rent.u
+  val uFault  = io.smode && !io.sum && tlb.io.rent.u
   val vmFault = daFault || rFault || wFault || xFault || uFault
   val fault   = io.en && vmFault
 
@@ -152,6 +152,6 @@ class MMU(val size: Int, val isInst: Boolean) extends Module {
 
   // output signals
   io.valid  := valid
-  io.fault  := fault
+  io.fault  := valid && fault
   io.paddr  := paddr
 }
