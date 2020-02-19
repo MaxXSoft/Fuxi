@@ -69,7 +69,6 @@ class CoreBus extends Module {
   immu.io.smode   := io.tlb.smode
   immu.io.write   := io.rom.wen =/= 0.U
   immu.io.vaddr   := io.rom.addr
-  io.rom.fault    := immu.io.fault
 
   // demux for I-MMU's data interface & ROM interface
   val idemux = Module(new SramDemux2(ADDR_WIDTH, DATA_WIDTH))
@@ -84,6 +83,9 @@ class CoreBus extends Module {
   icache.io.flush := io.cache.flushInst
   icache.io.axi   <> io.inst
 
+  // ROM interface
+  io.rom.fault  := immu.io.fault
+
   // data MMU
   val dmmu = Module(new MMU(DTLB_SIZE, false))
   dmmu.io.en      := io.tlb.en
@@ -93,7 +95,6 @@ class CoreBus extends Module {
   dmmu.io.smode   := io.tlb.smode
   dmmu.io.write   := io.ram.wen =/= 0.U
   dmmu.io.vaddr   := io.ram.addr
-  io.ram.fault    := dmmu.io.fault
 
   // demux for D-MMU's data interface & RAM interface
   val ddemux = Module(new SramDemux2(ADDR_WIDTH, DATA_WIDTH))
@@ -118,4 +119,7 @@ class CoreBus extends Module {
   val uncached = Module(new Uncached)
   uncached.io.sram  <> mux.io.out2
   uncached.io.axi   <> io.uncached
+
+  // RAM interface
+  io.ram.fault  := dmmu.io.fault
 }
