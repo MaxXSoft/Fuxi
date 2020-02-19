@@ -71,7 +71,17 @@ class Mem extends Module {
   val ramWen  = Mux(wen, writeEn, Mux(checkExcMon, scWen, amoWen))
 
   // write data
-  val wdata = Mux(wen || checkExcMon, io.alu.lsuData, amo.io.ramWdata)
+  def mapWriteData(i: Int, w: Int) =
+      (i * w / 8).U -> (io.alu.lsuData << (i * w))
+  val byteSeq = 0 until ADDR_WIDTH /  8 map { i => mapWriteData(i,  8) }
+  val halfSeq = 0 until ADDR_WIDTH / 16 map { i => mapWriteData(i, 16) }
+  val wordSeq = 0 until ADDR_WIDTH / 32 map { i => mapWriteData(i, 32) }
+  val lsuData = MuxLookup(width, 0.U, Seq(
+    LS_DATA_BYTE -> MuxLookup(sel, 0.U, byteSeq),
+    LS_DATA_HALF -> MuxLookup(sel, 0.U, halfSeq),
+    LS_DATA_WORD -> MuxLookup(sel, 0.U, wordSeq),
+  ))
+  val wdata   = Mux(wen || checkExcMon, lsuData, amo.io.ramWdata)
 
   // stall request
   val memStall  = Mux(amoOp =/= AMO_OP_NOP, !amo.io.ready,
