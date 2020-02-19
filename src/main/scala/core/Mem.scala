@@ -160,7 +160,7 @@ class Mem extends Module {
   io.excMon.addr  := addr
 
   // exception information
-  io.except.hasTrap   := hasTrap
+  io.except.hasTrap   := !io.csrBusy && hasTrap
   io.except.isSret    := isSret
   io.except.isMret    := isMret
   io.except.excCause  := excCause
