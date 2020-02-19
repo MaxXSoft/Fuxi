@@ -138,7 +138,6 @@ class Core extends Module {
   control.io.memTarget  := mem.io.flushPc
   control.io.load       := resolve.io.loadFlag
   control.io.csr        := resolve.io.csrFlag
-  control.io.csrBusy    := csrfile.io.busy
   control.io.except     <> mem.io.except
   control.io.csrSepc    := csrfile.io.sepc
   control.io.csrMepc    := csrfile.io.mepc
