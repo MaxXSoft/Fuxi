@@ -6,13 +6,7 @@ import chisel3.util._
 import io._
 import consts.Parameters._
 import axi.AxiMaster
-
-// some helper functions
-object DataCache {
-  def toBytes(data: UInt) = VecInit(0 until data.getWidth / 8 map {
-    i => data((i + 1) * 8 - 1, i * 8)
-  })
-}
+import utils.BlockMem
 
 // direct mapped data cache
 class DataCache extends Module {
@@ -43,8 +37,7 @@ class DataCache extends Module {
   val valid = RegInit(VecInit(Seq.fill(DCACHE_SIZE) { false.B }))
   val dirty = Reg(Vec(DCACHE_SIZE, Bool()))
   val tag   = Mem(DCACHE_SIZE, UInt(tagWidth.W))
-  val lines = SyncReadMem(DCACHE_SIZE * dataMemSize,
-                          Vec(DATA_WIDTH / 8, UInt(8.W)))
+  val lines = Module(new BlockMem(DCACHE_SIZE * dataMemSize, DATA_WIDTH))
 
   // AXI control
   val dataOffset  = Reg(UInt(log2Ceil(dataMemSize + 1).W))
@@ -54,7 +47,6 @@ class DataCache extends Module {
   val awen        = RegInit(false.B)
   val waddr       = Reg(UInt(ADDR_WIDTH.W))
   val wen         = RegInit(false.B)
-  val wdata       = WireInit(0.U(DATA_WIDTH.W))
   val wlast       = wen && dataOffset === (burstLen + 1).U
 
   // cache line selectors
@@ -69,7 +61,6 @@ class DataCache extends Module {
   val dataSel     = Cat(lineSel, dataOfsRef)
   val startRaddr  = Cat(tagSel, lineSel, 0.U(DCACHE_LINE_WIDTH.W))
   val startWaddr  = Cat(tag(lineSel), lineSel, 0.U(DCACHE_LINE_WIDTH.W))
-  val lineWen     = (0 until io.sram.wen.getWidth).map(i => io.sram.wen(i))
 
   // cache state & flush selector
   val cacheHit  = valid(lineSel) && tag(lineSel) === tagSel
@@ -78,6 +69,19 @@ class DataCache extends Module {
   val nextDirty = PriorityEncoder(realDirty)(DCACHE_WIDTH - 1, 0)
   val flushAddr = Cat(tag(nextDirty), nextDirty, 0.U(DCACHE_LINE_WIDTH.W))
   val flushSel  = Cat(nextDirty, dataOfsRef)
+
+  // read from / write to cache line
+  val lineEnCpu   = state === sIdle && !io.flush && io.sram.en && cacheHit
+  val lineEnRead  = state === sReadData && io.axi.readData.valid
+  val lineEnWrite = state === sWriteData
+  val lineEnFlush = state === sFlushData
+  lines.io.en     := true.B
+  lines.io.wen    := Mux(lineEnCpu, io.sram.wen,
+                     Mux(lineEnRead, wordWriteEn.U, 0.U))
+  lines.io.addr   := Mux(lineEnRead || lineEnWrite, dataSel,
+                     Mux(lineEnFlush, flushSel, lineDataSel))
+  lines.io.wdata  := Mux(lineEnCpu, io.sram.wdata,
+                                    io.axi.readData.bits.data)
 
   // main finite state machine
   switch (state) {
@@ -90,8 +94,6 @@ class DataCache extends Module {
         when (cacheHit) {
           // write data to cache line
           when (io.sram.wen =/= 0.U) {
-            lines.write(lineDataSel, DataCache.toBytes(io.sram.wdata),
-                        io.sram.wen.asBools)
             // set dirty bit
             dirty(lineSel) := true.B
           }
@@ -121,7 +123,6 @@ class DataCache extends Module {
       // fetch data from bus
       when (io.axi.readData.valid) {
         dataOffset := dataOffset + 1.U
-        lines.write(dataSel, DataCache.toBytes(io.axi.readData.bits.data))
       }
       // switch state
       when (io.axi.readData.valid && io.axi.readData.bits.last) {
@@ -148,7 +149,6 @@ class DataCache extends Module {
     }
     is (sWriteData) {
       // send write data to bus
-      wdata := Cat(lines.read(dataSel).reverse)
       when (io.axi.writeData.ready && !wlast) {
         wen := true.B
         dataOffset := dataOffset + 1.U
@@ -175,7 +175,6 @@ class DataCache extends Module {
     }
     is (sFlushData) {
       // send flush (write) data to bus
-      wdata := Cat(lines.read(flushSel).reverse)
       when (io.axi.writeData.ready && !wlast) {
         wen := true.B
         dataOffset := dataOffset + 1.U
@@ -198,7 +197,7 @@ class DataCache extends Module {
   // SRAM signals
   io.sram.valid := state === sIdle && Mux(io.flush, !isDirty, cacheHit)
   io.sram.fault := false.B
-  io.sram.rdata := Cat(lines.read(lineDataSel).reverse)
+  io.sram.rdata := lines.io.rdata
 
   // AXI signals
   io.axi.init()
@@ -214,7 +213,7 @@ class DataCache extends Module {
   io.axi.writeAddr.bits.len   := burstLen.U   // beats per burst
   io.axi.writeAddr.bits.burst := 1.U          // incrementing-address
   io.axi.writeData.valid      := wen
-  io.axi.writeData.bits.data  := wdata
+  io.axi.writeData.bits.data  := lines.io.rdata
   io.axi.writeData.bits.last  := wlast
   io.axi.writeData.bits.strb  := wordWriteEn.U
   io.axi.writeResp.ready      := true.B
