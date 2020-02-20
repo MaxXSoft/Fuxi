@@ -30,12 +30,12 @@ class MDU extends Module {
   val opr2      = Mux(isOpr2Neg, -io.opr2, io.opr2)
 
   // multiplier
-  val mul       = Module(new Multiplier(DATA_WIDTH))
+  val mul       = Module(new Multiplier(DATA_WIDTH, 1))
   val mulOut    = Mux(isAnsNeg, -mul.io.result, mul.io.result)
   val mulAns    = Mux(hiRem, mulOut(DATA_WIDTH * 2 - 1, DATA_WIDTH),
                              mulOut(DATA_WIDTH - 1, 0))
   mul.io.en    := mulEn
-  mul.io.flush := io.flush
+  mul.io.flush := io.flush || (mulEn && mul.io.done)
   mul.io.opr1  := opr1
   mul.io.opr2  := opr2
 
