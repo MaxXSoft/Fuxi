@@ -26,9 +26,9 @@ object Parameters {
   val RESET_PC  = "h00000200".U(ADDR_WIDTH.W)
 
   // TLB
-  val ITLB_WIDTH  = 5
+  val ITLB_WIDTH  = 4                 // 2^4 = 16 entries
   val ITLB_SIZE   = 1 << ITLB_WIDTH
-  val DTLB_WIDTH  = 5
+  val DTLB_WIDTH  = 4                 // 2^4 = 16 entries
   val DTLB_SIZE   = 1 << DTLB_WIDTH
 
   // cache
