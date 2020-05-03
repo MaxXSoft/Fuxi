@@ -342,3 +342,4 @@ hs_err_pid*
 .bloop
 .metals
 debug
+metals.sbt
