@@ -12,9 +12,12 @@ class SramMux2(val addrWidth: Int, val dataWidth: Int) extends Module {
     val out2  = new SramIO(addrWidth, dataWidth)
   })
 
-  io.in.valid := Mux(io.sel2, io.out2.valid, io.out1.valid)
-  io.in.fault := Mux(io.sel2, io.out2.fault, io.out1.fault)
-  io.in.rdata := Mux(io.sel2, io.out2.rdata, io.out1.rdata)
+  // delay for read data
+  val rdata_sel = RegNext(io.sel2)
+
+  io.in.valid   := Mux(io.sel2, io.out2.valid, io.out1.valid)
+  io.in.fault   := Mux(io.sel2, io.out2.fault, io.out1.fault)
+  io.in.rdata   := Mux(rdata_sel, io.out2.rdata, io.out1.rdata)
 
   io.out1.en    := io.in.en && !io.sel2
   io.out1.wen   := io.in.wen
