@@ -4,7 +4,7 @@ module AXIBridge(
   input           clk,
   input           rst_n,
   // AXI slave interface
-  input   [3:0]   axi_arid,
+  input   [5:0]   axi_arid,
   input   [31:0]  axi_araddr,
   input   [7:0]   axi_arlen,
   input   [2:0]   axi_arsize,
@@ -14,13 +14,13 @@ module AXIBridge(
   input   [2:0]   axi_arprot,
   input           axi_arvalid,
   output          axi_arready,
-  output  [3:0]   axi_rid,
+  output  [5:0]   axi_rid,
   output  [31:0]  axi_rdata,
   output  [1:0]   axi_rresp,
   output          axi_rlast,
   output          axi_rvalid,
   input           axi_rready,
-  input   [3:0]   axi_awid,
+  input   [5:0]   axi_awid,
   input   [31:0]  axi_awaddr,
   input   [7:0]   axi_awlen,
   input   [2:0]   axi_awsize,
@@ -30,13 +30,13 @@ module AXIBridge(
   input   [2:0]   axi_awprot,
   input           axi_awvalid,
   output          axi_awready,
-  input   [3:0]   axi_wid,
+  input   [5:0]   axi_wid,
   input   [31:0]  axi_wdata,
   input   [3:0]   axi_wstrb,
   input           axi_wlast,
   input           axi_wvalid,
   output          axi_wready,
-  output  [3:0]   axi_bid,
+  output  [5:0]   axi_bid,
   output  [1:0]   axi_bresp,
   output          axi_bvalid,
   input           axi_bready,
@@ -52,6 +52,7 @@ module AXIBridge(
 
   wire    ar_enter    = axi_arvalid & axi_arready;
   wire    r_retire    = axi_rvalid  & axi_rready & axi_rlast;
+  wire    r_valid     = busy & r_or_w & !r_retire;
   wire    aw_enter    = axi_awvalid & axi_awready;
   wire    w_enter     = axi_wvalid  & axi_wready & axi_wlast;
   wire    b_retire    = axi_bvalid  & axi_bready;
@@ -59,7 +60,7 @@ module AXIBridge(
   assign  axi_arready = ~busy & (!r_or_w | !axi_awvalid);
   assign  axi_awready = ~busy & ( r_or_w | !axi_arvalid);
 
-  reg [3 :0]  buf_id;
+  reg [5 :0]  buf_id;
   reg [31:0]  buf_addr;
   reg [7 :0]  buf_len;
   reg [2 :0]  buf_size;
@@ -73,7 +74,7 @@ module AXIBridge(
   always @(posedge clk) begin
     if (!rst_n) begin
       r_or_w    <= 1'b0;
-      buf_id    <= 4'b0;
+      buf_id    <= 6'b0;
       buf_addr  <= 32'h0;
       buf_len   <= 8'b0;
       buf_size  <= 3'b0;
@@ -97,6 +98,7 @@ module AXIBridge(
 
   reg rvalid_reg;
   reg rlast_reg;
+  assign  axi_rdata   = gpi_rdata;
   assign  axi_rvalid  = rvalid_reg;
   assign  axi_rlast   = rlast_reg;
   always @(posedge clk) begin
@@ -104,7 +106,7 @@ module AXIBridge(
       rvalid_reg  <= 1'b0;
       rlast_reg   <= 1'b0;
     end
-    else if (busy & r_or_w & !r_retire) begin
+    else if (r_valid) begin
       rvalid_reg  <= 1'b1;
       rlast_reg   <= 1'b1;
     end
@@ -112,8 +114,6 @@ module AXIBridge(
       rvalid_reg  <= 1'b0;
     end
   end
-
-  assign  axi_rdata   = gpi_rdata;
 
   reg bvalid_reg;
   assign  axi_bvalid  = bvalid_reg;
@@ -128,8 +128,8 @@ module AXIBridge(
   assign  axi_bresp   = 2'b0;
   assign  axi_rresp   = 2'b0;
 
-  assign  gpi_read    = ar_enter;
-  assign  gpi_write   = aw_enter;
+  assign  gpi_read    = r_valid;
+  assign  gpi_write   = w_enter;
   assign  gpi_addr    = gpi_read ? axi_araddr :
                         gpi_write ? axi_awaddr : 32'h0;
   assign  gpi_wdata   = axi_wdata;
