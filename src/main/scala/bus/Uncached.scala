@@ -29,6 +29,7 @@ class Uncached extends Module {
   val rdata   = Reg(UInt(DATA_WIDTH.W))
   val arvalid = state === sReadAddr
   val awvalid = state === sWriteAddr
+  val rvalid  = io.axi.readData.valid && io.axi.readData.bits.last
 
   // main finite state machine
   switch (state) {
@@ -43,7 +44,7 @@ class Uncached extends Module {
       }
     }
     is (sReadData) {
-      when (io.axi.readData.valid && io.axi.readData.bits.last) {
+      when (rvalid) {
         rdata := io.axi.readData.bits.data
         state := sEnd
       }
@@ -65,7 +66,7 @@ class Uncached extends Module {
   }
 
   // SRAM signals
-  io.sram.valid := state === sEnd
+  io.sram.valid := state === sEnd || rvalid
   io.sram.fault := false.B
   io.sram.rdata := rdata
 
