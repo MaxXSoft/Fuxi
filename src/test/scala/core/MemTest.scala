@@ -44,6 +44,7 @@ class MemUnitTester(c: Mem) extends PeekPokeTester(c) {
   def pokeExc(excType: BigInt, pc: Int,
               hasInt: Boolean, userMode: Boolean) = {
     poke(c.io.alu.excType, excType)
+    poke(c.io.alu.valid, true)
     poke(c.io.alu.inst, inst)
     poke(c.io.alu.currentPc, pc)
     poke(c.io.csrHasInt, hasInt)
