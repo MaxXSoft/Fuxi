@@ -49,7 +49,8 @@ class CsrFile extends Module {
   val mepc      = RegInit(MepcCsr.default)
   val mcause    = RegInit(McauseCsr.default)
   val mtval     = RegInit(MtvalCsr.default)
-  val mip       = RegInit(MipCsr.default)
+  val mipReal   = RegInit(MipCsr.default)
+  val mip       = MipCsr.default
   val mcycle    = RegInit(McycleCsr.default)
   val minstret  = RegInit(MinstretCsr.default)
   val sstatus   = SstatusCsr(mstatus)
@@ -153,12 +154,15 @@ class CsrFile extends Module {
   ))
 
   // CSR status signals
-  val hasIntS   = sstatus.sie &&
-                  (sip.asUInt & sie.asUInt & mideleg.asUInt).orR
-  val hasIntM   = mstatus.mie &&
-                  (mip.asUInt & mie.asUInt & ~mideleg.asUInt).orR
+  val hasIntS   = Mux(mode < CSR_MODE_S ||
+                          (mode === CSR_MODE_S && mstatus.sie),
+                      (sip.asUInt & sie.asUInt & mideleg.asUInt).orR,
+                      false.B)
+  val hasIntM   = Mux(mode <= CSR_MODE_S || mstatus.mie,
+                      (mip.asUInt & mie.asUInt & ~mideleg.asUInt).orR,
+                      false.B)
   val hasInt    = hasIntM || hasIntS
-  val handIntS  = !mode(1) && hasIntS
+  val handIntS  = hasInt && !hasIntM
   val hasExc    = io.except.hasTrap && !hasInt
   val hasExcS   = hasExc && medeleg.asUInt()(io.except.excCause(4, 0))
   val handExcS  = !mode(1) && hasExcS
@@ -175,14 +179,22 @@ class CsrFile extends Module {
                       mtvec.base) << 2
   val trapVec   = Mux(handIntS || handExcS, trapVecS, trapVecM)
 
+  // interrupt info
+  mip.meip := mipReal.meip | io.irq.extern
+  mip.seip := mipReal.seip | io.irq.extern
+  mip.mtip := mipReal.mtip | io.irq.timer
+  mip.stip := mipReal.stip | io.irq.timer
+  mip.msip := mipReal.msip | io.irq.soft
+  mip.ssip := mipReal.ssip | io.irq.soft
+
   // update current privilege mode
   val intMode   = Mux(handIntS, CSR_MODE_S, CSR_MODE_M)
   val sretMode  = Cat(false.B, sstatus.spp)
   val mretMode  = mstatus.mpp
+  val excMode   = Mux(handExcS, CSR_MODE_S, CSR_MODE_M)
   val trapMode  = Mux(hasInt, intMode,
                   Mux(io.except.isSret, sretMode,
-                  Mux(io.except.isMret, mretMode,
-                  Mux(handExcS, CSR_MODE_S, CSR_MODE_M))))
+                  Mux(io.except.isMret, mretMode, excMode)))
   val nextMode  = Mux(io.except.hasTrap && !writeEn, trapMode, mode)
   mode := nextMode
 
@@ -204,7 +216,7 @@ class CsrFile extends Module {
       mie.castAssign(SieCsr(), writeData)
     }
     when (io.write.addr === CSR_SIP) {
-      mip.castAssign(SipCsr(), writeData)
+      mipReal.castAssign(SipCsr(), writeData)
     }
     when (io.write.addr === CSR_MCYCLE) {
       mcycle.data := Cat(mcycle.data(63, 32), writeData)
@@ -233,7 +245,7 @@ class CsrFile extends Module {
     when (io.write.addr === CSR_MEPC)     { mepc <= writeData }
     when (io.write.addr === CSR_MCAUSE)   { mcause <= writeData }
     when (io.write.addr === CSR_MTVAL)    { mtval <= writeData }
-    when (io.write.addr === CSR_MIP)      { mip <= writeData }
+    when (io.write.addr === CSR_MIP)      { mipReal <= writeData }
   } .elsewhen (io.except.hasTrap) {
     // handle trap
     when (io.except.isSret) {
@@ -265,14 +277,6 @@ class CsrFile extends Module {
       mstatus.mie   := false.B
       mstatus.mpp   := mode
     }
-  } .otherwise {
-    // update interrupt-pending register
-    mip.meip    := io.irq.extern
-    mip.seip    := io.irq.extern
-    mip.mtip    := io.irq.timer
-    mip.stip    := io.irq.timer
-    mip.msip    := io.irq.soft
-    mip.ssip    := io.irq.soft
   }
 
   // read channel signals
