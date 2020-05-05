@@ -267,8 +267,7 @@ class MidelegCsr extends CsrBundle {
 
   override def <=(d: UInt) = {
     requireWidth(d)
-    data  := Cat(d(11), 0.U(1.W), d(9), 0.U(1.W), d(7), 0.U(1.W),
-                 d(5), 0.U(1.W), d(3), 0.U(1.W), d(1), 0.U(1.W))
+    data  := Cat(0.U(2.W), d(9), 0.U(3.W), d(5), 0.U(3.W), d(1), 0.U(1.W))
   }
 }
 
