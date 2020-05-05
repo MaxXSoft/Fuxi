@@ -50,6 +50,7 @@ class DecoderIO extends StageIO {
   // exception type
   val excType   = UInt(EXC_TYPE_WIDTH.W)
   // instruction info
+  val valid     = Bool()
   val inst      = UInt(INST_WIDTH.W)
   val currentPc = UInt(ADDR_WIDTH.W)
 }
@@ -66,6 +67,7 @@ class AluIO extends StageIO {
   // exception type
   val excType   = UInt(EXC_TYPE_WIDTH.W)
   // instruction info
+  val valid     = Bool()
   val inst      = UInt(INST_WIDTH.W)
   val currentPc = UInt(ADDR_WIDTH.W)
 }
