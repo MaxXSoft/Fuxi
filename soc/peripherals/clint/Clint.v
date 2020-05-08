@@ -135,11 +135,16 @@ module Clint(
 
   // interrupt signal output
   wire  [63:0]  mtime_r2_full, mtimecmp_full;
+  reg           timer_intr;
 
   assign mtime_r2_full  = {mtimeh_r2, mtime_r2};
   assign mtimecmp_full  = {mtimecmph, mtimecmp};
   assign intr_soft      = msip;
-  assign intr_timer     = mtime_r2_full >= mtimecmp_full;
+  assign intr_timer     = timer_intr;
+
+  always @(posedge clk) begin
+    timer_intr <= mtime_r2_full >= mtimecmp_full;
+  end
 
 
   // peripheral read
