@@ -19,7 +19,7 @@ class ExclusiveMonitor extends Module {
   val flag  = RegInit(false.B)
   val addr  = RegInit(0.U(ADDR_WIDTH.W))
 
-  when (io.flush || io.update.clear) {
+  when (io.flush || (io.update.clear && io.update.addr === addr)) {
     flag  := false.B
     addr  := 0.U
   } .elsewhen (io.update.set) {
