@@ -108,9 +108,9 @@ class MemUnitTester(c: Mem) extends PeekPokeTester(c) {
     expect(c.io.mem.excMon.clear, !isSet)
   }
 
-  def expectEm() = {
+  def expectEm(wen: Boolean) = {
     expect(c.io.mem.excMon.set, false)
-    expect(c.io.mem.excMon.clear, false)
+    expect(c.io.mem.excMon.clear, wen)
   }
 
   // SB
@@ -118,25 +118,25 @@ class MemUnitTester(c: Mem) extends PeekPokeTester(c) {
   pokeExc(EXC_STAMO, 0x00000200, false, false)
   simulateLatency()
   expectLsu(1)
-  expectEm()
+  expectEm(true)
   expectExc()
   pokeLsu(LSU_SB, 0x12345679)
   pokeExc(EXC_STAMO, 0x00000200, false, false)
   simulateLatency()
   expectLsu(2, wdata << 8)
-  expectEm()
+  expectEm(true)
   expectExc()
   pokeLsu(LSU_SB, 0x1234567a)
   pokeExc(EXC_STAMO, 0x00000200, false, false)
   simulateLatency()
   expectLsu(4, wdata << 16)
-  expectEm()
+  expectEm(true)
   expectExc()
   pokeLsu(LSU_SB, 0x1234567b)
   pokeExc(EXC_STAMO, 0x00000200, false, false)
   simulateLatency()
   expectLsu(8, wdata << 24)
-  expectEm()
+  expectEm(true)
   expectExc()
 
   // SH
@@ -144,25 +144,25 @@ class MemUnitTester(c: Mem) extends PeekPokeTester(c) {
   pokeExc(EXC_STAMO, 0x00000200, false, false)
   simulateLatency()
   expectLsu(3)
-  expectEm()
+  expectEm(true)
   expectExc()
   pokeLsu(LSU_SH, 0x12345679)
   pokeExc(EXC_STAMO, 0x00000200, false, false)
   simulateLatency()
   expectLsu(0)
-  expectEm()
+  expectEm(true)
   expectExc(EXC_STAMO_ADDR, 0x00000200, 0x12345679)
   pokeLsu(LSU_SH, 0x1234567a)
   pokeExc(EXC_STAMO, 0x00000200, false, false)
   simulateLatency()
   expectLsu(12, wdata << 16)
-  expectEm()
+  expectEm(true)
   expectExc()
   pokeLsu(LSU_SH, 0x1234567b)
   pokeExc(EXC_STAMO, 0x00000200, false, false)
   simulateLatency()
   expectLsu(0)
-  expectEm()
+  expectEm(true)
   expectExc(EXC_STAMO_ADDR, 0x00000200, 0x1234567b)
 
   // SW
@@ -170,25 +170,25 @@ class MemUnitTester(c: Mem) extends PeekPokeTester(c) {
   pokeExc(EXC_STAMO, 0x00000200, false, false)
   simulateLatency()
   expectLsu(15)
-  expectEm()
+  expectEm(true)
   expectExc()
   pokeLsu(LSU_SW, 0x12345679)
   pokeExc(EXC_STAMO, 0x00000200, false, false)
   simulateLatency()
   expectLsu(0)
-  expectEm()
+  expectEm(true)
   expectExc(EXC_STAMO_ADDR, 0x00000200, 0x12345679)
   pokeLsu(LSU_SW, 0x1234567a)
   pokeExc(EXC_STAMO, 0x00000200, false, false)
   simulateLatency()
   expectLsu(0)
-  expectEm()
+  expectEm(true)
   expectExc(EXC_STAMO_ADDR, 0x00000200, 0x1234567a)
   pokeLsu(LSU_SW, 0x1234567b)
   pokeExc(EXC_STAMO, 0x00000200, false, false)
   simulateLatency()
   expectLsu(0)
-  expectEm()
+  expectEm(true)
   expectExc(EXC_STAMO_ADDR, 0x00000200, 0x1234567b)
 
   // LW
@@ -196,12 +196,12 @@ class MemUnitTester(c: Mem) extends PeekPokeTester(c) {
   pokeExc(EXC_LOAD, 0x00000200, false, false)
   simulateLatency()
   expectLsu()
-  expectEm()
+  expectEm(false)
   expectExc()
   pokeLsu(LSU_LW, 0x12345679)
   pokeExc(EXC_LOAD, 0x00000200, false, false)
   simulateLatency()
-  expectEm()
+  expectEm(false)
   expectExc(EXC_LOAD_ADDR, 0x00000200, 0x12345679)
 
   // LR/SC
@@ -237,7 +237,7 @@ class MemUnitTester(c: Mem) extends PeekPokeTester(c) {
   expect(c.io.mem.reg.data, rdata)
   expectLsu()
   expectExc()
-  expectEm()
+  expectEm(true)
 
   // FENCE
   pokeLsu(LSU_FENC, 0)
@@ -248,7 +248,7 @@ class MemUnitTester(c: Mem) extends PeekPokeTester(c) {
   expect(c.io.flushIt, false)
   expect(c.io.flushDt, false)
   expectExc()
-  expectEm()
+  expectEm(false)
 
   // FENCE.I
   pokeLsu(LSU_FENI, 0)
@@ -259,7 +259,7 @@ class MemUnitTester(c: Mem) extends PeekPokeTester(c) {
   expect(c.io.flushIt, false)
   expect(c.io.flushDt, false)
   expectExc()
-  expectEm()
+  expectEm(false)
 
   // SFENCE.VMA
   pokeLsu(LSU_FENV, 0)
@@ -270,7 +270,7 @@ class MemUnitTester(c: Mem) extends PeekPokeTester(c) {
   expect(c.io.flushIt, true)
   expect(c.io.flushDt, true)
   expectExc()
-  expectEm()
+  expectEm(false)
   pokeLsu(LSU_FENV, 0)
   pokeExc(EXC_SPRIV, 0x00000200, false, true)
   expect(c.io.stallReq, false)
@@ -279,7 +279,7 @@ class MemUnitTester(c: Mem) extends PeekPokeTester(c) {
   expect(c.io.flushIt, false)
   expect(c.io.flushDt, false)
   expectExc(EXC_ILL_INST, 0x00000200, inst)
-  expectEm()
+  expectEm(false)
 
   // other exceptions
   pokeLsu(LSU_NOP, 0)
