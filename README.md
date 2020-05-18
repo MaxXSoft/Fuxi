@@ -2,7 +2,7 @@
 
 Fuxi (伏羲) is a 32-bit pipelined RISC-V processor written in Chisel3.
 
-![datapath](img/datapath.png)
+![datapath](img/datapath.svg)
 
 ## Implemented ISAs
 
