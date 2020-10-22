@@ -11,6 +11,7 @@ import consts.Instructions.NOP
 import consts.Parameters.{ADDR_WIDTH, INST_WIDTH}
 import consts.MduOp.MDU_NOP
 import consts.LsuOp.LSU_NOP
+import freechips.rocketchip.rocket.RVCExpander
 
 class Decoder extends Module {
   val io = IO(new Bundle {
@@ -33,10 +34,17 @@ class Decoder extends Module {
 
   // fetch instruction data from ROM
   // TODO: a little bit tricky and ugly, fix it?
+
+  // compressed decoder
+  val rvc = Module(new RVCExpander)
+  rvc.io.in := io.inst
+
   val stallDelay  = RegNext(io.stallId)
   val lastInst    = Reg(UInt(INST_WIDTH.W))
   val inst        = Mux(!io.fetch.valid, NOP,
-                    Mux(stallDelay, lastInst, io.inst))
+                    Mux(stallDelay, lastInst,
+                    Mux(rvc.io.rvc, rvc.io.out.bits,
+                        io.inst)))
   when (!stallDelay) { lastInst := io.inst }
 
   // regfile addresses
@@ -89,9 +97,11 @@ class Decoder extends Module {
                       Mux(branchFlag === BR_AL,
                           Mux(regEn1, targetJALR, targetJAL),
                           targetB))
-  val branchMiss  = io.fetch.taken =/= branchTaken ||
+  val branchMiss  = io.fetch.taken =/= branchTaken || rvc.io.rvc ||
                     (branchTaken && io.fetch.target =/= branchTarget)
-  val flushPc     = Mux(branchTaken, branchTarget, io.fetch.pc + 4.U)
+  val flushPc     = Mux(branchTaken, branchTarget,
+                    Mux(rvc.io.rvc, io.fetch.pc + 2.U,
+                        io.fetch.pc + 4.U))
 
   // CSR related signals
   val csrActOp  = MuxLookup(csrOp, CSR_NOP, Seq(
