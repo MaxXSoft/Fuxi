@@ -341,5 +341,6 @@ hs_err_pid*
 # VSCode
 .bloop
 .metals
+.vscode
 debug
 metals.sbt
