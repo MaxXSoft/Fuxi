@@ -154,22 +154,25 @@ class CsrFile extends Module {
   ))
 
   // CSR status signals
+  val flagIntS  = sip.asUInt & sie.asUInt
+  val flagIntM  = mip.asUInt & mie.asUInt
   val hasIntS   = Mux(mode < CSR_MODE_S ||
                           (mode === CSR_MODE_S && mstatus.sie),
-                      (sip.asUInt & sie.asUInt & mideleg.asUInt).orR,
-                      false.B)
+                      (flagIntS & mideleg.asUInt).orR, false.B)
   val hasIntM   = Mux(mode <= CSR_MODE_S || mstatus.mie,
-                      (mip.asUInt & mie.asUInt & ~mideleg.asUInt).orR,
-                      false.B)
+                      (flagIntM & ~mideleg.asUInt).orR, false.B)
   val hasInt    = hasIntM || hasIntS
   val handIntS  = hasInt && !hasIntM
   val hasExc    = io.except.hasTrap && !hasInt
   val hasExcS   = hasExc && medeleg.asUInt()(io.except.excCause(4, 0))
   val handExcS  = !mode(1) && hasExcS
-  val intCauseS = Mux(sip.seip, EXC_S_EXT_INT,
-                  Mux(sip.ssip, EXC_S_SOFT_INT, EXC_S_TIMER_INT))
-  val intCauseM = Mux(mip.meip, EXC_M_EXT_INT,
-                  Mux(mip.msip, EXC_M_SOFT_INT, EXC_M_TIMER_INT))
+  val intCauseS = Mux(flagIntS(EXC_S_EXT_INT), EXC_S_EXT_INT,
+                  Mux(flagIntS(EXC_S_SOFT_INT), EXC_S_SOFT_INT,
+                                                EXC_S_TIMER_INT))
+  val intCauseM = Mux(flagIntM(EXC_M_EXT_INT), EXC_M_EXT_INT,
+                  Mux(flagIntM(EXC_M_SOFT_INT), EXC_M_SOFT_INT,
+                  Mux(flagIntM(EXC_M_TIMER_INT), EXC_M_TIMER_INT,
+                                                 intCauseS)))
   val intCause  = Mux(handIntS, intCauseS, intCauseM)
   val cause     = Mux(hasInt, Cat(true.B, intCause),
                               Cat(false.B, io.except.excCause))
