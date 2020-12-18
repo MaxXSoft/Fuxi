@@ -71,7 +71,7 @@ class Core extends Module {
   idex.io.prev        <> decoder.io.decoder
 
   // execute stage
-  alu.io.decoder      := idex.io.next
+  alu.io.decoder      <> idex.io.next
   alu.io.flush        := control.io.flush
   alu.io.csrRead      <> resolve.io.csrRead
   exmem.io.flush      := control.io.flush
