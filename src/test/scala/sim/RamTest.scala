@@ -29,7 +29,7 @@ class RamUnitTester(c: RAM) extends PeekPokeTester(c) {
 }
 
 object RamTest extends App {
-  Driver.execute(args, () => new RAM) {
+  if (!Driver.execute(args, () => new RAM) {
     (c) => new RamUnitTester(c)
-  }
+  }) sys.exit(1)
 }

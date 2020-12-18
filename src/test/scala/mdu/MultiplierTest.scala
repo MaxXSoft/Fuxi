@@ -29,7 +29,7 @@ class MultiplierUnitTester(c: Multiplier) extends PeekPokeTester(c) {
 }
 
 object MultiplierTest extends App {
-  Driver.execute(args, () => new Multiplier(32, 3)) {
+  if (!Driver.execute(args, () => new Multiplier(32, 3)) {
     (c) => new MultiplierUnitTester(c)
-  }
+  }) sys.exit(1)
 }

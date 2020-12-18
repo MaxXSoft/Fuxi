@@ -96,7 +96,7 @@ object CoreTest extends App {
     }
   })
 
-  Driver.execute(() => new CoreWrapper(initFile), manager) {
+  if (!Driver.execute(() => new CoreWrapper(initFile), manager) {
     (c) => new CoreUnitTester(c, traceFile, genTrace)
-  }
+  }) sys.exit(1)
 }

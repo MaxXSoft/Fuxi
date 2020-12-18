@@ -64,7 +64,7 @@ class BpUnitTester(c: BranchPredictor) extends PeekPokeTester(c) {
 }
 
 object BranchPredictorTest extends App {
-  Driver.execute(args, () => new BranchPredictor) {
+  if (!Driver.execute(args, () => new BranchPredictor) {
     (c) => new BpUnitTester(c)
-  }
+  }) sys.exit(1)
 }

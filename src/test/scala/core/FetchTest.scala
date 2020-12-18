@@ -58,7 +58,7 @@ class FetchUnitTester(c: Fetch) extends PeekPokeTester(c) {
 }
 
 object FetchTest extends App {
-  Driver.execute(args, () => new Fetch) {
+  if (!Driver.execute(args, () => new Fetch) {
     (c) => new FetchUnitTester(c)
-  }
+  }) sys.exit(1)
 }

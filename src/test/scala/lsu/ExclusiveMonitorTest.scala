@@ -57,7 +57,7 @@ class ExclusiveMonitorUnitTester(c: ExclusiveMonitor)
 }
 
 object ExclusiveMonitorTest extends App {
-  Driver.execute(args, () => new ExclusiveMonitor) {
+  if (!Driver.execute(args, () => new ExclusiveMonitor) {
     (c) => new ExclusiveMonitorUnitTester(c)
-  }
+  }) sys.exit(1)
 }

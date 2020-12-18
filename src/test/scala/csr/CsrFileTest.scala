@@ -125,7 +125,7 @@ class CsrFileUnitTester(c: CsrFile) extends PeekPokeTester(c) {
 }
 
 object CsrFileTest extends App {
-  Driver.execute(args, () => new CsrFile) {
+  if (!Driver.execute(args, () => new CsrFile) {
     (c) => new CsrFileUnitTester(c)
-  }
+  }) sys.exit(1)
 }

@@ -29,7 +29,7 @@ class DividerUnitTester(c: Divider) extends PeekPokeTester(c) {
 }
 
 object DividerTest extends App {
-  Driver.execute(args, () => new Divider(32)) {
+  if (!Driver.execute(args, () => new Divider(32)) {
     (c) => new DividerUnitTester(c)
-  }
+  }) sys.exit(1)
 }

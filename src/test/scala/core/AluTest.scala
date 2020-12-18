@@ -58,7 +58,7 @@ class AluUnitTester(c: ALU) extends PeekPokeTester(c) {
 }
 
 object AluTest extends App {
-  Driver.execute(args, () => new ALU) {
+  if (!Driver.execute(args, () => new ALU) {
     (c) => new AluUnitTester(c)
-  }
+  }) sys.exit(1)
 }

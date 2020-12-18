@@ -304,7 +304,7 @@ class MemUnitTester(c: Mem) extends PeekPokeTester(c) {
 }
 
 object MemTest extends App {
-  Driver.execute(args, () => new Mem) {
+  if (!Driver.execute(args, () => new Mem) {
     (c) => new MemUnitTester(c)
-  }
+  }) sys.exit(1)
 }

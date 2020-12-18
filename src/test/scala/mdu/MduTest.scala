@@ -69,7 +69,7 @@ class MduUnitTester(c: MDU) extends PeekPokeTester(c) {
 }
 
 object MduTest extends App {
-  Driver.execute(args, () => new MDU) {
+  if (!Driver.execute(args, () => new MDU) {
     (c) => new MduUnitTester(c)
-  }
+  }) sys.exit(1)
 }

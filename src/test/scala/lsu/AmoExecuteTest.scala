@@ -41,7 +41,7 @@ class AmoExecuteUnitTester(c: AmoExecute) extends PeekPokeTester(c) {
 }
 
 object AmoExecuteTest extends App {
-  Driver.execute(args, () => new AmoExecute) {
+  if (!Driver.execute(args, () => new AmoExecute) {
     (c) => new AmoExecuteUnitTester(c)
-  }
+  }) sys.exit(1)
 }

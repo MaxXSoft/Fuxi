@@ -119,7 +119,7 @@ class WriteBackUnitTester(c: WriteBack) extends PeekPokeTester(c) {
 }
 
 object WriteBackTest extends App {
-  Driver.execute(args, () => new WriteBack) {
+  if (!Driver.execute(args, () => new WriteBack) {
     (c) => new WriteBackUnitTester(c)
-  }
+  }) sys.exit(1)
 }
