@@ -108,7 +108,7 @@ class Mem extends Module {
   val illgSret  = io.alu.excType === EXC_SRET && io.csrMode === CSR_MODE_U
   val illgMret  = io.alu.excType === EXC_MRET && io.csrMode =/= CSR_MODE_M
   val illgSpriv = io.alu.excType === EXC_SPRIV && io.csrMode === CSR_MODE_U
-  val instAddr  = io.alu.currentPc(ADDR_ALIGN_WIDTH - 1, 0) =/= 0.U
+  val instAddr  = io.alu.excType === EXC_IADDR
   val instPage  = io.alu.excType === EXC_IPAGE
   val instIllg  = io.alu.excType === EXC_ILLEG ||
                   illgSret || illgMret || illgSpriv
@@ -140,7 +140,7 @@ class Mem extends Module {
   val excPc     = io.alu.currentPc
   val excValue  = Mux(instIllg, io.alu.inst,
                   Mux(instPage, io.alu.currentPc,
-                  Mux(memExcept || instAddr, io.alu.reg.data, 0.U)))
+                  Mux(memExcept, io.alu.reg.data, io.alu.excValue)))
 
   // pipeline control
   io.stallReq := stallReq

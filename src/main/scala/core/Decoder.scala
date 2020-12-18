@@ -8,7 +8,7 @@ import consts.Control._
 import consts.ExceptType._
 import consts.CsrOp._
 import consts.Instructions.NOP
-import consts.Parameters.{ADDR_WIDTH, INST_WIDTH}
+import consts.Parameters.{ADDR_WIDTH, ADDR_ALIGN_WIDTH, INST_WIDTH}
 import consts.MduOp.MDU_NOP
 import consts.LsuOp.LSU_NOP
 
@@ -75,6 +75,7 @@ class Decoder extends Module {
   val targetJAL   = (io.fetch.pc.asSInt + immJ.asSInt).asUInt
   val sumR1immI   = io.read1.data.asSInt + immI.asSInt
   val targetJALR  = Cat(sumR1immI(ADDR_WIDTH - 1, 1), 0.U)
+  val targetJ     = Mux(regEn1, targetJALR, targetJAL)
   val targetB     = (io.fetch.pc.asSInt + immB.asSInt).asUInt
   val branchTaken = MuxLookup(branchFlag, false.B, Seq(
     BR_AL   -> true.B,
@@ -86,12 +87,12 @@ class Decoder extends Module {
     BR_GEU  -> (io.read1.data >= io.read2.data),
   ))
   val branchTarget  = Mux(branchFlag === BR_N, 0.U,
-                      Mux(branchFlag === BR_AL,
-                          Mux(regEn1, targetJALR, targetJAL),
-                          targetB))
+                      Mux(isJump, targetJ, targetB))
   val branchMiss  = io.fetch.taken =/= branchTaken ||
                     (branchTaken && io.fetch.target =/= branchTarget)
   val flushPc     = Mux(branchTaken, branchTarget, io.fetch.pc + 4.U)
+  val addrFault   = branchTaken &&
+                    branchTarget(ADDR_ALIGN_WIDTH - 1, 0) =/= 0.U
 
   // CSR related signals
   val csrActOp  = MuxLookup(csrOp, CSR_NOP, Seq(
@@ -103,7 +104,9 @@ class Decoder extends Module {
                   Mux(regEn1, io.read1.data, rs1))
 
   // exception signal
-  val exceptType = Mux(io.fetch.pageFault, EXC_IPAGE, excType)
+  val exceptType  = Mux(io.fetch.pageFault, EXC_IPAGE,
+                    Mux(addrFault, EXC_IADDR, excType))
+  val exceptValue = Mux(addrFault, branchTarget, 0.U)
 
   // operation related signals
   // cancel all unnecessary operations after fetching illegal instructions
@@ -113,7 +116,7 @@ class Decoder extends Module {
   val csrOperation  = Mux(illegalFetch, CSR_NOP, csrActOp)
 
   // pipeline control
-  io.flushIf  := !io.stallId && branchMiss
+  io.flushIf  := !io.stallId && !addrFault && branchMiss
   io.flushPc  := flushPc
 
   // regfile read signals
@@ -143,6 +146,7 @@ class Decoder extends Module {
   io.decoder.csrAddr    := immI
   io.decoder.csrData    := csrData
   io.decoder.excType    := exceptType
+  io.decoder.excValue   := exceptValue
   io.decoder.valid      := io.fetch.valid
   io.decoder.inst       := inst
   io.decoder.currentPc  := io.fetch.pc
