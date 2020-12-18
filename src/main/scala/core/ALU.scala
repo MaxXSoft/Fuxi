@@ -82,6 +82,7 @@ class ALU extends Module {
   io.alu.csr.data     := io.decoder.csrData
   io.alu.csr.retired  := retired
   io.alu.excType      := excType
+  io.alu.excValue     := io.decoder.excValue
   io.alu.valid        := io.decoder.valid
   io.alu.inst         := io.decoder.inst
   io.alu.currentPc    := io.decoder.currentPc
