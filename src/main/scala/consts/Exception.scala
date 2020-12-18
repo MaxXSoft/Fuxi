@@ -14,9 +14,10 @@ object ExceptType {
   val EXC_MRET  = 4.U(EXC_TYPE_WIDTH.W)
   val EXC_ILLEG = 5.U(EXC_TYPE_WIDTH.W)   // illegal instruction
   val EXC_IPAGE = 6.U(EXC_TYPE_WIDTH.W)   // instruction page fault
-  val EXC_LOAD  = 7.U(EXC_TYPE_WIDTH.W)
-  val EXC_STAMO = 8.U(EXC_TYPE_WIDTH.W)
-  val EXC_SPRIV = 9.U(EXC_TYPE_WIDTH.W)   // S-mode instruction
+  val EXC_IADDR = 7.U(EXC_TYPE_WIDTH.W)   // instruction address misaligned
+  val EXC_LOAD  = 8.U(EXC_TYPE_WIDTH.W)
+  val EXC_STAMO = 9.U(EXC_TYPE_WIDTH.W)
+  val EXC_SPRIV = 10.U(EXC_TYPE_WIDTH.W)  // S-mode instruction
 }
 
 // exception cause
