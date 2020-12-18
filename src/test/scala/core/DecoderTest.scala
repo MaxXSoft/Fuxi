@@ -131,7 +131,7 @@ class DecoderUnitTester(c: Decoder) extends PeekPokeTester(c) {
   expectAlu(ALU_ADD, MDU_NOP, pc, 4)
   expectLsu(LSU_NOP, 0)
   expectCsr(CSR_NOP, 0, 0)
-  expectExc(EXC_NONE)
+  expectExc(EXC_IADDR)
 
   // jalr ra, -1228(ra)
   pokeDecoder(0xb34080e7)
@@ -230,7 +230,7 @@ class DecoderUnitTester(c: Decoder) extends PeekPokeTester(c) {
 }
 
 object DecoderTest extends App {
-  Driver.execute(args, () => new Decoder) {
+  if (!Driver.execute(args, () => new Decoder) {
     (c) => new DecoderUnitTester(c)
-  }
+  }) sys.exit(1)
 }
