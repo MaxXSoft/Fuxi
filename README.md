@@ -18,7 +18,7 @@ Fuxi (伏羲) is a 32-bit pipelined RISC-V processor written in Chisel3.
 
 ## Unimplemented Details
 
-Fuxi processor is designed for running [GeeOS](https://github.com/MaxXSoft/GeeOS), or other simple operating systems or bare-metal software. Consider the complexity, the following functions has not yet been implemented:
+Fuxi processor is designed for running [GeeOS](https://github.com/MaxXSoft/GeeOS), or other simple operating systems or bare-metal software. Considering the complexity, the following functions has not yet been implemented:
 
 * Memory privilege in `mstatus` register: `MPRV` bit and `MXR` bit are hardwired to 0.
 * Virtualization support in `mstatus` register: `TVM` bit, `TW` bit and `TSR` bit are hardwired to 0.
