@@ -47,8 +47,9 @@ class DecoderIO extends StageIO {
   val csrOp     = UInt(CSR_OP_WIDTH.W)
   val csrAddr   = UInt(CSR_ADDR_WIDTH.W)
   val csrData   = UInt(DATA_WIDTH.W)
-  // exception type
+  // exception information
   val excType   = UInt(EXC_TYPE_WIDTH.W)
+  val excValue  = UInt(DATA_WIDTH.W)
   // instruction info
   val valid     = Bool()
   val inst      = UInt(INST_WIDTH.W)
@@ -64,8 +65,9 @@ class AluIO extends StageIO {
   val reg       = new RegCommitIO
   // to CSR
   val csr       = new CsrCommitIO
-  // exception type
+  // exception information
   val excType   = UInt(EXC_TYPE_WIDTH.W)
+  val excValue  = UInt(DATA_WIDTH.W)
   // instruction info
   val valid     = Bool()
   val inst      = UInt(INST_WIDTH.W)
