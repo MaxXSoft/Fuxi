@@ -24,26 +24,30 @@ jobs:
       run: sbt "test:runMain csr.CsrFileTest"
 
     - name: Test LSU
-      run: sbt "test:runMain lsu.AmoExecuteTest"
-      run: sbt "test:runMain lsu.ExclusiveMonitorTest"
+      run: |
+        sbt "test:runMain lsu.AmoExecuteTest"
+        sbt "test:runMain lsu.ExclusiveMonitorTest"
 
     - name: Test MDU
-      run: sbt "test:runMain mdu.DividerTest"
-      run: sbt "test:runMain mdu.MultiplierTest"
-      run: sbt "test:runMain mdu.MduTest"
+      run: |
+        sbt "test:runMain mdu.DividerTest"
+        sbt "test:runMain mdu.MultiplierTest"
+        sbt "test:runMain mdu.MduTest"
 
     - name: Test Sim
       run: sbt "test:runMain sim.RamTest"
 
     - name: Test Stages
-      run: sbt "test:runMain core.FetchTest"
-      run: sbt "test:runMain core.DecoderTest"
-      run: sbt "test:runMain core.AluTest"
-      run: sbt "test:runMain core.MemTest"
-      run: sbt "test:runMain core.WriteBackTest"
+      run: |
+        sbt "test:runMain core.FetchTest"
+        sbt "test:runMain core.DecoderTest"
+        sbt "test:runMain core.AluTest"
+        sbt "test:runMain core.MemTest"
+        sbt "test:runMain core.WriteBackTest"
 
     - name: Test Core
-      run: sbt "test:runMain core.CoreTest -if src/test/resources/fib.txt -tf src/test/resources/fib_trace.txt"
-      run: sbt "test:runMain core.CoreTest -if src/test/resources/mdu.txt -tf src/test/resources/mdu_trace.txt"
-      run: sbt "test:runMain core.CoreTest -if src/test/resources/mecall.txt -tf src/test/resources/mecall_trace.txt"
-      run: sbt "test:runMain core.CoreTest -if src/test/resources/secall.txt -tf src/test/resources/secall_trace.txt"
+      run: |
+        sbt "test:runMain core.CoreTest -if src/test/resources/fib.txt -tf src/test/resources/fib_trace.txt"
+        sbt "test:runMain core.CoreTest -if src/test/resources/mdu.txt -tf src/test/resources/mdu_trace.txt"
+        sbt "test:runMain core.CoreTest -if src/test/resources/mecall.txt -tf src/test/resources/mecall_trace.txt"
+        sbt "test:runMain core.CoreTest -if src/test/resources/secall.txt -tf src/test/resources/secall_trace.txt"
