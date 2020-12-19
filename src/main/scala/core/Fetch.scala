@@ -46,7 +46,7 @@ class Fetch extends Module {
   io.rom.wdata  := 0.U
 
   // output signals
-  io.fetch.valid      := io.rom.valid && !io.rom.fault
+  io.fetch.valid      := io.rom.valid
   io.fetch.pc         := pc
   io.fetch.taken      := bpu.io.predTaken
   io.fetch.target     := bpu.io.predTarget
