@@ -1,7 +1,7 @@
 package bus
 
 import chisel3._
-import chisel3.util.log2Ceil
+import chisel3.util.{isPow2, log2Ceil}
 
 import consts.Parameters._
 import consts.Paging._
@@ -29,6 +29,7 @@ class TLB(val size: Int) extends Module {
   })
 
   // some constants
+  require(isPow2(size), "TLB size must be a power of 2")
   val width = log2Ceil(size)
 
   // all TLB entries
