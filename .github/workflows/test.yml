@@ -45,6 +45,9 @@ jobs:
         sbt "test:runMain core.MemTest"
         sbt "test:runMain core.WriteBackTest"
 
+    - name: Test Bus
+      run: sbt "test:runMain bus.TlbTest"
+
     - name: Test Core
       run: |
         sbt "test:runMain core.CoreTest -if src/test/resources/fib.txt -tf src/test/resources/fib_trace.txt"
