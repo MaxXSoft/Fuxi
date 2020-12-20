@@ -52,7 +52,7 @@ class MMU(val size: Int, val isInst: Boolean) extends Module {
   })
 
   // states of finite state machine
-  val sIdle :: sAddr :: sRead :: sUpdate :: Nil = Enum(4)
+  val sIdle :: sAddr :: sRead :: sUpdate :: sFlush :: Nil = Enum(5)
   val state = RegInit(sIdle)
 
   // some other registers
@@ -69,8 +69,9 @@ class MMU(val size: Int, val isInst: Boolean) extends Module {
   tlb.io.went   := entry
 
   // valid flag
-  val tlbHit  = state === sIdle && tlb.io.valid
-  val valid   = !io.en || tlbHit
+  val tlbFlush  = state === sFlush
+  val tlbHit    = state === sIdle && tlb.io.valid
+  val valid     = !io.en || tlbFlush || tlbHit
 
   // fault flag
   val daFault = !tlb.io.rent.a || (io.write && !tlb.io.rent.d)
@@ -92,9 +93,12 @@ class MMU(val size: Int, val isInst: Boolean) extends Module {
   }
 
   // finite state machine of TLB fill
-  when (!io.flush && io.en) {
-    switch (state) {
-      is (sIdle) {
+  switch (state) {
+    is (sIdle) {
+      when (io.flush) {
+        // perform TLB flush
+        state := sFlush
+      } .elsewhen (io.en) {
         // entry not found in TLB
         when (io.lookup && !tlb.io.valid) {
           state := sAddr
@@ -102,47 +106,49 @@ class MMU(val size: Int, val isInst: Boolean) extends Module {
           level := (LEVELS - 1).U
         }
       }
-      is (sAddr) {
-        // wait until data valid
-        when (io.data.valid) {
-          state := sRead
-        }
-      }
-      is (sRead) {
-        // walk through page table
-        when (!pte.v || (!pte.r && pte.w)) {
-          // invalid PTE
-          raisePageFault()
-        } .elsewhen (pte.r || pte.x) {
-          when (level > 0.U && getPpnToZero(pte.ppn, level - 1.U).orR) {
-            // misaligned superpage
-            raisePageFault()
-          } .otherwise {
-            // target PTE found, write entry to TLB
-            state := sUpdate
-            entry := pte.asTlbEntry
-            // current page is a superpage
-            when (level > 0.U) {
-              entry.ppn := getSuperPpn(pte.ppn, io.vaddr, level - 1.U)
-            }
-          }
-        } .elsewhen (level === 0.U) {
-          // leaf PTE not found
-          raisePageFault()
-        } .otherwise {
-          // fetch next PTE
-          state := sAddr
-          addr  := getPteAddr(pte.ppn, io.vaddr, level - 1.U)
-          level := level - 1.U
-        }
-      }
-      is (sUpdate) {
-        // back to idle state
-        state := sIdle
+    }
+    is (sAddr) {
+      // wait until data valid
+      when (io.data.valid) {
+        state := sRead
       }
     }
-  } .otherwise {
-    state := sIdle
+    is (sRead) {
+      // walk through page table
+      when (!pte.v || (!pte.r && pte.w)) {
+        // invalid PTE
+        raisePageFault()
+      } .elsewhen (pte.r || pte.x) {
+        when (level > 0.U && getPpnToZero(pte.ppn, level - 1.U).orR) {
+          // misaligned superpage
+          raisePageFault()
+        } .otherwise {
+          // target PTE found, write entry to TLB
+          state := sUpdate
+          entry := pte.asTlbEntry
+          // current page is a superpage
+          when (level > 0.U) {
+            entry.ppn := getSuperPpn(pte.ppn, io.vaddr, level - 1.U)
+          }
+        }
+      } .elsewhen (level === 0.U) {
+        // leaf PTE not found
+        raisePageFault()
+      } .otherwise {
+        // fetch next PTE
+        state := sAddr
+        addr  := getPteAddr(pte.ppn, io.vaddr, level - 1.U)
+        level := level - 1.U
+      }
+    }
+    is (sUpdate) {
+      // back to idle state
+      state := sIdle
+    }
+    is (sFlush) {
+      // back to idle state if there is no flush request
+      when (!io.flush) { state := sIdle }
+    }
   }
 
   // data transfer signals
