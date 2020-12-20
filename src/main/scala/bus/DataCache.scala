@@ -41,6 +41,7 @@ class DataCache extends Module {
 
   // AXI control
   val dataOffset  = Reg(UInt(log2Ceil(dataMemSize + 1).W))
+  val lastOffset  = Reg(UInt(log2Ceil(dataMemSize + 1).W))
   val dataOfsRef  = dataOffset(log2Ceil(dataMemSize) - 1, 0)
   val aren        = RegInit(false.B)
   val raddr       = Reg(UInt(ADDR_WIDTH.W))
@@ -144,6 +145,7 @@ class DataCache extends Module {
       when (awen && io.axi.writeAddr.ready) {
         awen := false.B
         dataOffset := 0.U
+        lastOffset := 0.U
         state := sWriteData
       }
     }
@@ -152,8 +154,10 @@ class DataCache extends Module {
       when (io.axi.writeData.ready && !wlast) {
         wen := true.B
         dataOffset := dataOffset + 1.U
+        lastOffset := dataOffset
       } .otherwise {
         wen := false.B
+        dataOffset := lastOffset
       }
       // switch state
       when (wlast) {
