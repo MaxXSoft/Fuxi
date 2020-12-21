@@ -53,51 +53,47 @@ class InstCache extends Module {
   val cacheHit    = valid(lineSel) && tag(lineSel) === tagSel
 
   // main finite state machine
-  when (io.flush) {
-    // flush all valid bits
-    for (i <- 0 until ICACHE_SIZE) valid(i) := false.B
-    // reset state
-    state := sIdle
-  } .otherwise {
-    switch (state) {
-      is (sIdle) {
-        // cache idle
-        when (io.sram.en) {
-          // cache miss, switch state
-          when (!cacheHit) {
-            ren       := true.B
-            raddr     := startAddr
-            sramAddr  := io.sram.addr
-            state     := sAddr
-          }
-        }
+  switch (state) {
+    is (sIdle) {
+      // cache idle
+      when (io.flush) {
+        // flush all valid bits
+        valid.foreach(v => v := false.B)
+        // reset state
+        state := sIdle
+      } .elsewhen (io.sram.en && !cacheHit) {
+        // cache miss, switch state
+        ren       := true.B
+        raddr     := startAddr
+        sramAddr  := io.sram.addr
+        state     := sAddr
       }
-      is (sAddr) {
-        // send read address to bus
-        when (io.axi.readAddr.ready) {
-          // address has already been sent, switch state
-          ren         := false.B
-          dataOffset  := 0.U
-          state       := sData
-        }
+    }
+    is (sAddr) {
+      // send read address to bus
+      when (io.axi.readAddr.ready) {
+        // address has already been sent, switch state
+        ren         := false.B
+        dataOffset  := 0.U
+        state       := sData
       }
-      is (sData) {
-        // fetch data from bus
-        when (io.axi.readData.valid) {
-          dataOffset := dataOffset + 1.U
-          lines.write(dataSel, io.axi.readData.bits.data)
-        }
-        // switch state
-        when (io.axi.readData.valid && io.axi.readData.bits.last) {
-          state := sUpdate
-        }
+    }
+    is (sData) {
+      // fetch data from bus
+      when (io.axi.readData.valid) {
+        dataOffset := dataOffset + 1.U
+        lines.write(dataSel, io.axi.readData.bits.data)
       }
-      is (sUpdate) {
-        // update cache line & make data ready
-        valid(lineSel)  := true.B
-        tag(lineSel)    := tagSel
-        state           := sIdle
+      // switch state
+      when (io.axi.readData.valid && io.axi.readData.bits.last) {
+        state := sUpdate
       }
+    }
+    is (sUpdate) {
+      // update cache line & make data ready
+      valid(lineSel)  := true.B
+      tag(lineSel)    := tagSel
+      state           := sIdle
     }
   }
 
