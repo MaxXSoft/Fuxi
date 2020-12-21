@@ -46,7 +46,7 @@ class TLB(val size: Int) extends Module {
   // TLB flush/write
   when (io.flush) {
     // flush all valid bits
-    for (i <- 0 until size) valid(i) := false.B
+    valid.foreach(v => v := false.B)
   } .elsewhen (io.wen) {
     // write valid bit & data
     valid(pointer)      := true.B
