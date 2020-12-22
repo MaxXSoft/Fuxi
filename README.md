@@ -23,6 +23,13 @@ Fuxi processor is designed for running [GeeOS](https://github.com/MaxXSoft/GeeOS
 * Memory privilege in `mstatus` register: `MPRV` bit and `MXR` bit are hardwired to 0.
 * Virtualization support in `mstatus` register: `TVM` bit, `TW` bit and `TSR` bit are hardwired to 0.
 
+## Performance
+
+With default configuration:
+
+* **Dhrystone 2.1**: 0.60 DMIPS/MHz.
+* **CoreMark**: 2.15 CoreMark/MHz.
+
 ## Getting Started
 
 By issuing the following command lines, you can get generated verilog file in directory `verilog/build`:
