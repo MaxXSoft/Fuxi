@@ -192,7 +192,6 @@ object SatpCsr extends CsrObject[SatpCsr] {
 }
 
 // machine status register
-// supervisor interrupt-pending register
 class MstatusCsr extends CsrBundle {
   val sd    = Bool()
   val wpri0 = UInt(8.W)
