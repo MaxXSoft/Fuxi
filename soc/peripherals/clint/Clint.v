@@ -5,10 +5,10 @@
  *
  *  address:
  *    0x000: msip
- *    0x100: mtimecmp lo
- *    0x104: mtimecmp hi
- *    0x108: mtime lo
- *    0x10c: mtime hi
+ *    0x100: mtime lo
+ *    0x104: mtime hi
+ *    0x108: mtimecmp lo
+ *    0x10c: mtimecmp hi
  */
 module Clint(
   input           clk,
