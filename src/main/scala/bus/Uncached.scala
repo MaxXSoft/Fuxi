@@ -75,6 +75,7 @@ class Uncached extends Module {
   io.axi.readAddr.valid       := arvalid
   io.axi.readAddr.bits.addr   := io.sram.addr
   io.axi.readAddr.bits.size   := dataSize.U
+  io.axi.readAddr.bits.burst  := 1.U          // incrementing-address
   io.axi.readData.ready       := true.B
   io.axi.writeAddr.valid      := awvalid
   io.axi.writeAddr.bits.addr  := io.sram.addr
