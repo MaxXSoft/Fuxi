@@ -98,3 +98,5 @@ All of the unit test cases currently contained in this repository can only test 
 ## Copyright and License
 
 Copyright (C) 2010-2020 MaxXing. License GPLv3.
+
+Special thanks to [@Yukiteru Lee](https://github.com/wfly1998/).
