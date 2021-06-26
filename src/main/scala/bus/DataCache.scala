@@ -150,6 +150,7 @@ class DataCache extends Module {
       }
     }
     is (sWriteData) {
+      // TODO: 'wvalid' should always be high
       // send write data to bus
       when (io.axi.writeData.ready && !wlast) {
         wen := true.B
@@ -178,6 +179,7 @@ class DataCache extends Module {
       }
     }
     is (sFlushData) {
+      // TODO: 'wvalid' should always be high
       // send flush (write) data to bus
       when (io.axi.writeData.ready && !wlast) {
         wen := true.B
