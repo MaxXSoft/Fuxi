@@ -25,11 +25,11 @@ class Uncached extends Module {
   val state = RegInit(sIdle)
 
   // AXI control
-  val wen     = RegInit(false.B)
   val rdata   = Reg(UInt(DATA_WIDTH.W))
   val arvalid = state === sReadAddr
   val awvalid = state === sWriteAddr
   val rvalid  = io.axi.readData.valid && io.axi.readData.bits.last
+  val wvalid  = state === sWriteData
 
   // main finite state machine
   switch (state) {
@@ -55,8 +55,7 @@ class Uncached extends Module {
       }
     }
     is (sWriteData) {
-      wen := io.axi.writeData.ready && !io.axi.writeData.bits.last
-      when (io.axi.writeData.bits.last) {
+      when (io.axi.writeData.ready) {
         state := sWriteEnd
       }
     }
@@ -83,9 +82,9 @@ class Uncached extends Module {
   io.axi.writeAddr.valid      := awvalid
   io.axi.writeAddr.bits.addr  := io.sram.addr
   io.axi.writeAddr.bits.size  := dataSize.U
-  io.axi.writeData.valid      := wen
+  io.axi.writeData.valid      := wvalid
   io.axi.writeData.bits.data  := io.sram.wdata
-  io.axi.writeData.bits.last  := wen
+  io.axi.writeData.bits.last  := wvalid
   io.axi.writeData.bits.strb  := io.sram.wen
   io.axi.writeResp.ready      := true.B
 }
