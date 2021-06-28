@@ -55,7 +55,7 @@ class CsrFile extends Module {
   val minstret  = RegInit(MinstretCsr.default)
   val sstatus   = SstatusCsr(mstatus)
   val sie       = SieCsr(mie)
-  val sip       = SipCsr(mip)
+  val sip       = SipCsr.default
   val stvec     = RegInit(StvecCsr.default)
   val sscratch  = RegInit(SscratchCsr.default)
   val sepc      = RegInit(SepcCsr.default)
@@ -189,6 +189,9 @@ class CsrFile extends Module {
   mip.stip := mipReal.stip | io.irq.timer
   mip.msip := mipReal.msip | io.irq.soft
   mip.ssip := mipReal.ssip | io.irq.soft
+  sip.seip := mip.seip
+  sip.stip := mip.stip
+  sip.ssip := mip.ssip
 
   // update current privilege mode
   val intMode   = Mux(handIntS, CSR_MODE_S, CSR_MODE_M)
