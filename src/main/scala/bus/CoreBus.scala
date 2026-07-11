@@ -118,6 +118,8 @@ class CoreBus extends Module {
   dcache.io.sram  <> mux.io.out1
   dcache.io.flush := io.cache.flushData
   dcache.io.axi   <> io.data
+  io.cache.flushDataDone        := dcache.io.flushDone
+  io.cache.flushDataAccessFault := dcache.io.flushAccessFault
 
   // data uncached
   val uncached = Module(new Uncached)

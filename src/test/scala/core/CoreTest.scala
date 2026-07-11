@@ -18,6 +18,8 @@ class CoreWrapper(initFile: String) extends Module {
   core.io.irq.timer   := false.B
   core.io.irq.soft    := false.B
   core.io.irq.extern  := false.B
+  core.io.cache.flushDataDone        := true.B
+  core.io.cache.flushDataAccessFault := false.B
   core.io.rom         <> rom.io
   core.io.ram         <> ram.io
   core.io.debug       <> io

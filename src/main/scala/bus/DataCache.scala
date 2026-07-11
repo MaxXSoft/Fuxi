@@ -15,6 +15,8 @@ class DataCache extends Module {
     val sram  = Flipped(new SramIO(ADDR_WIDTH, DATA_WIDTH))
     // control signals
     val flush = Input(Bool())
+    val flushDone = Output(Bool())
+    val flushAccessFault = Output(Bool())
     // AXI interface
     val axi   = new AxiMaster(ADDR_WIDTH, DATA_WIDTH)
   })
@@ -31,7 +33,7 @@ class DataCache extends Module {
   val (sIdle :: sReadAddr :: sReadData :: sReadUpdate ::
        sWriteAddr :: sWriteData :: sWriteResp ::
        sFlushAddr :: sFlushData :: sFlushResp :: sFlushUpdate ::
-       sAccessFault :: Nil) = Enum(12)
+       sAccessFault :: sFlushAccessFault :: Nil) = Enum(13)
   val state = RegInit(sIdle)
 
   // all cache lines
@@ -221,7 +223,7 @@ class DataCache extends Module {
       // Do not discard a dirty line until its write response is successful.
       when (io.axi.writeResp.valid) {
         when (io.axi.writeResp.bits.resp(1)) {
-          state := sAccessFault
+          state := sFlushAccessFault
         } .otherwise {
           valid(nextDirty) := false.B
           state := sFlushUpdate
@@ -235,15 +237,23 @@ class DataCache extends Module {
     is (sAccessFault) {
       state := sIdle
     }
+    is (sFlushAccessFault) {
+      state := sIdle
+    }
   }
 
   // SRAM signals
-  io.sram.valid       := (state === sIdle &&
-                         Mux(io.flush, !isDirty, cacheHit)) ||
+  io.sram.valid       := (state === sIdle && !io.flush && cacheHit) ||
                          state === sAccessFault
   io.sram.fault       := false.B
   io.sram.accessFault := state === sAccessFault
   io.sram.rdata       := lines.io.rdata
+
+  // Cache-maintenance completion is independent of the demand SRAM path, so
+  // MMU and cached/uncached routing cannot hide it.  Fault is intentionally
+  // not gated by io.flush: Mem withdraws the request while taking the trap.
+  io.flushDone        := state === sIdle && io.flush && !isDirty
+  io.flushAccessFault := state === sFlushAccessFault
 
   // AXI signals
   io.axi.init()

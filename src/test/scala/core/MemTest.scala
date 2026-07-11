@@ -40,6 +40,8 @@ class MemUnitTester(c: Mem) extends PeekPokeTester(c) {
     poke(c.io.flush, false)
     poke(c.io.ram.fault, false)
     poke(c.io.ram.accessFault, false)
+    poke(c.io.flushDcDone, true)
+    poke(c.io.flushDcAccessFault, false)
   }
 
   def pokeExc(excType: BigInt, pc: Int,
@@ -323,6 +325,10 @@ class MemUnitTester(c: Mem) extends PeekPokeTester(c) {
   pokeExc(EXC_NONE, 0x00000200, false, false)
   poke(c.io.ram.valid, true)
   poke(c.io.ram.accessFault, true)
+  poke(c.io.flushDcDone, false)
+  expect(c.io.stallReq, true)
+  expectExc()
+  poke(c.io.flushDcAccessFault, true)
   expectExc(EXC_STAMO_ACCESS, 0x00000200, 0)
 
   pokeLsu(LSU_NOP, 0)

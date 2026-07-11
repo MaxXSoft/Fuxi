@@ -26,6 +26,8 @@ class Mem extends Module {
     // cache/TLB control
     val flushIc   = Output(Bool())
     val flushDc   = Output(Bool())
+    val flushDcDone = Input(Bool())
+    val flushDcAccessFault = Input(Bool())
     val flushIt   = Output(Bool())
     val flushDt   = Output(Bool())
     // CSR status
@@ -86,7 +88,8 @@ class Mem extends Module {
   // stall request
   val memStall  = Mux(amoOp =/= AMO_OP_NOP, !amo.io.ready,
                       en && !io.ram.valid)
-  val fencStall = flushDc && !io.ram.valid
+  val fencStall = flushDc && !io.flushDcDone &&
+                  !io.flushDcAccessFault
   val stallReq  = memStall || fencStall || io.csrBusy
 
   // Once a memory or cache-maintenance operation has started, an interrupt
@@ -135,7 +138,7 @@ class Mem extends Module {
                   io.alu.excType === EXC_MRET
   // A dirty-line writeback failure during a cache flush is imprecise, but it
   // must not be silently reported as a successful FENCE.I/SFENCE.VMA.
-  val fenceAccess = flushDc && memAccess
+  val fenceAccess = flushDc && io.flushDcAccessFault
   val syncTrap  = instAddr || instIllg || instPage || instAccess ||
                   (excMem && memExcept) || fenceAccess || excOther
   val takeInterrupt = io.csrHasInt && !memoryInProgress && !syncTrap

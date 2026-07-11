@@ -50,6 +50,7 @@ jobs:
         sbt "test:runMain bus.TlbTest"
         sbt "test:runMain bus.MmuTest"
         sbt "test:runMain bus.UncachedTest"
+        sbt "test:runMain bus.CoreBusTest"
 
     - name: Test Core
       run: |

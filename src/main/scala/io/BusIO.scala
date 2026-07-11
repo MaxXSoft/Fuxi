@@ -37,6 +37,8 @@ class TlbControlIO(val ppnWidth: Int) extends Bundle {
 class CacheControlIO extends Bundle {
   val flushInst = Output(Bool())
   val flushData = Output(Bool())
+  val flushDataDone = Input(Bool())
+  val flushDataAccessFault = Input(Bool())
 }
 
 // interrupt request
