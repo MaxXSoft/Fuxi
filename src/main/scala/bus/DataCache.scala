@@ -41,14 +41,13 @@ class DataCache extends Module {
 
   // AXI control
   val dataOffset  = Reg(UInt(log2Ceil(dataMemSize + 1).W))
-  val lastOffset  = Reg(UInt(log2Ceil(dataMemSize + 1).W))
   val dataOfsRef  = dataOffset(log2Ceil(dataMemSize) - 1, 0)
   val aren        = RegInit(false.B)
   val raddr       = Reg(UInt(ADDR_WIDTH.W))
   val awen        = RegInit(false.B)
   val waddr       = Reg(UInt(ADDR_WIDTH.W))
   val wen         = RegInit(false.B)
-  val wlast       = wen && dataOffset === (burstLen + 1).U
+  val wlast       = wen && dataOffset === burstLen.U
 
   // cache line selectors
   val sramAddr    = Reg(UInt(ADDR_WIDTH.W))
@@ -60,6 +59,14 @@ class DataCache extends Module {
   val lineDataSel = selAddr(DCACHE_WIDTH + DCACHE_LINE_WIDTH - 1,
                             burstSize)
   val dataSel     = Cat(lineSel, dataOfsRef)
+  // BlockMem has a one-cycle read latency.  While a W beat is accepted,
+  // request the following word so that the next beat remains available
+  // without a bubble.  Under backpressure, repeatedly request the current
+  // word and keep every W-channel signal stable until the handshake occurs.
+  val writeOffset = Mux(wen && io.axi.writeData.ready && !wlast,
+                        dataOffset + 1.U, dataOffset)
+  val writeOfsRef = writeOffset(log2Ceil(dataMemSize) - 1, 0)
+  val writeSel    = Cat(lineSel, writeOfsRef)
   val startRaddr  = Cat(tagSel, lineSel, 0.U(DCACHE_LINE_WIDTH.W))
   val startWaddr  = Cat(tag(lineSel), lineSel, 0.U(DCACHE_LINE_WIDTH.W))
 
@@ -69,7 +76,7 @@ class DataCache extends Module {
   val isDirty   = realDirty.reduce(_||_)
   val nextDirty = PriorityEncoder(realDirty)(DCACHE_WIDTH - 1, 0)
   val flushAddr = Cat(tag(nextDirty), nextDirty, 0.U(DCACHE_LINE_WIDTH.W))
-  val flushSel  = Cat(nextDirty, dataOfsRef)
+  val flushSel  = Cat(nextDirty, writeOfsRef)
 
   // read from / write to cache line
   val lineEnCpu   = state === sIdle && !io.flush && io.sram.en && cacheHit
@@ -79,8 +86,9 @@ class DataCache extends Module {
   lines.io.en     := true.B
   lines.io.wen    := Mux(lineEnCpu, io.sram.wen,
                      Mux(lineEnRead, wordWriteEn.U, 0.U))
-  lines.io.addr   := Mux(lineEnRead || lineEnWrite, dataSel,
-                     Mux(lineEnFlush, flushSel, lineDataSel))
+  lines.io.addr   := Mux(lineEnRead, dataSel,
+                     Mux(lineEnWrite, writeSel,
+                     Mux(lineEnFlush, flushSel, lineDataSel)))
   lines.io.wdata  := Mux(lineEnCpu, io.sram.wdata,
                                     io.axi.readData.bits.data)
 
@@ -144,27 +152,24 @@ class DataCache extends Module {
       // switch state
       when (awen && io.axi.writeAddr.ready) {
         awen := false.B
+        wen := false.B
         dataOffset := 0.U
-        lastOffset := 0.U
         state := sWriteData
       }
     }
     is (sWriteData) {
-      // TODO: 'wvalid' should always be high
-      // send write data to bus
-      when (io.axi.writeData.ready && !wlast) {
+      // Prime the synchronous cache-line read, then hold WVALID and the
+      // current beat until WREADY acknowledges it.
+      when (!wen) {
         wen := true.B
-        dataOffset := dataOffset + 1.U
-        lastOffset := dataOffset
-      } .otherwise {
-        wen := false.B
-        dataOffset := lastOffset
-      }
-      // switch state
-      when (wlast) {
-        wen := false.B
-        valid(lineSel) := false.B
-        state := sReadAddr
+      } .elsewhen (io.axi.writeData.ready) {
+        when (wlast) {
+          wen := false.B
+          valid(lineSel) := false.B
+          state := sReadAddr
+        } .otherwise {
+          dataOffset := dataOffset + 1.U
+        }
       }
     }
     is (sFlushAddr) {
@@ -174,24 +179,23 @@ class DataCache extends Module {
       // switch state
       when (awen && io.axi.writeAddr.ready) {
         awen := false.B
+        wen := false.B
         dataOffset := 0.U
         state := sFlushData
       }
     }
     is (sFlushData) {
-      // TODO: 'wvalid' should always be high
-      // send flush (write) data to bus
-      when (io.axi.writeData.ready && !wlast) {
+      // The flush path uses the same stable W-channel sequencing as eviction.
+      when (!wen) {
         wen := true.B
-        dataOffset := dataOffset + 1.U
-      } .otherwise {
-        wen := false.B
-      }
-      // switch state
-      when (wlast) {
-        wen := false.B
-        valid(nextDirty) := false.B
-        state := sFlushUpdate
+      } .elsewhen (io.axi.writeData.ready) {
+        when (wlast) {
+          wen := false.B
+          valid(nextDirty) := false.B
+          state := sFlushUpdate
+        } .otherwise {
+          dataOffset := dataOffset + 1.U
+        }
       }
     }
     is (sFlushUpdate) {
