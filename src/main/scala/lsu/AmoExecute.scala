@@ -26,6 +26,11 @@ class AmoExecute extends Module {
   val sIdle :: sStore :: sEnd :: Nil = Enum(3)
   val state = RegInit(sIdle)
 
+  // An AMO returns the value that preceded its memory update.  Capture that
+  // value on the store-completion edge instead of depending on the cache
+  // memory's implementation-specific read-during-write behaviour.
+  val oldData = RegEnable(io.ramRdata, state === sStore && io.ramValid)
+
   // operands
   val opr1 = io.ramRdata
   val opr2 = io.regOpr
@@ -71,7 +76,7 @@ class AmoExecute extends Module {
 
   // output signals
   io.ready    := state === sEnd
-  io.regWdata := io.ramRdata
+  io.regWdata := oldData
   io.ramWen   := state === sStore
   io.ramWdata := result
 }

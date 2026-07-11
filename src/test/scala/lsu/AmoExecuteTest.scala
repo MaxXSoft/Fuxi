@@ -9,6 +9,7 @@ class AmoExecuteUnitTester(c: AmoExecute) extends PeekPokeTester(c) {
     val opr1 = BigInt(rnd.nextInt.toHexString, 16)
     val opr2 = BigInt(rnd.nextInt.toHexString, 16)
     val mask = BigInt("ffffffff", 16)
+    val result = (opr1 + opr2) & mask
 
     def simulateLatency() = {
       val latency = rnd.nextInt(32)
@@ -28,8 +29,11 @@ class AmoExecuteUnitTester(c: AmoExecute) extends PeekPokeTester(c) {
     simulateLatency()
     expect(c.io.ready, false)
     expect(c.io.ramWen, true)
-    expect(c.io.ramWdata, (opr1 + opr2) & mask)
+    expect(c.io.ramWdata, result)
     simulateLatency()
+    // Model a write-first/no-change-independent memory: once the write edge
+    // has completed, its live read output may already expose the new value.
+    poke(c.io.ramRdata, result)
     expect(c.io.ready, true)
     expect(c.io.regWdata, opr1)
     step(1)
