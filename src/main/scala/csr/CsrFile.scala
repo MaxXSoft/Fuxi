@@ -162,8 +162,15 @@ class CsrFile extends Module {
   val hasIntM   = Mux(mode <= CSR_MODE_S || mstatus.mie,
                       (flagIntM & ~mideleg.asUInt).orR, false.B)
   val hasInt    = hasIntM || hasIntS
-  val handIntS  = hasInt && !hasIntM
-  val hasExc    = io.except.hasTrap && !hasInt
+  // Complete xRET before accepting an interrupt.  The pending interrupt is
+  // re-evaluated in the restored privilege mode on the following instruction
+  // boundary.  This keeps the selected trap kind consistent with the xRET
+  // status-stack update below.
+  val isXret    = io.except.hasTrap &&
+                  (io.except.isSret || io.except.isMret)
+  val takeInt   = io.except.hasTrap && hasInt && !isXret
+  val handIntS  = takeInt && !hasIntM
+  val hasExc    = io.except.hasTrap && !takeInt && !isXret
   val hasExcS   = hasExc && medeleg.asUInt()(io.except.excCause(4, 0))
   val handExcS  = !mode(1) && hasExcS
   val intCauseS = Mux(flagIntS(EXC_S_EXT_INT), EXC_S_EXT_INT,
@@ -174,11 +181,13 @@ class CsrFile extends Module {
                   Mux(flagIntM(EXC_M_TIMER_INT), EXC_M_TIMER_INT,
                                                  intCauseS)))
   val intCause  = Mux(handIntS, intCauseS, intCauseM)
-  val cause     = Mux(hasInt, Cat(true.B, intCause),
+  val cause     = Mux(takeInt, Cat(true.B, intCause),
                               Cat(false.B, io.except.excCause))
-  val trapVecS  = Mux(stvec.mode(0) && hasInt, (stvec.base + cause(29, 0)),
+  val trapVecS  = Mux(stvec.mode(0) && takeInt,
+                      (stvec.base + cause(29, 0)),
                       stvec.base) << 2
-  val trapVecM  = Mux(mtvec.mode(0) && hasInt, (mtvec.base + cause(29, 0)),
+  val trapVecM  = Mux(mtvec.mode(0) && takeInt,
+                      (mtvec.base + cause(29, 0)),
                       mtvec.base) << 2
   val trapVec   = Mux(handIntS || handExcS, trapVecS, trapVecM)
 
@@ -198,7 +207,7 @@ class CsrFile extends Module {
   val sretMode  = Cat(false.B, sstatus.spp)
   val mretMode  = mstatus.mpp
   val excMode   = Mux(handExcS, CSR_MODE_S, CSR_MODE_M)
-  val trapMode  = Mux(hasInt, intMode,
+  val trapMode  = Mux(takeInt, intMode,
                   Mux(io.except.isSret, sretMode,
                   Mux(io.except.isMret, mretMode, excMode)))
   val nextMode  = Mux(io.except.hasTrap && !writeEn, trapMode, mode)

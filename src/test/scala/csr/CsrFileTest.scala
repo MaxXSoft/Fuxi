@@ -90,14 +90,39 @@ class CsrFileUnitTester(c: CsrFile) extends PeekPokeTester(c) {
   testRead(CSR_R, CSR_MEDELEG, true, 0x0000b35d)
 
   // return to S-mode
-  pokeWrite(CSR_RS, CSR_MSTATUS, 0x00000880)
+  // A pending interrupt must not make MRET use interrupt mode selection while
+  // its CSR updates still follow the xRET path.  Finish MRET first; the IRQ is
+  // accepted after returning to S-mode.
+  pokeWrite(CSR_RS, CSR_MSTATUS, 0x00000888)
   step(1)
   pokeWrite()
+  pokeInt(true, false, false)
   pokeExcept(false, true, 0x00000200)
+  expect(c.io.hasInt, true)
   step(1)
   pokeExcept()
   expectMode(CSR_MODE_S)
+  expect(c.io.hasInt, true)
+  pokeInt()
   testRead(CSR_R, CSR_MSTATUS, false, 0)
+
+  // Apply the same rule to SRET.  An eligible M-mode timer interrupt is
+  // deliberately pending while SRET returns to U-mode.
+  pokeInt(true, false, false)
+  pokeExcept(true, false, 0x00000200)
+  expect(c.io.hasInt, true)
+  step(1)
+  pokeExcept()
+  expectMode(CSR_MODE_U)
+  expect(c.io.hasInt, true)
+  pokeInt()
+
+  // Return to S-mode through a delegated U-mode ECALL so the remaining CSR
+  // tests keep their original starting privilege.
+  pokeExcept(EXC_U_ECALL, 0x00000180, 0)
+  step(1)
+  pokeExcept()
+  expectMode(CSR_MODE_S)
   pokeWrite(CSR_W, CSR_STVEC, 0x00103301)
   step(1)
   pokeWrite()
