@@ -162,13 +162,11 @@ class CsrFile extends Module {
   val hasIntM   = Mux(mode <= CSR_MODE_S || mstatus.mie,
                       (flagIntM & ~mideleg.asUInt).orR, false.B)
   val hasInt    = hasIntM || hasIntS
-  // Complete xRET before accepting an interrupt.  The pending interrupt is
-  // re-evaluated in the restored privilege mode on the following instruction
-  // boundary.  This keeps the selected trap kind consistent with the xRET
-  // status-stack update below.
+  // Mem selects interrupts only at a precise instruction boundary.  Complete
+  // xRET defensively even if an inconsistent record marks it as an interrupt.
   val isXret    = io.except.hasTrap &&
                   (io.except.isSret || io.except.isMret)
-  val takeInt   = io.except.hasTrap && hasInt && !isXret
+  val takeInt   = io.except.hasTrap && io.except.isInterrupt && !isXret
   val handIntS  = takeInt && !hasIntM
   val hasExc    = io.except.hasTrap && !takeInt && !isXret
   val hasExcS   = hasExc && medeleg.asUInt()(io.except.excCause(4, 0))

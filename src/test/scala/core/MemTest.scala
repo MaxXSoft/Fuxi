@@ -77,6 +77,7 @@ class MemUnitTester(c: Mem) extends PeekPokeTester(c) {
 
   def expectExc(sret: Boolean, mret: Boolean, pc: Int) = {
     expect(c.io.except.hasTrap, 1)
+    expect(c.io.except.isInterrupt, false)
     expect(c.io.except.isSret, if (sret) 1 else 0)
     expect(c.io.except.isMret, if (mret) 1 else 0)
     expect(c.io.except.excPc, pc)
@@ -84,6 +85,7 @@ class MemUnitTester(c: Mem) extends PeekPokeTester(c) {
 
   def expectExc(cause: BigInt, pc: Int, excVal: BigInt) = {
     expect(c.io.except.hasTrap, true)
+    expect(c.io.except.isInterrupt, false)
     expect(c.io.except.isSret, false)
     expect(c.io.except.isMret, false)
     expect(c.io.except.excCause, cause)
@@ -93,6 +95,7 @@ class MemUnitTester(c: Mem) extends PeekPokeTester(c) {
 
   def expectExc(cause: BigInt, pc: Int) = {
     expect(c.io.except.hasTrap, true)
+    expect(c.io.except.isInterrupt, false)
     expect(c.io.except.isSret, false)
     expect(c.io.except.isMret, false)
     expect(c.io.except.excCause, cause)
@@ -325,6 +328,45 @@ class MemUnitTester(c: Mem) extends PeekPokeTester(c) {
   pokeLsu(LSU_NOP, 0)
   pokeExc(EXC_IACCESS, 0x00000200, false, false)
   expectExc(EXC_INST_ACCESS, 0x00000200, 0x00000200)
+
+  // An interrupt arriving after a store has started must not cancel it.  The
+  // completion cycle advances the store, and the IRQ is accepted only when
+  // the following instruction reaches this stage.
+  pokeLsu(LSU_SW, 0x10000000)
+  pokeExc(EXC_STAMO, 0x00000300, false, false)
+  poke(c.io.ram.valid, false)
+  poke(c.io.ram.accessFault, false)
+  expect(c.io.ram.en, true)
+  expectExc()
+  step(1)
+
+  poke(c.io.csrHasInt, true)
+  expect(c.io.ram.en, true)
+  expectExc()
+  step(1)
+
+  poke(c.io.ram.valid, true)
+  expect(c.io.ram.en, true)
+  expectExc()
+  step(1)
+
+  pokeLsu(LSU_NOP, 0)
+  pokeExc(EXC_NONE, 0x00000304, true, false)
+  expect(c.io.except.hasTrap, true)
+  expect(c.io.except.isInterrupt, true)
+  expect(c.io.except.excPc, 0x00000304)
+
+  // A failed response remains a synchronous exception even when an IRQ is
+  // pending on the completion cycle.
+  pokeLsu(LSU_SW, 0x10000004)
+  pokeExc(EXC_STAMO, 0x00000400, false, false)
+  poke(c.io.ram.valid, false)
+  poke(c.io.ram.accessFault, false)
+  step(1)
+  poke(c.io.csrHasInt, true)
+  poke(c.io.ram.valid, true)
+  poke(c.io.ram.accessFault, true)
+  expectExc(EXC_STAMO_ACCESS, 0x00000400, 0x10000004)
 }
 
 object MemTest extends App {

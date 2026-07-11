@@ -89,6 +89,17 @@ class Mem extends Module {
   val fencStall = flushDc && !io.ram.valid
   val stallReq  = memStall || fencStall || io.csrBusy
 
+  // Once a memory or cache-maintenance operation has started, an interrupt
+  // cannot cancel it.  Keep the interrupt pending through the completion
+  // cycle so the operation can advance to writeback; it will be accepted at
+  // the following instruction boundary instead.
+  val memoryInProgress = RegInit(false.B)
+  when (io.flush) {
+    memoryInProgress := false.B
+  } .elsewhen (io.alu.valid && (en || flushDc)) {
+    memoryInProgress := stallReq
+  }
+
   // write back data
   val data = Mux(checkExcMon, Mux(io.excMon.valid, 0.U, 1.U),
              Mux(amoOp =/= AMO_OP_NOP, amo.io.regWdata, io.alu.reg.data))
@@ -125,9 +136,10 @@ class Mem extends Module {
   // A dirty-line writeback failure during a cache flush is imprecise, but it
   // must not be silently reported as a successful FENCE.I/SFENCE.VMA.
   val fenceAccess = flushDc && memAccess
-  val hasTrap   = instAddr || instIllg || instPage || instAccess ||
-                  (excMem && memExcept) || fenceAccess ||
-                  excOther || io.csrHasInt
+  val syncTrap  = instAddr || instIllg || instPage || instAccess ||
+                  (excMem && memExcept) || fenceAccess || excOther
+  val takeInterrupt = io.csrHasInt && !memoryInProgress && !syncTrap
+  val hasTrap   = syncTrap || takeInterrupt
   // trap return instructions & interruptions
   val isSret    = io.alu.excType === EXC_SRET && !instIllg
   val isMret    = io.alu.excType === EXC_MRET && !instIllg
@@ -176,6 +188,7 @@ class Mem extends Module {
 
   // exception information
   io.except.hasTrap   := !io.csrBusy && io.alu.valid && hasTrap
+  io.except.isInterrupt := takeInterrupt
   io.except.isSret    := isSret
   io.except.isMret    := isMret
   io.except.excCause  := excCause

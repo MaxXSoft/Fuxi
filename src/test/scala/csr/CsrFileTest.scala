@@ -30,6 +30,7 @@ class CsrFileUnitTester(c: CsrFile) extends PeekPokeTester(c) {
 
   def pokeExcept(sret: Boolean, mret: Boolean, pc: Int) = {
     poke(c.io.except.hasTrap, true)
+    poke(c.io.except.isInterrupt, false)
     poke(c.io.except.isSret, sret)
     poke(c.io.except.isMret, mret)
     poke(c.io.except.excCause, 0)
@@ -39,6 +40,7 @@ class CsrFileUnitTester(c: CsrFile) extends PeekPokeTester(c) {
 
   def pokeExcept(cause: BigInt, pc: Int, value: Int) = {
     poke(c.io.except.hasTrap, true)
+    poke(c.io.except.isInterrupt, false)
     poke(c.io.except.isSret, false)
     poke(c.io.except.isMret, false)
     poke(c.io.except.excCause, cause)
@@ -48,6 +50,7 @@ class CsrFileUnitTester(c: CsrFile) extends PeekPokeTester(c) {
 
   def pokeExcept() = {
     poke(c.io.except.hasTrap, false)
+    poke(c.io.except.isInterrupt, false)
     poke(c.io.except.isSret, false)
     poke(c.io.except.isMret, false)
     poke(c.io.except.excCause, 0)
@@ -143,6 +146,7 @@ class CsrFileUnitTester(c: CsrFile) extends PeekPokeTester(c) {
   step(1)
   expect(c.io.hasInt, true)
   pokeExcept(0, 0x00000100, 0)
+  poke(c.io.except.isInterrupt, true)
   expect(c.io.trapVec, 0x00000000)
   step(1)
   pokeExcept()
