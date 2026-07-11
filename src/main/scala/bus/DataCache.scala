@@ -29,8 +29,9 @@ class DataCache extends Module {
 
   // states of finite state machine
   val (sIdle :: sReadAddr :: sReadData :: sReadUpdate ::
-       sWriteAddr :: sWriteData ::
-       sFlushAddr :: sFlushData :: sFlushUpdate :: Nil) = Enum(9)
+       sWriteAddr :: sWriteData :: sWriteResp ::
+       sFlushAddr :: sFlushData :: sFlushResp :: sFlushUpdate ::
+       sAccessFault :: Nil) = Enum(12)
   val state = RegInit(sIdle)
 
   // all cache lines
@@ -48,6 +49,7 @@ class DataCache extends Module {
   val waddr       = Reg(UInt(ADDR_WIDTH.W))
   val wen         = RegInit(false.B)
   val wlast       = wen && dataOffset === burstLen.U
+  val readFault   = RegInit(false.B)
 
   // cache line selectors
   val sramAddr    = Reg(UInt(ADDR_WIDTH.W))
@@ -112,6 +114,7 @@ class DataCache extends Module {
           state := sWriteAddr
         } .otherwise {
           // read from memory
+          valid(lineSel) := false.B
           sramAddr := io.sram.addr
           state := sReadAddr
         }
@@ -125,6 +128,7 @@ class DataCache extends Module {
       when (aren && io.axi.readAddr.ready) {
         aren := false.B
         dataOffset := 0.U
+        readFault := false.B
         state := sReadData
       }
     }
@@ -132,13 +136,19 @@ class DataCache extends Module {
       // fetch data from bus
       when (io.axi.readData.valid) {
         dataOffset := dataOffset + 1.U
+        readFault := readFault || io.axi.readData.bits.resp(1)
       }
       // switch state
       when (io.axi.readData.valid && io.axi.readData.bits.last) {
-        valid(lineSel) := true.B
-        dirty(lineSel) := false.B
-        tag(lineSel) := tagSel
-        state := sReadUpdate
+        when (readFault || io.axi.readData.bits.resp(1)) {
+          valid(lineSel) := false.B
+          state := sAccessFault
+        } .otherwise {
+          valid(lineSel) := true.B
+          dirty(lineSel) := false.B
+          tag(lineSel) := tagSel
+          state := sReadUpdate
+        }
       }
     }
     is (sReadUpdate) {
@@ -165,10 +175,20 @@ class DataCache extends Module {
       } .elsewhen (io.axi.writeData.ready) {
         when (wlast) {
           wen := false.B
-          valid(lineSel) := false.B
-          state := sReadAddr
+          state := sWriteResp
         } .otherwise {
           dataOffset := dataOffset + 1.U
+        }
+      }
+    }
+    is (sWriteResp) {
+      // A dirty victim remains valid until the write response succeeds.
+      when (io.axi.writeResp.valid) {
+        when (io.axi.writeResp.bits.resp(1)) {
+          state := sAccessFault
+        } .otherwise {
+          valid(lineSel) := false.B
+          state := sReadAddr
         }
       }
     }
@@ -191,10 +211,20 @@ class DataCache extends Module {
       } .elsewhen (io.axi.writeData.ready) {
         when (wlast) {
           wen := false.B
-          valid(nextDirty) := false.B
-          state := sFlushUpdate
+          state := sFlushResp
         } .otherwise {
           dataOffset := dataOffset + 1.U
+        }
+      }
+    }
+    is (sFlushResp) {
+      // Do not discard a dirty line until its write response is successful.
+      when (io.axi.writeResp.valid) {
+        when (io.axi.writeResp.bits.resp(1)) {
+          state := sAccessFault
+        } .otherwise {
+          valid(nextDirty) := false.B
+          state := sFlushUpdate
         }
       }
     }
@@ -202,12 +232,18 @@ class DataCache extends Module {
       // determine if need to flush next line
       state := Mux(isDirty, sFlushAddr, sIdle)
     }
+    is (sAccessFault) {
+      state := sIdle
+    }
   }
 
   // SRAM signals
-  io.sram.valid := state === sIdle && Mux(io.flush, !isDirty, cacheHit)
-  io.sram.fault := false.B
-  io.sram.rdata := lines.io.rdata
+  io.sram.valid       := (state === sIdle &&
+                         Mux(io.flush, !isDirty, cacheHit)) ||
+                         state === sAccessFault
+  io.sram.fault       := false.B
+  io.sram.accessFault := state === sAccessFault
+  io.sram.rdata       := lines.io.rdata
 
   // AXI signals
   io.axi.init()
@@ -216,7 +252,7 @@ class DataCache extends Module {
   io.axi.readAddr.bits.size   := burstSize.U  // bytes per beat
   io.axi.readAddr.bits.len    := burstLen.U   // beats per burst
   io.axi.readAddr.bits.burst  := 1.U          // incrementing-address
-  io.axi.readData.ready       := true.B
+  io.axi.readData.ready       := state === sReadData
   io.axi.writeAddr.valid      := awen
   io.axi.writeAddr.bits.addr  := waddr
   io.axi.writeAddr.bits.size  := burstSize.U  // bytes per beat
@@ -226,5 +262,5 @@ class DataCache extends Module {
   io.axi.writeData.bits.data  := lines.io.rdata
   io.axi.writeData.bits.last  := wlast
   io.axi.writeData.bits.strb  := wordWriteEn.U
-  io.axi.writeResp.ready      := true.B
+  io.axi.writeResp.ready      := state === sWriteResp || state === sFlushResp
 }

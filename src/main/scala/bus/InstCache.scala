@@ -26,7 +26,7 @@ class InstCache extends Module {
   require(log2Ceil(burstLen) <= io.axi.readAddr.bits.len.getWidth)
 
   // states of finite state machine
-  val sIdle :: sAddr :: sData :: sUpdate :: Nil = Enum(4)
+  val sIdle :: sAddr :: sData :: sUpdate :: sAccessFault :: Nil = Enum(5)
   val state = RegInit(sIdle)
 
   // all cache lines
@@ -38,6 +38,7 @@ class InstCache extends Module {
   val ren         = RegInit(false.B)
   val raddr       = Reg(UInt(ADDR_WIDTH.W))
   val dataOffset  = Reg(UInt(log2Ceil(dataMemSize).W))
+  val readFault   = RegInit(false.B)
 
   // cache line selectors
   val sramAddr    = Reg(UInt(ADDR_WIDTH.W))
@@ -63,6 +64,7 @@ class InstCache extends Module {
         state := sIdle
       } .elsewhen (io.sram.en && !cacheHit) {
         // cache miss, switch state
+        valid(lineSel) := false.B
         ren       := true.B
         raddr     := startAddr
         sramAddr  := io.sram.addr
@@ -75,6 +77,7 @@ class InstCache extends Module {
         // address has already been sent, switch state
         ren         := false.B
         dataOffset  := 0.U
+        readFault   := false.B
         state       := sData
       }
     }
@@ -82,11 +85,13 @@ class InstCache extends Module {
       // fetch data from bus
       when (io.axi.readData.valid) {
         dataOffset := dataOffset + 1.U
+        readFault := readFault || io.axi.readData.bits.resp(1)
         lines.write(dataSel, io.axi.readData.bits.data)
       }
       // switch state
       when (io.axi.readData.valid && io.axi.readData.bits.last) {
-        state := sUpdate
+        state := Mux(readFault || io.axi.readData.bits.resp(1),
+                     sAccessFault, sUpdate)
       }
     }
     is (sUpdate) {
@@ -95,12 +100,18 @@ class InstCache extends Module {
       tag(lineSel)    := tagSel
       state           := sIdle
     }
+    is (sAccessFault) {
+      // The partially refilled line stays invalid.
+      state := sIdle
+    }
   }
 
   // SRAM signals
-  io.sram.valid := state === sIdle && cacheHit
-  io.sram.fault := false.B
-  io.sram.rdata := lines.read(lineDataSel)
+  io.sram.valid       := (state === sIdle && cacheHit) ||
+                         state === sAccessFault
+  io.sram.fault       := false.B
+  io.sram.accessFault := state === sAccessFault
+  io.sram.rdata       := lines.read(lineDataSel)
 
   // AXI signals
   io.axi.init()
@@ -109,5 +120,5 @@ class InstCache extends Module {
   io.axi.readAddr.bits.size   := burstSize.U  // bytes per beat
   io.axi.readAddr.bits.len    := burstLen.U   // beats per burst
   io.axi.readAddr.bits.burst  := 1.U          // incrementing-address
-  io.axi.readData.ready       := true.B
+  io.axi.readData.ready       := state === sData
 }

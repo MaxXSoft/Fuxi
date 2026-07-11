@@ -85,7 +85,9 @@ class CoreBus extends Module {
   icache.io.axi   <> io.inst
 
   // ROM interface
-  io.rom.fault  := immu.io.fault
+  io.rom.valid       := immu.io.accessFault || idemux.io.in2.valid
+  io.rom.fault       := immu.io.fault
+  io.rom.accessFault := immu.io.accessFault || idemux.io.in2.accessFault
 
   // data MMU
   val dmmu = Module(new MMU(DTLB_SIZE, false))
@@ -123,5 +125,7 @@ class CoreBus extends Module {
   uncached.io.axi   <> io.uncached
 
   // RAM interface
-  io.ram.fault  := dmmu.io.fault
+  io.ram.valid       := dmmu.io.accessFault || ddemux.io.in2.valid
+  io.ram.fault       := dmmu.io.fault
+  io.ram.accessFault := dmmu.io.accessFault || ddemux.io.in2.accessFault
 }

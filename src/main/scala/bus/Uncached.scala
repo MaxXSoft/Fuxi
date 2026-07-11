@@ -21,20 +21,23 @@ class Uncached extends Module {
 
   // states of finite state machine
   val (sIdle :: sReadAddr :: sReadData :: sWriteAddr :: sWriteData ::
-       sReadEnd :: sWriteEnd :: Nil) = Enum(7)
+       sWriteResp :: sReadEnd :: sWriteEnd :: Nil) = Enum(8)
   val state = RegInit(sIdle)
 
   // AXI control
   val rdata   = Reg(UInt(DATA_WIDTH.W))
+  val accessFault = RegInit(false.B)
   val arvalid = state === sReadAddr
   val awvalid = state === sWriteAddr
-  val rvalid  = io.axi.readData.valid && io.axi.readData.bits.last
+  val rvalid  = state === sReadData && io.axi.readData.valid &&
+                io.axi.readData.bits.last
   val wvalid  = state === sWriteData
 
   // main finite state machine
   switch (state) {
     is (sIdle) {
       when (io.sram.en) {
+        accessFault := false.B
         state := Mux(io.sram.wen =/= 0.U, sWriteAddr, sReadAddr)
       }
     }
@@ -46,6 +49,7 @@ class Uncached extends Module {
     is (sReadData) {
       when (rvalid) {
         rdata := io.axi.readData.bits.data
+        accessFault := io.axi.readData.bits.resp(1)
         state := sReadEnd
       }
     }
@@ -56,6 +60,12 @@ class Uncached extends Module {
     }
     is (sWriteData) {
       when (io.axi.writeData.ready) {
+        state := sWriteResp
+      }
+    }
+    is (sWriteResp) {
+      when (io.axi.writeResp.valid) {
+        accessFault := io.axi.writeResp.bits.resp(1)
         state := sWriteEnd
       }
     }
@@ -68,9 +78,10 @@ class Uncached extends Module {
   }
 
   // SRAM signals
-  io.sram.valid := state === sWriteEnd || rvalid
-  io.sram.fault := false.B
-  io.sram.rdata := rdata
+  io.sram.valid       := state === sReadEnd || state === sWriteEnd
+  io.sram.fault       := false.B
+  io.sram.accessFault := io.sram.valid && accessFault
+  io.sram.rdata       := rdata
 
   // AXI signals
   io.axi.init()
@@ -78,7 +89,7 @@ class Uncached extends Module {
   io.axi.readAddr.bits.addr   := io.sram.addr
   io.axi.readAddr.bits.size   := dataSize.U
   io.axi.readAddr.bits.burst  := 1.U          // incrementing-address
-  io.axi.readData.ready       := true.B
+  io.axi.readData.ready       := state === sReadData
   io.axi.writeAddr.valid      := awvalid
   io.axi.writeAddr.bits.addr  := io.sram.addr
   io.axi.writeAddr.bits.size  := dataSize.U
@@ -86,5 +97,5 @@ class Uncached extends Module {
   io.axi.writeData.bits.data  := io.sram.wdata
   io.axi.writeData.bits.last  := wvalid
   io.axi.writeData.bits.strb  := io.sram.wen
-  io.axi.writeResp.ready      := true.B
+  io.axi.writeResp.ready      := state === sWriteResp
 }

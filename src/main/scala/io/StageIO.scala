@@ -28,6 +28,8 @@ class FetchIO extends StageIO {
   val predIndex = UInt(GHR_WIDTH.W)
   // instruction fetch page fault
   val pageFault = Bool()
+  // instruction fetch physical access fault
+  val accessFault = Bool()
 }
 
 // ID stage

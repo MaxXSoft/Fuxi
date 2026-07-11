@@ -20,6 +20,7 @@ class DecoderUnitTester(c: Decoder) extends PeekPokeTester(c) {
     poke(c.io.fetch.pc, pc)
     poke(c.io.fetch.predIndex, 0)
     poke(c.io.fetch.pageFault, false)
+    poke(c.io.fetch.accessFault, false)
     poke(c.io.inst, inst)
     poke(c.io.read1.data, reg1)
     poke(c.io.read2.data, reg2)
@@ -227,6 +228,14 @@ class DecoderUnitTester(c: Decoder) extends PeekPokeTester(c) {
   pokeDecoder(0x203d2067)
   step(1)
   expectExc(EXC_ILLEG)
+
+  // instruction access fault overrides the fetched instruction
+  pokeDecoder(0x00b605b3)
+  poke(c.io.fetch.accessFault, true)
+  step(1)
+  expectLsu(LSU_NOP, 0)
+  expectCsr(CSR_NOP, 0, 0)
+  expectExc(EXC_IACCESS)
 }
 
 object DecoderTest extends App {

@@ -105,18 +105,21 @@ class Decoder extends Module {
 
   // exception signal
   val exceptType  = Mux(io.fetch.pageFault, EXC_IPAGE,
-                    Mux(addrFault, EXC_IADDR, excType))
+                    Mux(io.fetch.accessFault, EXC_IACCESS,
+                    Mux(addrFault, EXC_IADDR, excType)))
   val exceptValue = Mux(addrFault, branchTarget, 0.U)
 
   // operation related signals
   // cancel all unnecessary operations after fetching illegal instructions
-  val illegalFetch  = exceptType === EXC_ILLEG || exceptType === EXC_IPAGE
+  val illegalFetch  = exceptType === EXC_ILLEG ||
+                      exceptType === EXC_IPAGE ||
+                      exceptType === EXC_IACCESS
   val mduOperation  = Mux(illegalFetch, MDU_NOP, mduOp)
   val lsuOperation  = Mux(illegalFetch, LSU_NOP, lsuOp)
   val csrOperation  = Mux(illegalFetch, CSR_NOP, csrActOp)
 
   // pipeline control
-  io.flushIf  := !io.stallId && !addrFault && branchMiss
+  io.flushIf  := !io.stallId && !addrFault && !illegalFetch && branchMiss
   io.flushPc  := flushPc
 
   // regfile read signals
@@ -126,9 +129,9 @@ class Decoder extends Module {
   io.read2.addr := rs2
 
   // branch information
-  io.branch.branch  := isBranch
-  io.branch.jump    := isJump
-  io.branch.taken   := branchTaken
+  io.branch.branch  := isBranch && !illegalFetch
+  io.branch.jump    := isJump && !illegalFetch
+  io.branch.taken   := branchTaken && !illegalFetch
   io.branch.index   := io.fetch.predIndex
   io.branch.pc      := io.fetch.pc
   io.branch.target  := branchTarget
@@ -140,7 +143,7 @@ class Decoder extends Module {
   io.decoder.mduOp      := mduOperation
   io.decoder.lsuOp      := lsuOperation
   io.decoder.lsuData    := io.read2.data
-  io.decoder.regWen     := regWen
+  io.decoder.regWen     := regWen && !illegalFetch
   io.decoder.regWaddr   := rd
   io.decoder.csrOp      := csrOperation
   io.decoder.csrAddr    := immI

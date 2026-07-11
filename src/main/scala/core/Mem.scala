@@ -103,13 +103,16 @@ class Mem extends Module {
     LS_DATA_HALF  -> (sel(0) =/= 0.U),
     LS_DATA_WORD  -> (sel(1, 0) =/= 0.U),
   ))
-  val memExcept = memAddr || io.ram.fault
+  val memPage   = io.ram.fault
+  val memAccess = io.ram.accessFault
+  val memExcept = memAddr || memPage || memAccess
   // signals about instruction exceptions
   val illgSret  = io.alu.excType === EXC_SRET && io.csrMode === CSR_MODE_U
   val illgMret  = io.alu.excType === EXC_MRET && io.csrMode =/= CSR_MODE_M
   val illgSpriv = io.alu.excType === EXC_SPRIV && io.csrMode === CSR_MODE_U
   val instAddr  = io.alu.excType === EXC_IADDR
   val instPage  = io.alu.excType === EXC_IPAGE
+  val instAccess = io.alu.excType === EXC_IACCESS
   val instIllg  = io.alu.excType === EXC_ILLEG ||
                   illgSret || illgMret || illgSpriv
   // whether exception occurred
@@ -119,8 +122,12 @@ class Mem extends Module {
                   io.alu.excType === EXC_EBRK ||
                   io.alu.excType === EXC_SRET ||
                   io.alu.excType === EXC_MRET
-  val hasTrap   = instAddr || instIllg || instPage ||
-                  (excMem && memExcept) || excOther || io.csrHasInt
+  // A dirty-line writeback failure during a cache flush is imprecise, but it
+  // must not be silently reported as a successful FENCE.I/SFENCE.VMA.
+  val fenceAccess = flushDc && memAccess
+  val hasTrap   = instAddr || instIllg || instPage || instAccess ||
+                  (excMem && memExcept) || fenceAccess ||
+                  excOther || io.csrHasInt
   // trap return instructions & interruptions
   val isSret    = io.alu.excType === EXC_SRET && !instIllg
   val isMret    = io.alu.excType === EXC_MRET && !instIllg
@@ -130,17 +137,22 @@ class Mem extends Module {
     EXC_ECALL -> Mux(io.csrMode === CSR_MODE_U, EXC_U_ECALL,
                  Mux(io.csrMode === CSR_MODE_S, EXC_S_ECALL, EXC_M_ECALL)),
     EXC_EBRK  -> EXC_BRK_POINT,
-    EXC_LOAD  -> Mux(memAddr, EXC_LOAD_ADDR, EXC_LOAD_PAGE),
-    EXC_STAMO -> Mux(memAddr, EXC_STAMO_ADDR, EXC_STAMO_PAGE),
+    EXC_LOAD  -> Mux(memAddr, EXC_LOAD_ADDR,
+                 Mux(memAccess, EXC_LOAD_ACCESS, EXC_LOAD_PAGE)),
+    EXC_STAMO -> Mux(memAddr, EXC_STAMO_ADDR,
+                 Mux(memAccess, EXC_STAMO_ACCESS, EXC_STAMO_PAGE)),
   ))
   val excCause  = Mux(instPage, EXC_INST_PAGE,
+                  Mux(instAccess, EXC_INST_ACCESS,
                   Mux(instIllg, EXC_ILL_INST,
-                  Mux(instAddr, EXC_INST_ADDR, cause)))
+                  Mux(instAddr, EXC_INST_ADDR,
+                  Mux(fenceAccess, EXC_STAMO_ACCESS, cause)))))
   // exception pc & value
   val excPc     = io.alu.currentPc
   val excValue  = Mux(instIllg, io.alu.inst,
-                  Mux(instPage, io.alu.currentPc,
-                  Mux(memExcept, io.alu.reg.data, io.alu.excValue)))
+                  Mux(instPage || instAccess, io.alu.currentPc,
+                  Mux(fenceAccess, 0.U,
+                  Mux(memExcept, io.alu.reg.data, io.alu.excValue))))
 
   // pipeline control
   io.stallReq := stallReq

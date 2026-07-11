@@ -52,4 +52,5 @@ class Fetch extends Module {
   io.fetch.target     := bpu.io.predTarget
   io.fetch.predIndex  := bpu.io.predIndex
   io.fetch.pageFault  := io.rom.fault
+  io.fetch.accessFault := io.rom.accessFault
 }

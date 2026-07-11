@@ -46,13 +46,15 @@ class MMU(val size: Int, val isInst: Boolean) extends Module {
     val vaddr   = Input(UInt(ADDR_WIDTH.W))
     val valid   = Output(Bool())
     val fault   = Output(Bool())
+    val accessFault = Output(Bool())
     val paddr   = Output(UInt(ADDR_WIDTH.W))
     // data transfer channel
     val data    = new SramIO(ADDR_WIDTH, DATA_WIDTH)
   })
 
   // states of finite state machine
-  val sIdle :: sAddr :: sRead :: sUpdate :: sFlush :: Nil = Enum(5)
+  val (sIdle :: sAddr :: sRead :: sUpdate :: sAccessFault ::
+       sFlush :: Nil) = Enum(6)
   val state = RegInit(sIdle)
 
   // some other registers
@@ -110,7 +112,7 @@ class MMU(val size: Int, val isInst: Boolean) extends Module {
     is (sAddr) {
       // wait until data valid
       when (io.data.valid) {
-        state := sRead
+        state := Mux(io.data.accessFault, sAccessFault, sRead)
       }
     }
     is (sRead) {
@@ -145,6 +147,10 @@ class MMU(val size: Int, val isInst: Boolean) extends Module {
       // back to idle state
       state := sIdle
     }
+    is (sAccessFault) {
+      // Report a page-table memory access fault to the original lookup.
+      state := sIdle
+    }
     is (sFlush) {
       // back to idle state if there is no flush request
       when (!io.flush) { state := sIdle }
@@ -160,5 +166,6 @@ class MMU(val size: Int, val isInst: Boolean) extends Module {
   // output signals
   io.valid  := valid
   io.fault  := valid && fault
+  io.accessFault := state === sAccessFault
   io.paddr  := paddr
 }

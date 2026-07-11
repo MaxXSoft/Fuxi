@@ -17,6 +17,8 @@ class SramMux2(val addrWidth: Int, val dataWidth: Int) extends Module {
 
   io.in.valid   := Mux(io.sel2, io.out2.valid, io.out1.valid)
   io.in.fault   := Mux(io.sel2, io.out2.fault, io.out1.fault)
+  io.in.accessFault := Mux(io.sel2, io.out2.accessFault,
+                           io.out1.accessFault)
   io.in.rdata   := Mux(rdata_sel, io.out2.rdata, io.out1.rdata)
 
   io.out1.en    := io.in.en && !io.sel2
@@ -40,10 +42,12 @@ class SramDemux2(val addrWidth: Int, val dataWidth: Int) extends Module {
 
   io.in1.valid  := !io.sel2 && io.out.valid
   io.in1.fault  := !io.sel2 && io.out.fault
+  io.in1.accessFault := !io.sel2 && io.out.accessFault
   io.in1.rdata  := io.out.rdata
 
   io.in2.valid  := io.sel2 && io.out.valid
   io.in2.fault  := io.sel2 && io.out.fault
+  io.in2.accessFault := io.sel2 && io.out.accessFault
   io.in2.rdata  := io.out.rdata
 
   io.out.en     := Mux(io.sel2, io.in2.en, io.in1.en)

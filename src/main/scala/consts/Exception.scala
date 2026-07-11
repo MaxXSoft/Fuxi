@@ -5,7 +5,7 @@ import chisel3.util.log2Ceil
 
 // exception type
 object ExceptType {
-  val EXC_TYPE_WIDTH = log2Ceil(11)
+  val EXC_TYPE_WIDTH = log2Ceil(12)
 
   val EXC_NONE  = 0.U(EXC_TYPE_WIDTH.W)
   val EXC_ECALL = 1.U(EXC_TYPE_WIDTH.W)
@@ -18,6 +18,7 @@ object ExceptType {
   val EXC_LOAD  = 8.U(EXC_TYPE_WIDTH.W)
   val EXC_STAMO = 9.U(EXC_TYPE_WIDTH.W)
   val EXC_SPRIV = 10.U(EXC_TYPE_WIDTH.W)  // S-mode instruction
+  val EXC_IACCESS = 11.U(EXC_TYPE_WIDTH.W) // instruction access fault
 }
 
 // exception cause
@@ -34,10 +35,13 @@ object ExceptCause {
 
   // exceptions
   val EXC_INST_ADDR   = 0.U(EXC_CAUSE_WIDTH.W)
+  val EXC_INST_ACCESS = 1.U(EXC_CAUSE_WIDTH.W)
   val EXC_ILL_INST    = 2.U(EXC_CAUSE_WIDTH.W)
   val EXC_BRK_POINT   = 3.U(EXC_CAUSE_WIDTH.W)
   val EXC_LOAD_ADDR   = 4.U(EXC_CAUSE_WIDTH.W)
+  val EXC_LOAD_ACCESS = 5.U(EXC_CAUSE_WIDTH.W)
   val EXC_STAMO_ADDR  = 6.U(EXC_CAUSE_WIDTH.W)
+  val EXC_STAMO_ACCESS = 7.U(EXC_CAUSE_WIDTH.W)
   val EXC_U_ECALL     = 8.U(EXC_CAUSE_WIDTH.W)
   val EXC_S_ECALL     = 9.U(EXC_CAUSE_WIDTH.W)
   val EXC_M_ECALL     = 11.U(EXC_CAUSE_WIDTH.W)

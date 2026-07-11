@@ -10,6 +10,8 @@ class SramIO(val addrWidth: Int, val dataWidth: Int) extends Bundle {
   val valid = Input(Bool())
   // page fault flag
   val fault = Input(Bool())
+  // physical memory/bus access fault flag
+  val accessFault = Input(Bool())
   // other signals
   val wen   = Output(UInt((dataWidth / 8).W))
   val addr  = Output(UInt(addrWidth.W))

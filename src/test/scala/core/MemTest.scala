@@ -39,6 +39,7 @@ class MemUnitTester(c: Mem) extends PeekPokeTester(c) {
     poke(c.io.alu.lsuData, wdata)
     poke(c.io.flush, false)
     poke(c.io.ram.fault, false)
+    poke(c.io.ram.accessFault, false)
   }
 
   def pokeExc(excType: BigInt, pc: Int,
@@ -301,6 +302,29 @@ class MemUnitTester(c: Mem) extends PeekPokeTester(c) {
   expectExc(EXC_ILL_INST, 0x00000200, inst)
   pokeExc(EXC_IPAGE, 0x00000200, false, false)
   expectExc(EXC_INST_PAGE, 0x00000200, 0x00000200)
+
+  // AXI access faults are distinct from page and alignment faults.
+  pokeLsu(LSU_LW, 0x12345678)
+  pokeExc(EXC_LOAD, 0x00000200, false, false)
+  poke(c.io.ram.valid, true)
+  poke(c.io.ram.accessFault, true)
+  expectExc(EXC_LOAD_ACCESS, 0x00000200, 0x12345678)
+
+  pokeLsu(LSU_SW, 0x12345678)
+  pokeExc(EXC_STAMO, 0x00000200, false, false)
+  poke(c.io.ram.valid, true)
+  poke(c.io.ram.accessFault, true)
+  expectExc(EXC_STAMO_ACCESS, 0x00000200, 0x12345678)
+
+  pokeLsu(LSU_FENI, 0)
+  pokeExc(EXC_NONE, 0x00000200, false, false)
+  poke(c.io.ram.valid, true)
+  poke(c.io.ram.accessFault, true)
+  expectExc(EXC_STAMO_ACCESS, 0x00000200, 0)
+
+  pokeLsu(LSU_NOP, 0)
+  pokeExc(EXC_IACCESS, 0x00000200, false, false)
+  expectExc(EXC_INST_ACCESS, 0x00000200, 0x00000200)
 }
 
 object MemTest extends App {

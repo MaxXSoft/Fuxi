@@ -26,5 +26,6 @@ class RAM extends Module {
 
   io.valid := true.B
   io.fault := false.B
+  io.accessFault := false.B
   io.rdata := Cat(data.reverse)
 }
