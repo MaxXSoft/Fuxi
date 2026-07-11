@@ -31,7 +31,7 @@ class ALU extends Module {
   val shamt = opr2(4, 0)
 
   // result of ALU
-  val aluResult = MuxLookup(io.decoder.aluOp, 0.U, Seq(
+  val aluResult = MuxLookup(io.decoder.aluOp, 0.U)(Seq(
     ALU_ADD   -> (opr1 + opr2),
     ALU_SUB   -> (opr1 - opr2),
     ALU_XOR   -> (opr1 ^ opr2),

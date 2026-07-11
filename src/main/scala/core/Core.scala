@@ -31,7 +31,7 @@ class Core extends Module {
   val idex    = Module(new MidStage(new DecoderIO))
   val alu     = Module(new ALU)
   val exmem   = Module(new MidStage(new AluIO))
-  val mem     = Module(new Mem)
+  val mem     = Module(new core.Mem)
   val memwb   = Module(new MidStage(new MemIO))
   val wb      = Module(new WriteBack)
 

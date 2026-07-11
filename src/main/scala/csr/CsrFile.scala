@@ -39,29 +39,29 @@ class CsrFile extends Module {
   val mode      = RegInit(CSR_MODE_M)
 
   // definition of CSRs
-  val mstatus   = RegInit(MstatusCsr.default)
-  val misa      = MisaCsr.default
-  val medeleg   = RegInit(MedelegCsr.default)
-  val mideleg   = RegInit(MidelegCsr.default)
-  val mie       = RegInit(MieCsr.default)
-  val mtvec     = RegInit(MtvecCsr.default)
-  val mscratch  = RegInit(MscratchCsr.default)
-  val mepc      = RegInit(MepcCsr.default)
-  val mcause    = RegInit(McauseCsr.default)
-  val mtval     = RegInit(MtvalCsr.default)
-  val mipReal   = RegInit(MipCsr.default)
-  val mip       = MipCsr.default
-  val mcycle    = RegInit(McycleCsr.default)
-  val minstret  = RegInit(MinstretCsr.default)
+  val mstatus   = RegInit(MstatusCsr.default())
+  val misa      = MisaCsr.default()
+  val medeleg   = RegInit(MedelegCsr.default())
+  val mideleg   = RegInit(MidelegCsr.default())
+  val mie       = RegInit(MieCsr.default())
+  val mtvec     = RegInit(MtvecCsr.default())
+  val mscratch  = RegInit(MscratchCsr.default())
+  val mepc      = RegInit(MepcCsr.default())
+  val mcause    = RegInit(McauseCsr.default())
+  val mtval     = RegInit(MtvalCsr.default())
+  val mipReal   = RegInit(MipCsr.default())
+  val mip       = WireDefault(MipCsr.default())
+  val mcycle    = RegInit(McycleCsr.default())
+  val minstret  = RegInit(MinstretCsr.default())
   val sstatus   = SstatusCsr(mstatus)
   val sie       = SieCsr(mie)
-  val sip       = SipCsr.default
-  val stvec     = RegInit(StvecCsr.default)
-  val sscratch  = RegInit(SscratchCsr.default)
-  val sepc      = RegInit(SepcCsr.default)
-  val scause    = RegInit(ScauseCsr.default)
-  val stval     = RegInit(StvalCsr.default)
-  val satp      = RegInit(SatpCsr.default)
+  val sip       = WireDefault(SipCsr.default())
+  val stvec     = RegInit(StvecCsr.default())
+  val sscratch  = RegInit(SscratchCsr.default())
+  val sepc      = RegInit(SepcCsr.default())
+  val scause    = RegInit(ScauseCsr.default())
+  val stval     = RegInit(StvalCsr.default())
+  val satp      = RegInit(SatpCsr.default())
   val cycle     = mcycle.asUInt
   val instret   = minstret.asUInt
 
@@ -132,7 +132,7 @@ class CsrFile extends Module {
   // CSR read related signals
   val readData :: (readable: Bool) :: (writable: Bool) :: Nil =
       ListLookup(io.read.addr, default, csrTable)
-  val readValid = MuxLookup(io.read.op, false.B, Seq(
+  val readValid = MuxLookup(io.read.op, false.B)(Seq(
     CSR_R   -> readable,
     CSR_W   -> writable,
     CSR_RW  -> (readable && writable),
@@ -146,7 +146,7 @@ class CsrFile extends Module {
   val csrData :: _ :: _ :: Nil =
       ListLookup(io.write.addr, default, csrTable)
   val writeEn   = io.write.op =/= CSR_NOP && io.write.op =/= CSR_R
-  val writeData = MuxLookup(io.write.op, 0.U, Seq(
+  val writeData = MuxLookup(io.write.op, 0.U)(Seq(
     CSR_W   -> io.write.data,
     CSR_RW  -> io.write.data,
     CSR_RS  -> (csrData | io.write.data),
@@ -169,14 +169,14 @@ class CsrFile extends Module {
   val takeInt   = io.except.hasTrap && io.except.isInterrupt && !isXret
   val handIntS  = takeInt && !hasIntM
   val hasExc    = io.except.hasTrap && !takeInt && !isXret
-  val hasExcS   = hasExc && medeleg.asUInt()(io.except.excCause(4, 0))
+  val hasExcS   = hasExc && medeleg.asUInt(io.except.excCause(4, 0))
   val handExcS  = !mode(1) && hasExcS
-  val intCauseS = Mux(flagIntS(EXC_S_EXT_INT), EXC_S_EXT_INT,
-                  Mux(flagIntS(EXC_S_SOFT_INT), EXC_S_SOFT_INT,
+  val intCauseS = Mux(flagIntS(EXC_S_EXT_INT.litValue.toInt), EXC_S_EXT_INT,
+                  Mux(flagIntS(EXC_S_SOFT_INT.litValue.toInt), EXC_S_SOFT_INT,
                                                 EXC_S_TIMER_INT))
-  val intCauseM = Mux(flagIntM(EXC_M_EXT_INT), EXC_M_EXT_INT,
-                  Mux(flagIntM(EXC_M_SOFT_INT), EXC_M_SOFT_INT,
-                  Mux(flagIntM(EXC_M_TIMER_INT), EXC_M_TIMER_INT,
+  val intCauseM = Mux(flagIntM(EXC_M_EXT_INT.litValue.toInt), EXC_M_EXT_INT,
+                  Mux(flagIntM(EXC_M_SOFT_INT.litValue.toInt), EXC_M_SOFT_INT,
+                  Mux(flagIntM(EXC_M_TIMER_INT.litValue.toInt), EXC_M_TIMER_INT,
                                                  intCauseS)))
   val intCause  = Mux(handIntS, intCauseS, intCauseM)
   val cause     = Mux(takeInt, Cat(true.B, intCause),

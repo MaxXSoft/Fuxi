@@ -1,13 +1,12 @@
 package core
 
 import chisel3._
-import chisel3.iotesters.{Driver, PeekPokeTester}
 import scala.io.Source
 import java.io.{File, PrintWriter}
 
 import io._
 import sim._
-import utils.ArgParser
+import utils.{ArgParser, PeekPokeTester, TestDriver}
 
 class CoreWrapper(initFile: String) extends Module {
   val io    = IO(new DebugIO)
@@ -31,7 +30,7 @@ class CoreUnitTester(c: CoreWrapper, traceFile: String, genTrace: Boolean)
 
   // perform trace comparison
   def runTrace(source: Source) = {
-    for (line <- source.getLines) {
+    for (line <- source.getLines()) {
       val pc :: addr :: data :: Nil = line.split(' ').toList
       do {
         step(1)
@@ -89,16 +88,18 @@ object CoreTest extends App {
   var traceFile = ""
   var genTrace = false
 
-  val manager = ArgParser(args, (o, v) => {
+  ArgParser(args, (o, v) => {
     o match {
-      case Some("--init-file") | Some("-if") => initFile = v; true
+      case Some("--init-file") | Some("-if") =>
+        initFile = new File(v).getAbsolutePath
+        true
       case Some("--trace-file") | Some("-tf") => traceFile = v; true
       case Some("--gen-trace") | Some("-gt") => genTrace = v != "0"; true
       case _ => false
     }
   })
 
-  if (!Driver.execute(() => new CoreWrapper(initFile), manager) {
+  if (!TestDriver.execute(args, () => new CoreWrapper(initFile)) {
     (c) => new CoreUnitTester(c, traceFile, genTrace)
   }) sys.exit(1)
 }

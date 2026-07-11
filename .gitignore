@@ -136,6 +136,8 @@ local.properties
 # http://www.scala-sbt.org/release/docs/Getting-Started/Directories.html#configuring-version-control
 
 target/
+/.bsp/
+/obj_dir/
 lib_managed/
 src_managed/
 project/boot/

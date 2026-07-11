@@ -1,11 +1,9 @@
 package utils
 
-import chisel3.iotesters.TesterOptionsManager
-
 object ArgParser {
   type OptionCallback = (Option[String], String) => Boolean
 
-  private def isOpt(s: String) = s(0) == '-'
+  private def isOpt(s: String) = s.startsWith("-")
 
   private def matchArgs(args: List[String],
                         opts: OptionCallback): Boolean = {
@@ -20,17 +18,14 @@ object ArgParser {
       case value :: Nil => {
         opts(None, value)
       }
+      case _ => false
     }
   }
 
   def apply(args: Array[String], opts: OptionCallback) = {
-    val manager = new TesterOptionsManager()
-    manager.doNotExitOnHelp()
-    manager.parse(args)
     if (!matchArgs(args.toList, opts)) {
       println("Error(ArgParser): Invalid argument list.")
       sys.exit(1)
     }
-    manager
   }
 }

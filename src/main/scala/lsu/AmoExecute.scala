@@ -36,7 +36,7 @@ class AmoExecute extends Module {
   val opr2 = io.regOpr
 
   // generate execute result
-  val result = MuxLookup(io.op, 0.U, Seq(
+  val result = MuxLookup(io.op, 0.U)(Seq(
     AMO_OP_SWAP -> opr2,
     AMO_OP_ADD  -> (opr1 + opr2),
     AMO_OP_XOR  -> (opr1 ^ opr2),

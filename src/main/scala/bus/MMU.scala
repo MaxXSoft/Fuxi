@@ -127,7 +127,7 @@ class MMU(val size: Int, val isInst: Boolean) extends Module {
         } .otherwise {
           // target PTE found, write entry to TLB
           state := sUpdate
-          entry := pte.asTlbEntry
+          entry := pte.asTlbEntry()
           // current page is a superpage
           when (level > 0.U) {
             entry.ppn := getSuperPpn(pte.ppn, io.vaddr, level - 1.U)

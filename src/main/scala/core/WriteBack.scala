@@ -34,10 +34,10 @@ class WriteBack extends Module {
   val byteSeq   = 0 until ADDR_WIDTH /  8 map { i => mapRamData(i,  8) }
   val halfSeq   = 0 until ADDR_WIDTH / 16 map { i => mapRamData(i, 16) }
   val wordSeq   = 0 until ADDR_WIDTH / 32 map { i => mapRamData(i, 32) }
-  val loadData  = MuxLookup(io.mem.memWidth, 0.U, Seq(
-    LS_DATA_BYTE  -> MuxLookup(io.mem.memSel, 0.U, byteSeq),
-    LS_DATA_HALF  -> MuxLookup(io.mem.memSel, 0.U, halfSeq),
-    LS_DATA_WORD  -> MuxLookup(io.mem.memSel, 0.U, wordSeq),
+  val loadData  = MuxLookup(io.mem.memWidth, 0.U)(Seq(
+    LS_DATA_BYTE  -> MuxLookup(io.mem.memSel, 0.U)(byteSeq),
+    LS_DATA_HALF  -> MuxLookup(io.mem.memSel, 0.U)(halfSeq),
+    LS_DATA_WORD  -> MuxLookup(io.mem.memSel, 0.U)(wordSeq),
   ))
 
   // data that write back to regfile

@@ -1,14 +1,14 @@
 package mdu
 
-import chisel3.iotesters.{Driver, PeekPokeTester}
+import utils.{PeekPokeTester, TestDriver}
 
 class MultiplierUnitTester(c: Multiplier) extends PeekPokeTester(c) {
   val mask = BigInt("ffffffff", 16)
 
   def testMult() = {
     // generate operands & result
-    val opr1    = BigInt(rnd.nextInt.toHexString, 16)
-    val opr2    = BigInt(rnd.nextInt.toHexString, 16)
+    val opr1    = BigInt(rnd.nextInt().toHexString, 16)
+    val opr2    = BigInt(rnd.nextInt().toHexString, 16)
     val result  = opr1 * opr2
     // test multiplier
     poke(c.io.en, true)
@@ -29,7 +29,7 @@ class MultiplierUnitTester(c: Multiplier) extends PeekPokeTester(c) {
 }
 
 object MultiplierTest extends App {
-  if (!Driver.execute(args, () => new Multiplier(32, 3)) {
+  if (!TestDriver.execute(args, () => new Multiplier(32, 3)) {
     (c) => new MultiplierUnitTester(c)
   }) sys.exit(1)
 }

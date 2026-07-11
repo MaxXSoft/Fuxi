@@ -16,7 +16,7 @@ abstract class CsrBundle extends Bundle {
   }
 
   def castAssign[T <: CsrBundle](that: T, data: UInt) = {
-    val temp = asTypeOf(that)
+    val temp = WireDefault(asTypeOf(that))
     temp <= data
     this <= temp.asUInt
   }
@@ -27,7 +27,7 @@ trait CsrObject[T <: CsrBundle] {
   def default(): T = 0.U.asTypeOf(apply())
 
   def apply[U <: Data](data: U): T = {
-    val init = default()
+    val init = WireDefault(default())
     init <= data.asUInt
     init
   }
@@ -180,7 +180,7 @@ class SatpCsr extends CsrBundle {
   val asid  = UInt(9.W)
   val ppn   = UInt(22.W)
 
-  override def <=(data: UInt) {
+  override def <=(data: UInt): Unit = {
     requireWidth(data)
     mode  := data(31)
     ppn   := data(21, 0)

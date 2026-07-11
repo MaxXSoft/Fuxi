@@ -53,7 +53,7 @@ class Decoder extends Module {
 
   // operand generator
   def generateOpr(oprSel: UInt) =
-      MuxLookup(oprSel, 0.S, Seq(
+      MuxLookup(oprSel, 0.S)(Seq(
         OPR_REG1  -> io.read1.data.asSInt,
         OPR_REG2  -> io.read2.data.asSInt,
         OPR_IMMI  -> immI.asSInt,
@@ -77,7 +77,7 @@ class Decoder extends Module {
   val targetJALR  = Cat(sumR1immI(ADDR_WIDTH - 1, 1), 0.U)
   val targetJ     = Mux(regEn1, targetJALR, targetJAL)
   val targetB     = (io.fetch.pc.asSInt + immB.asSInt).asUInt
-  val branchTaken = MuxLookup(branchFlag, false.B, Seq(
+  val branchTaken = MuxLookup(branchFlag, false.B)(Seq(
     BR_AL   -> true.B,
     BR_EQ   -> (io.read1.data === io.read2.data),
     BR_NE   -> (io.read1.data =/= io.read2.data),
@@ -95,7 +95,7 @@ class Decoder extends Module {
                     branchTarget(ADDR_ALIGN_WIDTH - 1, 0) =/= 0.U
 
   // CSR related signals
-  val csrActOp  = MuxLookup(csrOp, CSR_NOP, Seq(
+  val csrActOp  = MuxLookup(csrOp, CSR_NOP)(Seq(
     CSR_RW  -> Mux(rd === 0.U, CSR_W, CSR_RW),
     CSR_RS  -> Mux(rs1 === 0.U, CSR_R, CSR_RS),
     CSR_RC  -> Mux(rs1 === 0.U, CSR_R, CSR_RC),

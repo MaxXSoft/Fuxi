@@ -1,7 +1,7 @@
 package mdu
 
 import chisel3.UInt
-import chisel3.iotesters.{Driver, PeekPokeTester}
+import utils.{PeekPokeTester, TestDriver}
 
 import consts.MduOp._
 
@@ -10,8 +10,8 @@ class MduUnitTester(c: MDU) extends PeekPokeTester(c) {
   val min   = BigInt("80000000", 16)
 
   def generateOprAns(op: UInt) = {
-    val num1  = rnd.nextInt
-    val num2  = rnd.nextInt
+    val num1  = rnd.nextInt()
+    val num2  = rnd.nextInt()
     val opr1s = BigInt(num1)
     val opr2s = BigInt(num2)
     val opr1  = BigInt(num1.toHexString, 16)
@@ -69,7 +69,7 @@ class MduUnitTester(c: MDU) extends PeekPokeTester(c) {
 }
 
 object MduTest extends App {
-  if (!Driver.execute(args, () => new MDU) {
+  if (!TestDriver.execute(args, () => new MDU) {
     (c) => new MduUnitTester(c)
   }) sys.exit(1)
 }

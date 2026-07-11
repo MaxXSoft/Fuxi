@@ -1,6 +1,6 @@
 package bus
 
-import chisel3.iotesters.{Driver, PeekPokeTester}
+import utils.{PeekPokeTester, TestDriver}
 
 class UncachedUnitTester(c: Uncached) extends PeekPokeTester(c) {
   def initialize() = {
@@ -93,7 +93,7 @@ class UncachedUnitTester(c: Uncached) extends PeekPokeTester(c) {
 }
 
 object UncachedTest extends App {
-  if (!Driver.execute(args, () => new Uncached) {
+  if (!TestDriver.execute(args, () => new Uncached) {
     (c) => new UncachedUnitTester(c)
   }) sys.exit(1)
 }

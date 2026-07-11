@@ -1,6 +1,6 @@
 package bus
 
-import chisel3.iotesters.{Driver, PeekPokeTester}
+import utils.{PeekPokeTester, TestDriver}
 
 class TlbTester(c: TLB) extends PeekPokeTester(c) {
   def pokeTlbEntry(ppn: Int) = {
@@ -79,7 +79,7 @@ class TlbTester(c: TLB) extends PeekPokeTester(c) {
 }
 
 object TlbTest extends App {
-  if (!Driver.execute(args, () => new TLB(16)) {
+  if (!TestDriver.execute(args, () => new TLB(16)) {
     (c) => new TlbTester(c)
   }) sys.exit(1)
 }

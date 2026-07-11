@@ -1,7 +1,7 @@
 package core
 
 import chisel3._
-import chisel3.iotesters.{Driver, PeekPokeTester}
+import utils.{PeekPokeTester, TestDriver}
 
 import io._
 import consts.Parameters._
@@ -11,7 +11,7 @@ import consts.ExceptCause._
 import consts.CSR._
 import utils.MidStage
 
-class MemUnitTester(c: Mem) extends PeekPokeTester(c) {
+class MemUnitTester(c: core.Mem) extends PeekPokeTester(c) {
   val wdata = BigInt("abcdef00", 16)
   val rdata = BigInt("8badf00d", 16)
   val mask  = BigInt("ffffffff", 16)
@@ -33,7 +33,7 @@ class MemUnitTester(c: Mem) extends PeekPokeTester(c) {
     if (checkStall) expect(c.io.stallReq, false)
   }
 
-  def pokeLsu(op: BigInt, addr: Int) = {
+  def pokeLsu(op: UInt, addr: Int) = {
     poke(c.io.alu.reg.data, addr)
     poke(c.io.alu.lsuOp, op)
     poke(c.io.alu.lsuData, wdata)
@@ -44,7 +44,7 @@ class MemUnitTester(c: Mem) extends PeekPokeTester(c) {
     poke(c.io.flushDcAccessFault, false)
   }
 
-  def pokeExc(excType: BigInt, pc: Int,
+  def pokeExc(excType: UInt, pc: Int,
               hasInt: Boolean, userMode: Boolean) = {
     poke(c.io.alu.excType, excType)
     poke(c.io.alu.valid, true)
@@ -85,7 +85,7 @@ class MemUnitTester(c: Mem) extends PeekPokeTester(c) {
     expect(c.io.except.excPc, pc)
   }
 
-  def expectExc(cause: BigInt, pc: Int, excVal: BigInt) = {
+  def expectExc(cause: UInt, pc: Int, excVal: BigInt) = {
     expect(c.io.except.hasTrap, true)
     expect(c.io.except.isInterrupt, false)
     expect(c.io.except.isSret, false)
@@ -95,7 +95,7 @@ class MemUnitTester(c: Mem) extends PeekPokeTester(c) {
     expect(c.io.except.excValue, excVal)
   }
 
-  def expectExc(cause: BigInt, pc: Int) = {
+  def expectExc(cause: UInt, pc: Int) = {
     expect(c.io.except.hasTrap, true)
     expect(c.io.except.isInterrupt, false)
     expect(c.io.except.isSret, false)
@@ -376,7 +376,7 @@ class MemUnitTester(c: Mem) extends PeekPokeTester(c) {
 }
 
 object MemTest extends App {
-  if (!Driver.execute(args, () => new Mem) {
+  if (!TestDriver.execute(args, () => new core.Mem) {
     (c) => new MemUnitTester(c)
   }) sys.exit(1)
 }

@@ -63,7 +63,7 @@ class Mem extends Module {
 
   // write enable
   val selWord = "b1111".U((DATA_WIDTH / 8).W)
-  val writeEn = MuxLookup(width, 0.U, Seq(
+  val writeEn = MuxLookup(width, 0.U)(Seq(
     LS_DATA_BYTE -> ("b1".U((DATA_WIDTH / 8).W) << sel),
     LS_DATA_HALF -> ("b11".U((DATA_WIDTH / 8).W) << sel),
     LS_DATA_WORD -> selWord,
@@ -78,10 +78,10 @@ class Mem extends Module {
   val byteSeq = 0 until ADDR_WIDTH /  8 map { i => mapWriteData(i,  8) }
   val halfSeq = 0 until ADDR_WIDTH / 16 map { i => mapWriteData(i, 16) }
   val wordSeq = 0 until ADDR_WIDTH / 32 map { i => mapWriteData(i, 32) }
-  val lsuData = MuxLookup(width, 0.U, Seq(
-    LS_DATA_BYTE -> MuxLookup(sel, 0.U, byteSeq),
-    LS_DATA_HALF -> MuxLookup(sel, 0.U, halfSeq),
-    LS_DATA_WORD -> MuxLookup(sel, 0.U, wordSeq),
+  val lsuData = MuxLookup(width, 0.U)(Seq(
+    LS_DATA_BYTE -> MuxLookup(sel, 0.U)(byteSeq),
+    LS_DATA_HALF -> MuxLookup(sel, 0.U)(halfSeq),
+    LS_DATA_WORD -> MuxLookup(sel, 0.U)(wordSeq),
   ))
   val wdata   = Mux(wen || checkExcMon, lsuData, amo.io.ramWdata)
 
@@ -112,7 +112,7 @@ class Mem extends Module {
 
   // exception related signals
   // signals about memory accessing
-  val memAddr   = MuxLookup(width, false.B, Seq(
+  val memAddr   = MuxLookup(width, false.B)(Seq(
     LS_DATA_BYTE  -> false.B,
     LS_DATA_HALF  -> (sel(0) =/= 0.U),
     LS_DATA_WORD  -> (sel(1, 0) =/= 0.U),
@@ -148,7 +148,7 @@ class Mem extends Module {
   val isMret    = io.alu.excType === EXC_MRET && !instIllg
   // exception cause
   // NOTE: priority is important
-  val cause     = MuxLookup(io.alu.excType, 0.U, Seq(
+  val cause     = MuxLookup(io.alu.excType, 0.U)(Seq(
     EXC_ECALL -> Mux(io.csrMode === CSR_MODE_U, EXC_U_ECALL,
                  Mux(io.csrMode === CSR_MODE_S, EXC_S_ECALL, EXC_M_ECALL)),
     EXC_EBRK  -> EXC_BRK_POINT,

@@ -1,12 +1,12 @@
 package mdu
 
-import chisel3.iotesters.{Driver, PeekPokeTester}
+import utils.{PeekPokeTester, TestDriver}
 
 class DividerUnitTester(c: Divider) extends PeekPokeTester(c) {
   def testDivider() = {
     // generate operands and result
-    val divident  = BigInt(rnd.nextInt.toHexString, 16)
-    val divisor   = BigInt(rnd.nextInt.toHexString, 16)
+    val divident  = BigInt(rnd.nextInt().toHexString, 16)
+    val divisor   = BigInt(rnd.nextInt().toHexString, 16)
     // println(s"divident: $divident, divisor: $divisor")
     val quotient  = divident / divisor
     val remainder = divident % divisor
@@ -29,7 +29,7 @@ class DividerUnitTester(c: Divider) extends PeekPokeTester(c) {
 }
 
 object DividerTest extends App {
-  if (!Driver.execute(args, () => new Divider(32)) {
+  if (!TestDriver.execute(args, () => new Divider(32)) {
     (c) => new DividerUnitTester(c)
   }) sys.exit(1)
 }

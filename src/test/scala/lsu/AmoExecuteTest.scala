@@ -1,13 +1,13 @@
 package lsu
 
-import chisel3.iotesters.{Driver, PeekPokeTester}
+import utils.{PeekPokeTester, TestDriver}
 
 import LsuDecode._
 
 class AmoExecuteUnitTester(c: AmoExecute) extends PeekPokeTester(c) {
   def testAmo() = {
-    val opr1 = BigInt(rnd.nextInt.toHexString, 16)
-    val opr2 = BigInt(rnd.nextInt.toHexString, 16)
+    val opr1 = BigInt(rnd.nextInt().toHexString, 16)
+    val opr2 = BigInt(rnd.nextInt().toHexString, 16)
     val mask = BigInt("ffffffff", 16)
     val result = (opr1 + opr2) & mask
 
@@ -45,7 +45,7 @@ class AmoExecuteUnitTester(c: AmoExecute) extends PeekPokeTester(c) {
 }
 
 object AmoExecuteTest extends App {
-  if (!Driver.execute(args, () => new AmoExecute) {
+  if (!TestDriver.execute(args, () => new AmoExecute) {
     (c) => new AmoExecuteUnitTester(c)
   }) sys.exit(1)
 }

@@ -1,6 +1,6 @@
 package bus
 
-import chisel3.iotesters.{Driver, PeekPokeTester}
+import utils.{PeekPokeTester, TestDriver}
 
 class CoreBusUnitTester(c: CoreBus) extends PeekPokeTester(c) {
   poke(c.io.rom.en, false)
@@ -51,7 +51,7 @@ class CoreBusUnitTester(c: CoreBus) extends PeekPokeTester(c) {
 }
 
 object CoreBusTest extends App {
-  if (!Driver.execute(args, () => new CoreBus) {
+  if (!TestDriver.execute(args, () => new CoreBus) {
     (c) => new CoreBusUnitTester(c)
   }) sys.exit(1)
 }

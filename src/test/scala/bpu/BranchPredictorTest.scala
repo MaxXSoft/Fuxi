@@ -1,6 +1,6 @@
 package bpu
 
-import chisel3.iotesters.{Driver, PeekPokeTester}
+import utils.{PeekPokeTester, TestDriver}
 
 object InstType extends Enumeration {
   val Normal, Branch, Jump = Value
@@ -64,7 +64,7 @@ class BpUnitTester(c: BranchPredictor) extends PeekPokeTester(c) {
 }
 
 object BranchPredictorTest extends App {
-  if (!Driver.execute(args, () => new BranchPredictor) {
+  if (!TestDriver.execute(args, () => new BranchPredictor) {
     (c) => new BpUnitTester(c)
   }) sys.exit(1)
 }

@@ -1,5 +1,8 @@
 name: Test
 
+permissions:
+  contents: read
+
 on:
   push:
     branches:
@@ -15,46 +18,70 @@ jobs:
 
     steps:
     - name: Checkout Fuxi
-      uses: actions/checkout@v2
+      uses: actions/checkout@v6
+
+    - name: Setup JDK
+      uses: actions/setup-java@v5
+      with:
+        distribution: temurin
+        java-version: 17
+        cache: sbt
+
+    - name: Setup sbt
+      uses: sbt/setup-sbt@v1
+
+    - name: Install Verilator
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y verilator
+
+    - name: Generate Verilog
+      run: make
+
+    - name: Lint generated Verilog
+      run: |
+        verilator --lint-only -Wno-fatal --language 1364-2005 \
+          --top-module FuxiWrapper \
+          verilog/build/Fuxi.v verilog/FuxiWrapper.v
 
     - name: Test BPU
-      run: sbt "test:runMain bpu.BranchPredictorTest"
+      run: sbt "Test / runMain bpu.BranchPredictorTest"
 
     - name: Test CSR
-      run: sbt "test:runMain csr.CsrFileTest"
+      run: sbt "Test / runMain csr.CsrFileTest"
 
     - name: Test LSU
       run: |
-        sbt "test:runMain lsu.AmoExecuteTest"
-        sbt "test:runMain lsu.ExclusiveMonitorTest"
+        sbt "Test / runMain lsu.AmoExecuteTest"
+        sbt "Test / runMain lsu.ExclusiveMonitorTest"
 
     - name: Test MDU
       run: |
-        sbt "test:runMain mdu.DividerTest"
-        sbt "test:runMain mdu.MultiplierTest"
-        sbt "test:runMain mdu.MduTest"
+        sbt "Test / runMain mdu.DividerTest"
+        sbt "Test / runMain mdu.MultiplierTest"
+        sbt "Test / runMain mdu.MduTest"
 
     - name: Test Sim
-      run: sbt "test:runMain sim.RamTest"
+      run: sbt "Test / runMain sim.RamTest"
 
     - name: Test Stages
       run: |
-        sbt "test:runMain core.FetchTest"
-        sbt "test:runMain core.DecoderTest"
-        sbt "test:runMain core.AluTest"
-        sbt "test:runMain core.MemTest"
-        sbt "test:runMain core.WriteBackTest"
+        sbt "Test / runMain core.FetchTest"
+        sbt "Test / runMain core.DecoderTest"
+        sbt "Test / runMain core.AluTest"
+        sbt "Test / runMain core.MemTest"
+        sbt "Test / runMain core.WriteBackTest"
 
     - name: Test Bus
       run: |
-        sbt "test:runMain bus.TlbTest"
-        sbt "test:runMain bus.MmuTest"
-        sbt "test:runMain bus.UncachedTest"
-        sbt "test:runMain bus.CoreBusTest"
+        sbt "Test / runMain bus.TlbTest"
+        sbt "Test / runMain bus.MmuTest"
+        sbt "Test / runMain bus.UncachedTest"
+        sbt "Test / runMain bus.CoreBusTest"
 
     - name: Test Core
       run: |
-        sbt "test:runMain core.CoreTest -if src/test/resources/fib.txt -tf src/test/resources/fib_trace.txt"
-        sbt "test:runMain core.CoreTest -if src/test/resources/mdu.txt -tf src/test/resources/mdu_trace.txt"
-        sbt "test:runMain core.CoreTest -if src/test/resources/mecall.txt -tf src/test/resources/mecall_trace.txt"
-        sbt "test:runMain core.CoreTest -if src/test/resources/secall.txt -tf src/test/resources/secall_trace.txt"
+        sbt "Test / runMain core.CoreTest -if src/test/resources/fib.txt -tf src/test/resources/fib_trace.txt"
+        sbt "Test / runMain core.CoreTest -if src/test/resources/mdu.txt -tf src/test/resources/mdu_trace.txt"
+        sbt "Test / runMain core.CoreTest -if src/test/resources/mecall.txt -tf src/test/resources/mecall_trace.txt"
+        sbt "Test / runMain core.CoreTest -if src/test/resources/secall.txt -tf src/test/resources/secall_trace.txt"

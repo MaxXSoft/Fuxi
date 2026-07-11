@@ -1,20 +1,21 @@
 package csr
 
-import chisel3.iotesters.{Driver, PeekPokeTester}
+import chisel3.UInt
+import utils.{PeekPokeTester, TestDriver}
 
 import consts.CsrOp._
 import consts.CSR._
 import consts.ExceptCause._
 
 class CsrFileUnitTester(c: CsrFile) extends PeekPokeTester(c) {
-  def testRead(op: BigInt, addr: BigInt, valid: Boolean, data: BigInt) = {
+  def testRead(op: UInt, addr: UInt, valid: Boolean, data: BigInt) = {
     poke(c.io.read.op, op)
     poke(c.io.read.addr, addr)
     expect(c.io.read.valid, valid)
     if (valid) expect(c.io.read.data, data)
   }
 
-  def pokeWrite(op: BigInt, addr: BigInt, data: Int) = {
+  def pokeWrite(op: UInt, addr: UInt, data: Int) = {
     poke(c.io.write.op, op)
     poke(c.io.write.addr, addr)
     poke(c.io.write.data, data)
@@ -38,7 +39,7 @@ class CsrFileUnitTester(c: CsrFile) extends PeekPokeTester(c) {
     poke(c.io.except.excValue, 0)
   }
 
-  def pokeExcept(cause: BigInt, pc: Int, value: Int) = {
+  def pokeExcept(cause: UInt, pc: Int, value: Int) = {
     poke(c.io.except.hasTrap, true)
     poke(c.io.except.isInterrupt, false)
     poke(c.io.except.isSret, false)
@@ -70,7 +71,7 @@ class CsrFileUnitTester(c: CsrFile) extends PeekPokeTester(c) {
     poke(c.io.irq.extern, false)
   }
 
-  def expectMode(mode: BigInt) = {
+  def expectMode(mode: UInt) = {
     expect(c.io.mode, mode)
   }
 
@@ -138,14 +139,14 @@ class CsrFileUnitTester(c: CsrFile) extends PeekPokeTester(c) {
   pokeExcept()
   expectMode(CSR_MODE_S)
   testRead(CSR_R, CSR_SEPC, true, 0x00000100)
-  testRead(CSR_R, CSR_SCAUSE, true, EXC_S_ECALL)
+  testRead(CSR_R, CSR_SCAUSE, true, EXC_S_ECALL.litValue)
   testRead(CSR_R, CSR_SSTATUS, true, 0x00000100)
 
   // test interrupt
   pokeInt(true, false, false)
   step(1)
   expect(c.io.hasInt, true)
-  pokeExcept(0, 0x00000100, 0)
+  pokeExcept(EXC_INST_ADDR, 0x00000100, 0)
   poke(c.io.except.isInterrupt, true)
   expect(c.io.trapVec, 0x00000000)
   step(1)
@@ -154,7 +155,7 @@ class CsrFileUnitTester(c: CsrFile) extends PeekPokeTester(c) {
 }
 
 object CsrFileTest extends App {
-  if (!Driver.execute(args, () => new CsrFile) {
+  if (!TestDriver.execute(args, () => new CsrFile) {
     (c) => new CsrFileUnitTester(c)
   }) sys.exit(1)
 }

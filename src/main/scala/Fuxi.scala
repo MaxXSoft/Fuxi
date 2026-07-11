@@ -1,4 +1,6 @@
-import chisel3.{Module, Bundle, Driver}
+import chisel3.{Bundle, Module}
+import chisel3.stage.ChiselGeneratorAnnotation
+import circt.stage.ChiselStage
 
 import io._
 import axi.AxiMaster
@@ -35,5 +37,17 @@ class Fuxi extends Module {
 }
 
 object Fuxi extends App {
-  Driver.execute(args, () => new Fuxi)
+  private val firtoolOptions = Array(
+    "--firtool-option", "-disable-all-randomization",
+    "--firtool-option", "-strip-debug-info",
+    "--firtool-option", "-default-layer-specialization=enable",
+    "--firtool-option", "-lowering-options=disallowLocalVariables,disallowPackedArrays," +
+      "disallowPackedStructAssignments,disallowDeclAssignments,noAlwaysComb," +
+      "mitigateVivadoArrayIndexConstPropBug"
+  )
+
+  (new ChiselStage).execute(
+    Array("--target", "verilog") ++ firtoolOptions ++ args,
+    Seq(ChiselGeneratorAnnotation(() => new Fuxi))
+  )
 }

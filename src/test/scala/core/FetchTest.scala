@@ -1,6 +1,6 @@
 package core
 
-import chisel3.iotesters.{Driver, PeekPokeTester}
+import utils.{PeekPokeTester, TestDriver}
 
 class FetchUnitTester(c: Fetch) extends PeekPokeTester(c) {
   def testNormal(pc: BigInt) = {
@@ -58,7 +58,7 @@ class FetchUnitTester(c: Fetch) extends PeekPokeTester(c) {
 }
 
 object FetchTest extends App {
-  if (!Driver.execute(args, () => new Fetch) {
+  if (!TestDriver.execute(args, () => new Fetch) {
     (c) => new FetchUnitTester(c)
   }) sys.exit(1)
 }

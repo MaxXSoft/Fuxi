@@ -1,6 +1,6 @@
 package sim
 
-import chisel3.iotesters.{Driver, PeekPokeTester}
+import utils.{PeekPokeTester, TestDriver}
 
 class RamUnitTester(c: RAM) extends PeekPokeTester(c) {
   poke(c.io.en, true)
@@ -29,7 +29,7 @@ class RamUnitTester(c: RAM) extends PeekPokeTester(c) {
 }
 
 object RamTest extends App {
-  if (!Driver.execute(args, () => new RAM) {
+  if (!TestDriver.execute(args, () => new RAM) {
     (c) => new RamUnitTester(c)
   }) sys.exit(1)
 }

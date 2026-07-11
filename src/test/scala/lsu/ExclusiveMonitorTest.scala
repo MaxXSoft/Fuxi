@@ -1,6 +1,6 @@
 package lsu
 
-import chisel3.iotesters.{Driver, PeekPokeTester}
+import utils.{PeekPokeTester, TestDriver}
 
 class ExclusiveMonitorUnitTester(c: ExclusiveMonitor)
       extends PeekPokeTester(c) {
@@ -57,7 +57,7 @@ class ExclusiveMonitorUnitTester(c: ExclusiveMonitor)
 }
 
 object ExclusiveMonitorTest extends App {
-  if (!Driver.execute(args, () => new ExclusiveMonitor) {
+  if (!TestDriver.execute(args, () => new ExclusiveMonitor) {
     (c) => new ExclusiveMonitorUnitTester(c)
   }) sys.exit(1)
 }

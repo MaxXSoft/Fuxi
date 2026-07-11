@@ -1,7 +1,7 @@
 package core
 
 import chisel3.UInt
-import chisel3.iotesters.{Driver, PeekPokeTester}
+import utils.{PeekPokeTester, TestDriver}
 
 import consts.LsuOp._
 import lsu.LsuDecode._
@@ -61,7 +61,7 @@ class WriteBackUnitTester(c: WriteBack) extends PeekPokeTester(c) {
     expect(c.io.reg.data, data)
   }
 
-  def expectLoad(op: UInt, sel: Int) {
+  def expectLoad(op: UInt, sel: Int): Unit = {
     op match {
       case LSU_LB => expectReg(signExt(rdata, 8, sel))
       case LSU_LH => expectReg(signExt(rdata, 16, sel))
@@ -119,7 +119,7 @@ class WriteBackUnitTester(c: WriteBack) extends PeekPokeTester(c) {
 }
 
 object WriteBackTest extends App {
-  if (!Driver.execute(args, () => new WriteBack) {
+  if (!TestDriver.execute(args, () => new WriteBack) {
     (c) => new WriteBackUnitTester(c)
   }) sys.exit(1)
 }

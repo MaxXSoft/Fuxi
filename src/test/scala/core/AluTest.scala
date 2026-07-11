@@ -1,7 +1,7 @@
 package core
 
 import chisel3.UInt
-import chisel3.iotesters.{Driver, PeekPokeTester}
+import utils.{PeekPokeTester, TestDriver}
 
 import consts.AluOp._
 import consts.MduOp._
@@ -18,8 +18,8 @@ class AluUnitTester(c: ALU) extends PeekPokeTester(c) {
       case ALU_XOR  => opr1 ^ opr2
       case ALU_OR   => opr1 | opr2
       case ALU_AND  => opr1 & opr2
-      case ALU_SLT  => (opr1 < opr2).toInt
-      case ALU_SLTU => unsignedCompare(opr1, opr2).toInt
+      case ALU_SLT  => if (opr1 < opr2) 1 else 0
+      case ALU_SLTU => if (unsignedCompare(opr1, opr2)) 1 else 0
       case ALU_SLL  => opr1 << (opr2 & 0x1f)
       case ALU_SRL  => opr1 >>> (opr2 & 0x1f)
       case ALU_SRA  => opr1 >> (opr2 & 0x1f)
@@ -58,7 +58,7 @@ class AluUnitTester(c: ALU) extends PeekPokeTester(c) {
 }
 
 object AluTest extends App {
-  if (!Driver.execute(args, () => new ALU) {
+  if (!TestDriver.execute(args, () => new ALU) {
     (c) => new AluUnitTester(c)
   }) sys.exit(1)
 }

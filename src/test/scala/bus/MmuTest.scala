@@ -1,6 +1,6 @@
 package bus
 
-import chisel3.iotesters.{Driver, PeekPokeTester}
+import utils.{PeekPokeTester, TestDriver}
 
 class MmuUnitTester(c: MMU) extends PeekPokeTester(c) {
   poke(c.io.en, true)
@@ -37,7 +37,7 @@ class MmuUnitTester(c: MMU) extends PeekPokeTester(c) {
 }
 
 object MmuTest extends App {
-  if (!Driver.execute(args, () => new MMU(16, false)) {
+  if (!TestDriver.execute(args, () => new MMU(16, false)) {
     (c) => new MmuUnitTester(c)
   }) sys.exit(1)
 }
