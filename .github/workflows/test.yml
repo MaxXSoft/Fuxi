@@ -30,10 +30,15 @@ jobs:
     - name: Setup sbt
       uses: sbt/setup-sbt@v1
 
-    - name: Install Verilator
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y verilator
+    # Ubuntu 24.04 ships Verilator 5.020, which mis-simulates the Core
+    # CSR-write/xRET sequence exercised by the mecall trace.
+    - name: Setup Verilator
+      uses: veryl-lang/setup-verilator@b155747595eb4b817473a83045ba1da581c4084b
+      with:
+        version: 5.048
+
+    - name: Check Verilator version
+      run: verilator --version
 
     - name: Generate Verilog
       run: make
