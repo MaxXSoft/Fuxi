@@ -170,6 +170,56 @@ class MmuRedirectTester(c: MMU) extends PeekPokeTester(c) {
   expectTranslation(original, 0, true)
 }
 
+class MmuPrivilegeTester(c: MMU) extends PeekPokeTester(c) {
+  poke(c.io.en, true)
+  poke(c.io.flush, false)
+  poke(c.io.basePpn, 0x100)
+  poke(c.io.sum, false)
+  poke(c.io.smode, true)
+  poke(c.io.lookup, false)
+  poke(c.io.write, false)
+  poke(c.io.vaddr, 0x00400100)
+  poke(c.io.data.valid, false)
+  poke(c.io.data.fault, false)
+  poke(c.io.data.accessFault, false)
+  poke(c.io.data.rdata, 0)
+
+  for (userPage <- Seq(false, true)) {
+    poke(c.io.flush, true)
+    step(1)
+    poke(c.io.flush, false)
+    step(1)
+    poke(c.io.lookup, true)
+    step(1)
+    expect(c.io.data.en, true)
+    // Aligned 4 MiB RWX leaf with A/D set; vary only the U permission.
+    poke(c.io.data.rdata, (BigInt(0x80000) << 10) | 0xcf |
+      (if (userPage) 0x10 else 0))
+    poke(c.io.data.valid, true)
+    step(1)
+    poke(c.io.data.valid, false)
+    step(2)
+    poke(c.io.lookup, false)
+
+    // A privilege/SUM change must take effect even for an existing TLB hit.
+    for (supervisor <- Seq(false, true); sum <- Seq(false, true);
+         write <- (if (c.isInst) Seq(false) else Seq(false, true))) {
+      poke(c.io.smode, supervisor)
+      poke(c.io.sum, sum)
+      poke(c.io.write, write)
+      expect(c.io.valid, true)
+      expect(c.io.fault, if (supervisor) userPage && (c.isInst || !sum) else !userPage)
+      expect(c.io.accessFault, false)
+    }
+    // Bare mode must not apply permissions from a cached translation.
+    poke(c.io.en, false)
+    expect(c.io.valid, true)
+    expect(c.io.fault, false)
+    expect(c.io.paddr, 0x00400100)
+    poke(c.io.en, true)
+  }
+}
+
 object MmuTest extends App {
   if (!TestDriver.execute(args, () => new MMU(16, false)) {
     (c) => new MmuUnitTester(c)
@@ -177,6 +227,9 @@ object MmuTest extends App {
   for (isInst <- Seq(true, false)) {
     if (!TestDriver.execute(args, () => new MMU(16, isInst)) {
       (c) => new MmuRedirectTester(c)
+    }) sys.exit(1)
+    if (!TestDriver.execute(args, () => new MMU(16, isInst)) {
+      (c) => new MmuPrivilegeTester(c)
     }) sys.exit(1)
   }
 }

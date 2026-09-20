@@ -84,7 +84,11 @@ class MMU(val size: Int, val isInst: Boolean) extends Module {
   val rFault  = if (!isInst) !io.write && !tlb.io.rent.r else false.B
   val wFault  = io.write && !tlb.io.rent.w
   val xFault  = if (isInst) !tlb.io.rent.x else false.B
-  val uFault  = io.smode && !io.sum && tlb.io.rent.u
+  // SUM permits supervisor data accesses to user pages, never instruction
+  // fetches. User mode may only access pages explicitly marked U.
+  val supervisorUserFault = if (isInst) tlb.io.rent.u
+                            else !io.sum && tlb.io.rent.u
+  val uFault  = Mux(io.smode, supervisorUserFault, !tlb.io.rent.u)
   val vmFault = daFault || rFault || wFault || xFault || uFault
   val fault   = io.en && vmFault
 
