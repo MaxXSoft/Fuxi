@@ -241,7 +241,9 @@ module confreg #(
             conf_rvalid_reg <= 1'd0;
             conf_rlast_reg  <= 1'd0;
         end
-        else if(busy & R_or_W & !r_retire)
+        // Capture once per request; live switches/timer must not change an
+        // already-valid AXI response while the master applies backpressure.
+        else if(busy & R_or_W & !conf_rvalid_reg)
         begin
             conf_rvalid_reg <= 1'd1;
             conf_rlast_reg  <= 1'd1;

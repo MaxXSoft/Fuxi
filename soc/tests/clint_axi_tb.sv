@@ -69,7 +69,8 @@ module clint_axi_tb;
     bready = 0;
   endtask
 
-  task automatic read_reg(input [31:0] address, output [31:0] value);
+  task automatic read_reg(input [31:0] address, output [31:0] value,
+                          input integer stall_cycles = 0);
     @(negedge clk);
     arid = 6'h09;
     araddr = address;
@@ -83,6 +84,11 @@ module clint_axi_tb;
     check(rid == 6'h09 && rresp == 0 && rlast,
           "read response must preserve the accepted ID and single-beat framing");
     value = rdata;
+    repeat (stall_cycles) begin
+      tick();
+      check(rvalid && rlast && rid == 6'h09 && rresp == 0 && rdata == value,
+            "CLINT must hold the entire read response during backpressure");
+    end
     @(negedge clk);
     rready = 1;
     tick();
@@ -100,6 +106,11 @@ module clint_axi_tb;
     write_reg(32'h1100010c, 32'h2468ace0);
     read_reg(32'h1100010c, value);
     check(value == 32'h2468ace0, "second CLINT register must not alias the changed address");
+    // MTIME changes asynchronously while the response is waiting for RREADY.
+    read_reg(32'h11000100, value, 12);
+    check(value != 0, "MTIME must be running during the stalled read");
+    read_reg(32'h11000108, value);
+    check(value == 32'h13579bdf, "a stalled response must retire before the next read");
     if (failures != 0) $fatal(1, "CLINT AXI regression: %0d failures", failures);
     $display("CLINT AXI regression passed");
     $finish;

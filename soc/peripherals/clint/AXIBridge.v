@@ -52,7 +52,9 @@ module AXIBridge(
 
   wire    ar_enter    = axi_arvalid & axi_arready;
   wire    r_retire    = axi_rvalid  & axi_rready & axi_rlast;
-  wire    r_valid     = busy & r_or_w & !r_retire;
+  // Sample the synchronous peripheral only once, then hold its response
+  // until the master accepts it, even if the register changes meanwhile.
+  wire    r_valid     = busy & r_or_w & !axi_rvalid;
   wire    aw_enter    = axi_awvalid & axi_awready;
   wire    w_enter     = axi_wvalid  & axi_wready & axi_wlast;
   wire    b_retire    = axi_bvalid  & axi_bready;
