@@ -94,7 +94,13 @@ class HazardResolver extends Module {
         (read.addr === write.addr || alias || delegatedView)
     }
     val isRead = read.op =/= CSR_NOP && read.op =/= CSR_W
-    isRead && (dependsOn(io.memCsr) || dependsOn(io.wbCsr))
+    // Every preceding instruction implicitly writes minstret when it retires.
+    // Drain MEM/WB before taking a software snapshot, including high-half
+    // reads that can observe a carry. The current EX instruction is excluded.
+    val readsInstret = Seq(CSR_INSTRET, CSR_INSTRETH, CSR_MINSTRET, CSR_MINSTRETH)
+      .map(read.addr === _).reduce(_ || _)
+    val retirementHazard = readsInstret && (io.memCsr.retired || io.wbCsr.retired)
+    isRead && (dependsOn(io.memCsr) || dependsOn(io.wbCsr) || retirementHazard)
   }
 
   // forward regfile read channels
