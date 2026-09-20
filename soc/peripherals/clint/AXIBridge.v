@@ -130,8 +130,8 @@ module AXIBridge(
 
   assign  gpi_read    = r_valid;
   assign  gpi_write   = w_enter;
-  assign  gpi_addr    = gpi_read ? axi_araddr :
-                        gpi_write ? axi_awaddr : 32'h0;
+  // Address channels may change immediately after their handshake.
+  assign  gpi_addr    = buf_addr;
   assign  gpi_wdata   = axi_wdata;
 
 endmodule
