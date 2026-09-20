@@ -3,6 +3,7 @@ package utils
 import chisel3._
 
 import io._
+import consts.CSR._
 import consts.CsrOp.{CSR_NOP, CSR_R, CSR_W}
 
 class HazardResolver extends Module {
@@ -70,12 +71,30 @@ class HazardResolver extends Module {
   }
 
   def resolveCsrHazard(read: CsrReadIO) = {
-    val isRead  = read.op =/= CSR_NOP && read.op =/= CSR_W
-    val memCsr  = io.memCsr.op =/= CSR_NOP && io.memCsr.op =/= CSR_R &&
-                  read.addr === io.memCsr.addr
-    val wbCsr   = io.wbCsr.op =/= CSR_NOP && io.wbCsr.op =/= CSR_R &&
-                  read.addr === io.wbCsr.addr
-    isRead && (memCsr || wbCsr)
+    // Distinct CSR addresses can name the same storage.  A read must wait
+    // for writes through either name, including the read-only counter views.
+    val aliases = Seq(
+      CSR_SSTATUS -> CSR_MSTATUS,
+      CSR_SIE -> CSR_MIE,
+      CSR_SIP -> CSR_MIP,
+      CSR_CYCLE -> CSR_MCYCLE,
+      CSR_CYCLEH -> CSR_MCYCLEH,
+      CSR_INSTRET -> CSR_MINSTRET,
+      CSR_INSTRETH -> CSR_MINSTRETH,
+    )
+    def dependsOn(write: CsrCommitIO): Bool = {
+      val alias = aliases.map { case (a, b) =>
+        (read.addr === a && write.addr === b) ||
+        (read.addr === b && write.addr === a)
+      }.reduce(_ || _)
+      // Delegation changes the readable SIE/SIP view without changing MIE/MIP.
+      val delegatedView = write.addr === CSR_MIDELEG &&
+        (read.addr === CSR_SIE || read.addr === CSR_SIP)
+      write.op =/= CSR_NOP && write.op =/= CSR_R &&
+        (read.addr === write.addr || alias || delegatedView)
+    }
+    val isRead = read.op =/= CSR_NOP && read.op =/= CSR_W
+    isRead && (dependsOn(io.memCsr) || dependsOn(io.wbCsr))
   }
 
   // forward regfile read channels
