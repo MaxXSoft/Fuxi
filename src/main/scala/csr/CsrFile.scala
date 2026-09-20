@@ -140,7 +140,10 @@ class CsrFile extends Module {
     CSR_RC  -> (readable && writable),
   ))
   val modeValid = io.read.addr(9, 8) <= mode
-  val valid     = readValid && modeValid
+  // mcounteren/scounteren are WARL zero, so user counter addresses are
+  // accessible only in M-mode, including their RV32 high halves.
+  val counterValid = mode === CSR_MODE_M || io.read.addr(11, 8) =/= 0xc.U
+  val valid     = readValid && modeValid && counterValid
 
   // CSR write related signals
   val csrData :: _ :: _ :: Nil =
