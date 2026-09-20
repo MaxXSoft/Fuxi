@@ -142,8 +142,9 @@ class Mem extends Module {
   // A dirty-line writeback failure during a cache flush is imprecise, but it
   // must not be silently reported as a successful FENCE.I/SFENCE.VMA.
   val fenceAccess = flushDc && io.flushDcAccessFault
-  val syncTrap  = instAddr || instIllg || instPage || instAccess ||
-                  (excMem && memExcept) || fenceAccess || excOther
+  val nonMemTrap = instAddr || instIllg || instPage || instAccess ||
+                   fenceAccess || excOther
+  val syncTrap  = nonMemTrap || (excMem && memExcept)
   val takeInterrupt = io.csrHasInt && !memoryInProgress && !syncTrap
   val hasTrap   = syncTrap || takeInterrupt
   // trap return instructions & interruptions
@@ -187,10 +188,14 @@ class Mem extends Module {
   io.writeIntent := wen || checkExcMon || amoOp =/= AMO_OP_NOP
 
   // cache/TLB control signals
-  io.flushIc  := Mux(hasTrap, false.B, flushIc)
-  io.flushDc  := Mux(hasTrap, false.B, flushDc)
-  io.flushIt  := Mux(hasTrap, false.B, flushIt)
-  io.flushDt  := Mux(hasTrap, false.B, flushDt)
+  // Fences do not perform a load/store lookup. Depending on the data MMU's
+  // fault here would feed its flush-sensitive result back into its flush
+  // input, creating a combinational loop in the complete core.
+  val maintenanceTrap = nonMemTrap || (io.csrHasInt && !memoryInProgress)
+  io.flushIc  := !maintenanceTrap && flushIc
+  io.flushDc  := !maintenanceTrap && flushDc
+  io.flushIt  := !maintenanceTrap && flushIt
+  io.flushDt  := !maintenanceTrap && flushDt
 
   // exclusive monitor check signals
   io.excMon.addr  := addr

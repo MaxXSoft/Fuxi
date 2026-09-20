@@ -279,6 +279,15 @@ class MemUnitTester(c: core.Mem) extends PeekPokeTester(c) {
   expect(c.io.flushDt, true)
   expectExc()
   expectEm(false)
+  // A fence does not look up a data address. TLB/access fault outputs for
+  // the unused RAM address must not gate the invalidation that clears them.
+  poke(c.io.ram.fault, true)
+  poke(c.io.ram.accessFault, true)
+  expect(c.io.flushIc, true)
+  expect(c.io.flushDc, true)
+  expect(c.io.flushIt, true)
+  expect(c.io.flushDt, true)
+  expectExc()
   pokeLsu(LSU_FENV, 0)
   pokeExc(EXC_SPRIV, 0x00000200, false, true)
   expect(c.io.stallReq, false)
@@ -332,6 +341,8 @@ class MemUnitTester(c: core.Mem) extends PeekPokeTester(c) {
   expectExc()
   poke(c.io.flushDcAccessFault, true)
   expectExc(EXC_STAMO_ACCESS, 0x00000200, 0)
+  expect(c.io.flushIc, false)
+  expect(c.io.flushDc, false)
 
   pokeLsu(LSU_NOP, 0)
   pokeExc(EXC_IACCESS, 0x00000200, false, false)
