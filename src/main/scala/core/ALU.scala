@@ -9,7 +9,6 @@ import consts.MduOp.MDU_NOP
 import consts.LsuOp.LSU_NOP
 import consts.CsrOp.CSR_NOP
 import consts.ExceptType.EXC_ILLEG
-import consts.Instructions.NOP
 import mdu.MDU
 
 class ALU extends Module {
@@ -54,7 +53,7 @@ class ALU extends Module {
 
   // CSR control & exception type
   val csrEn   = io.decoder.csrOp =/= CSR_NOP
-  val retired = io.decoder.inst =/= NOP
+  val retired = io.decoder.valid
   val excType = Mux(csrEn && !io.csrRead.valid,
                     EXC_ILLEG, io.decoder.excType)
 

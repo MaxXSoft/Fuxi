@@ -89,7 +89,11 @@ class Core extends Module {
   mem.io.flushDcDone  := io.cache.flushDataDone
   mem.io.flushDcAccessFault := io.cache.flushDataAccessFault
   mem.io.excMon       <> resolve.io.check
-  memwb.io.flush      := control.io.flush
+  // Fences and legal xRET instructions redirect younger stages but still
+  // retire. Synchronous faults and interrupted instructions are discarded.
+  val serializingDone = (mem.io.flushReq && !mem.io.except.hasTrap) ||
+    (mem.io.except.hasTrap && (mem.io.except.isSret || mem.io.except.isMret))
+  memwb.io.flush      := control.io.flush && !serializingDone
   memwb.io.stallPrev  := control.io.stallMm
   memwb.io.stallNext  := control.io.stallWb
   memwb.io.prev       <> mem.io.mem
