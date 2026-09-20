@@ -50,15 +50,24 @@ jobs:
           verilog/build/Fuxi.v verilog/FuxiWrapper.v
 
     - name: Test BPU
-      run: sbt "Test / runMain bpu.BranchPredictorTest"
+      run: sbt "Test / runMain bpu.BranchPredictorTest" "Test / runMain bpu.DecoderTrainingTest"
 
     - name: Test CSR
-      run: sbt "Test / runMain csr.CsrFileTest"
+      run: >-
+        sbt "Test / runMain csr.CsrFileTest"
+        "Test / runMain csr.CsrInterruptTest"
+        "Test / runMain csr.CsrPendingTest"
+        "Test / runMain csr.CsrDelegationTest"
+        "Test / runMain csr.CsrCounterAccessTest"
 
     - name: Test LSU
       run: |
         sbt "Test / runMain lsu.AmoExecuteTest"
         sbt "Test / runMain lsu.ExclusiveMonitorTest"
+        sbt "Test / runMain lsu.AtomicMemoryTest"
+        sbt "Test / runMain lsu.ScSequenceTest"
+        sbt "Test / runMain lsu.AtomicFaultTest"
+        sbt "Test / runMain lsu.AtomicPermissionTest"
 
     - name: Test MDU
       run: |
@@ -83,9 +92,16 @@ jobs:
         sbt "Test / runMain bus.MmuTest"
         sbt "Test / runMain bus.UncachedTest"
         sbt "Test / runMain bus.CoreBusTest"
+        sbt "Test / runMain bus.InstCacheTest"
+
+    - name: Test peripheral AXI handshakes
+      run: soc/tests/run.sh
 
     - name: Test Core
       run: |
+        sbt "Test / runMain core.CoreCsrAliasTest"
+        sbt "Test / runMain core.CoreRetirementTest"
+        sbt "Test / runMain core.CoreInstretReadTest"
         sbt "Test / runMain core.CoreTest -if src/test/resources/fib.txt -tf src/test/resources/fib_trace.txt"
         sbt "Test / runMain core.CoreTest -if src/test/resources/mdu.txt -tf src/test/resources/mdu_trace.txt"
         sbt "Test / runMain core.CoreTest -if src/test/resources/mecall.txt -tf src/test/resources/mecall_trace.txt"

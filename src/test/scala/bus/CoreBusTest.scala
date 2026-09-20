@@ -72,6 +72,7 @@ class CoreBusFenceTester(c: CoreBus) extends PeekPokeTester(c) {
     poke(c.io.ram.addr, 0)
     poke(c.io.ram.wdata, 0)
     poke(c.io.tlb.en, true)
+    poke(c.io.tlb.dataWrite, false)
     poke(c.io.tlb.flushInst, false)
     poke(c.io.tlb.flushData, false)
     poke(c.io.tlb.basePpn, oldRoot >> 12)
