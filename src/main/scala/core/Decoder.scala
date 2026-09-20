@@ -129,9 +129,12 @@ class Decoder extends Module {
   io.read2.addr := rs2
 
   // branch information
-  io.branch.branch  := isBranch && !illegalFetch
-  io.branch.jump    := isJump && !illegalFetch
-  io.branch.taken   := branchTaken && !illegalFetch
+  // A held instruction may still be waiting for forwarded operands. Train
+  // only when this valid instruction can advance out of decode.
+  val branchUpdate = io.fetch.valid && !io.stallId && !illegalFetch
+  io.branch.branch  := isBranch && branchUpdate
+  io.branch.jump    := isJump && branchUpdate
+  io.branch.taken   := branchTaken && branchUpdate
   io.branch.index   := io.fetch.predIndex
   io.branch.pc      := io.fetch.pc
   io.branch.target  := branchTarget
