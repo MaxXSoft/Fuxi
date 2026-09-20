@@ -146,11 +146,16 @@ class CsrFile extends Module {
   val csrData :: _ :: _ :: Nil =
       ListLookup(io.write.addr, default, csrTable)
   val writeEn   = io.write.op =/= CSR_NOP && io.write.op =/= CSR_R
+  // External SEIP is visible to rd, but CSRRS/CSRRC must modify only the
+  // software-pending bit (Privileged ISA 1.11, machine interrupt registers).
+  val rmwData = Mux(io.write.addr === CSR_MIP,
+                    Cat(csrData(31, 10), mipReal.seip, csrData(8, 0)),
+                    csrData)
   val writeData = MuxLookup(io.write.op, 0.U)(Seq(
     CSR_W   -> io.write.data,
     CSR_RW  -> io.write.data,
-    CSR_RS  -> (csrData | io.write.data),
-    CSR_RC  -> (csrData & ~io.write.data),
+    CSR_RS  -> (rmwData | io.write.data),
+    CSR_RC  -> (rmwData & ~io.write.data),
   ))
 
   // CSR status signals
