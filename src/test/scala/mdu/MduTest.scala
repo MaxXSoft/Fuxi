@@ -42,19 +42,43 @@ class MduUnitTester(c: MDU) extends PeekPokeTester(c) {
     (opr1, opr2, ans)
   }
 
-  def testMdu(op: UInt) = {
-    val (opr1, opr2, ans) = generateOprAns(op)
+  def checkMdu(op: UInt, opr1: BigInt, opr2: BigInt, ans: BigInt): Unit = {
     poke(c.io.flush, false)
     poke(c.io.op, op)
     poke(c.io.opr1, opr1)
     poke(c.io.opr2, opr2)
-    while (peek(c.io.valid) == 0) {
+    var cycles = 0
+    while (peek(c.io.valid) == 0 && cycles < 32) {
       step(1)
+      cycles += 1
     }
+    assert(peek(c.io.valid) != 0, s"MDU operation $op ($opr1, $opr2) timed out")
     expect(c.io.result, ans)
+    poke(c.io.op, MDU_NOP)
     step(1)
   }
 
+  def testMdu(op: UInt): Unit = {
+    val (opr1, opr2, ans) = generateOprAns(op)
+    checkMdu(op, opr1, opr2, ans)
+  }
+
+  // Exercise architectural results, not just Divider's raw divZero flag.
+  checkMdu(MDU_DIVU, 0, 0, mask)
+  checkMdu(MDU_REMU, 0, 0, 0)
+  for ((op, dividend, answer) <- Seq(
+    (MDU_DIVU, BigInt(100), BigInt(14)),
+    (MDU_REMU, BigInt(100), BigInt(2)),
+    (MDU_DIV, mask - 99, mask - 13), // -100 / 7 = -14
+    (MDU_REM, mask - 99, mask - 1)   // -100 % 7 = -2
+  )) {
+    checkMdu(op, dividend, 7, answer)
+    poke(c.io.flush, true)
+    step(1)
+    checkMdu(op, dividend, 7, answer)
+  }
+
+  rnd.setSeed(0x46555849L)
   for (i <- 0 until 20) {
     testMdu(MDU_NOP)
     testMdu(MDU_MUL)
