@@ -23,6 +23,8 @@ class Mem extends Module {
     val flushPc   = Output(UInt(ADDR_WIDTH.W))
     // RAM interface
     val ram       = new SramIO(ADDR_WIDTH, DATA_WIDTH)
+    // Architectural permission check for stores, SC and every AMO phase.
+    val writeIntent = Output(Bool())
     // cache/TLB control
     val flushIc   = Output(Bool())
     val flushDc   = Output(Bool())
@@ -180,6 +182,9 @@ class Mem extends Module {
   io.ram.wen    := ramWen
   io.ram.addr   := addr
   io.ram.wdata  := wdata
+  // A failed SC still needs write permission; an AMO must check write
+  // permission before issuing its initial read. Neither has strobes yet.
+  io.writeIntent := wen || checkExcMon || amoOp =/= AMO_OP_NOP
 
   // cache/TLB control signals
   io.flushIc  := Mux(hasTrap, false.B, flushIc)

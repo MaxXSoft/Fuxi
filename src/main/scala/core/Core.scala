@@ -152,6 +152,7 @@ class Core extends Module {
 
   // TLB/cache control
   io.tlb.en           := csrfile.io.pageEn
+  io.tlb.dataWrite    := mem.io.writeIntent
   io.tlb.flushInst    := mem.io.flushIt
   io.tlb.flushData    := mem.io.flushDt
   io.tlb.basePpn      := csrfile.io.basePpn

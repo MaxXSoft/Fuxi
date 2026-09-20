@@ -23,6 +23,8 @@ class SramIO(val addrWidth: Int, val dataWidth: Int) extends Bundle {
 class TlbControlIO(val ppnWidth: Int) extends Bundle {
   // enable address translation
   val en        = Output(Bool())
+  // Architectural store intent, independent of the current byte strobes.
+  val dataWrite = Output(Bool())
   // flush signals
   val flushInst = Output(Bool())
   val flushData = Output(Bool())

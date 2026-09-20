@@ -97,7 +97,7 @@ class CoreBus extends Module {
   dmmu.io.sum     := io.tlb.sum
   dmmu.io.smode   := io.tlb.smode
   dmmu.io.lookup  := io.ram.en
-  dmmu.io.write   := io.ram.wen =/= 0.U
+  dmmu.io.write   := io.tlb.dataWrite || io.ram.wen =/= 0.U
   dmmu.io.vaddr   := io.ram.addr
 
   // demux for D-MMU's data interface & RAM interface
