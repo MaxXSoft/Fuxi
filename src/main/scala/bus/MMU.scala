@@ -63,21 +63,22 @@ class MMU(val size: Int, val isInst: Boolean) extends Module {
   // Fetch can redirect while a walk is waiting for memory. Keep every level
   // and the eventual TLB fill associated with the original virtual address.
   val walkVaddr = Reg(UInt(ADDR_WIDTH.W))
+  val discardWalk = RegInit(false.B)
+  val walkCanceled = discardWalk || io.flush
   val level = Reg(UInt(LEVEL_WIDTH.W))
   val pte   = io.data.rdata(PTE_WIDTH - 1, 0).asTypeOf(new PTE)
 
   // TLB
   val tlb = Module(new TLB(size))
   tlb.io.flush  := io.flush
-  tlb.io.wen    := state === sUpdate
+  tlb.io.wen    := state === sUpdate && !walkCanceled
   tlb.io.waddr  := walkVaddr
   tlb.io.vaddr  := io.vaddr
   tlb.io.went   := entry
 
   // valid flag
-  val tlbFlush  = state === sFlush
-  val tlbHit    = state === sIdle && tlb.io.valid
-  val valid     = !io.en || tlbFlush || tlbHit
+  val tlbHit    = state === sIdle && !io.flush && tlb.io.valid
+  val valid     = !io.en || tlbHit
 
   // fault flag
   val daFault = !tlb.io.rent.a || (io.write && !tlb.io.rent.d)
@@ -102,6 +103,15 @@ class MMU(val size: Int, val isInst: Boolean) extends Module {
     entry := 0.U.asTypeOf(new TlbEntry)
   }
 
+  // SFENCE.VMA invalidates both cached translations and work already in
+  // flight. Drain an outstanding SRAM request, but never install its result
+  // or report its error after the fence. A new walk starts with a clean tag.
+  when (io.flush) {
+    discardWalk := true.B
+  } .elsewhen (state === sIdle) {
+    discardWalk := false.B
+  }
+
   // finite state machine of TLB fill
   switch (state) {
     is (sIdle) {
@@ -121,12 +131,15 @@ class MMU(val size: Int, val isInst: Boolean) extends Module {
     is (sAddr) {
       // wait until data valid
       when (io.data.valid) {
-        state := Mux(io.data.accessFault, sAccessFault, sRead)
+        state := Mux(walkCanceled, sFlush,
+                  Mux(io.data.accessFault, sAccessFault, sRead))
       }
     }
     is (sRead) {
       // walk through page table
-      when (!pte.v || (!pte.r && pte.w)) {
+      when (walkCanceled) {
+        state := sFlush
+      } .elsewhen (!pte.v || (!pte.r && pte.w)) {
         // invalid PTE
         raisePageFault()
       } .elsewhen (pte.r || pte.x) {
@@ -175,6 +188,6 @@ class MMU(val size: Int, val isInst: Boolean) extends Module {
   // output signals
   io.valid  := valid
   io.fault  := valid && fault
-  io.accessFault := state === sAccessFault
+  io.accessFault := state === sAccessFault && !walkCanceled
   io.paddr  := paddr
 }

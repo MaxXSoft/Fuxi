@@ -220,6 +220,80 @@ class MmuPrivilegeTester(c: MMU) extends PeekPokeTester(c) {
   }
 }
 
+class MmuFlushTester(c: MMU) extends PeekPokeTester(c) {
+  val vaddr = BigInt("00400100", 16)
+  val rootAddress = BigInt(0x100004)
+  val oldPte = (BigInt(0x80000) << 10) | 0xcf
+  val newPte = (BigInt(0x80400) << 10) | 0xcf
+  poke(c.io.en, true)
+  poke(c.io.flush, false)
+  poke(c.io.basePpn, 0x100)
+  poke(c.io.sum, false)
+  poke(c.io.smode, true)
+  poke(c.io.lookup, false)
+  poke(c.io.write, false)
+  poke(c.io.vaddr, vaddr)
+  poke(c.io.data.valid, false)
+  poke(c.io.data.fault, false)
+  poke(c.io.data.accessFault, false)
+  poke(c.io.data.rdata, oldPte)
+
+  for (phase <- Seq("address", "read", "update");
+       responseError <- (if (phase == "address") Seq(false, true) else Seq(false))) {
+    poke(c.reset, 1)
+    step(1)
+    poke(c.reset, 0)
+    poke(c.io.lookup, true)
+    poke(c.io.data.rdata, oldPte)
+    step(1)
+    poke(c.io.lookup, false)
+    expect(c.io.data.en, true)
+    expect(c.io.data.addr, rootAddress)
+    if (phase == "address") {
+      poke(c.io.flush, true)
+      step(1)
+      poke(c.io.flush, false)
+      for (_ <- 0 until 3) {
+        expect(c.io.data.en, true) // accepted lower-level work must be drained
+        expect(c.io.data.addr, rootAddress)
+        step(1)
+      }
+    }
+    poke(c.io.data.valid, true)
+    poke(c.io.data.accessFault, responseError)
+    step(1)
+    poke(c.io.data.valid, false)
+    poke(c.io.data.accessFault, false)
+    if (phase == "update") step(1)
+    if (phase != "address") {
+      poke(c.io.flush, true)
+      step(1)
+      poke(c.io.flush, false)
+    }
+    for (_ <- 0 until 3) {
+      expect(c.io.accessFault, false)
+      step(1)
+    }
+    expect(c.io.valid, false)
+    expect(c.io.fault, false)
+
+    // A replacement PTE must be fetched rather than reusing the old result.
+    poke(c.io.lookup, true)
+    step(1)
+    expect(c.io.data.en, true)
+    expect(c.io.data.addr, rootAddress)
+    poke(c.io.data.rdata, newPte)
+    poke(c.io.data.valid, true)
+    step(1)
+    poke(c.io.data.valid, false)
+    step(2)
+    poke(c.io.lookup, false)
+    expect(c.io.valid, true)
+    expect(c.io.fault, false)
+    expect(c.io.paddr, BigInt("80400100", 16))
+  }
+}
+
 object MmuTest extends App {
   if (!TestDriver.execute(args, () => new MMU(16, false)) {
     (c) => new MmuUnitTester(c)
@@ -230,6 +304,9 @@ object MmuTest extends App {
     }) sys.exit(1)
     if (!TestDriver.execute(args, () => new MMU(16, isInst)) {
       (c) => new MmuPrivilegeTester(c)
+    }) sys.exit(1)
+    if (!TestDriver.execute(args, () => new MMU(16, isInst)) {
+      (c) => new MmuFlushTester(c)
     }) sys.exit(1)
   }
 }
