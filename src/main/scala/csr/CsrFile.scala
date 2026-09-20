@@ -54,7 +54,7 @@ class CsrFile extends Module {
   val mcycle    = RegInit(McycleCsr.default())
   val minstret  = RegInit(MinstretCsr.default())
   val sstatus   = SstatusCsr(mstatus)
-  val sie       = SieCsr(mie)
+  val sie       = SieCsr(mie.asUInt & mideleg.asUInt)
   val sip       = WireDefault(SipCsr.default())
   val stvec     = RegInit(StvecCsr.default())
   val sscratch  = RegInit(SscratchCsr.default())
@@ -202,9 +202,9 @@ class CsrFile extends Module {
   mip.stip := mipReal.stip | io.irq.timer
   mip.msip := mipReal.msip | io.irq.soft
   mip.ssip := mipReal.ssip | io.irq.soft
-  sip.seip := mip.seip
-  sip.stip := mip.stip
-  sip.ssip := mip.ssip
+  sip.seip := mip.seip && mideleg.data(9)
+  sip.stip := mip.stip && mideleg.data(5)
+  sip.ssip := mip.ssip && mideleg.data(1)
 
   // update current privilege mode
   val intMode   = Mux(handIntS, CSR_MODE_S, CSR_MODE_M)
@@ -232,10 +232,12 @@ class CsrFile extends Module {
       mstatus.castAssign(SstatusCsr(), writeData)
     }
     when (io.write.addr === CSR_SIE) {
-      mie.castAssign(SieCsr(), writeData)
+      mie.castAssign(SieCsr(),
+        (mie.asUInt & ~mideleg.asUInt) | (writeData & mideleg.asUInt))
     }
     when (io.write.addr === CSR_SIP) {
-      mipReal.castAssign(SipCsr(), writeData)
+      mipReal.castAssign(SipCsr(),
+        (mipReal.asUInt & ~mideleg.asUInt) | (writeData & mideleg.asUInt))
     }
     when (io.write.addr === CSR_MCYCLE) {
       mcycle.data := Cat(mcycle.data(63, 32), writeData)
