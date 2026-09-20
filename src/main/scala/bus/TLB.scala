@@ -22,6 +22,7 @@ class TLB(val size: Int) extends Module {
     val flush = Input(Bool())
     // write/lookup channel
     val wen   = Input(Bool())
+    val waddr = Input(UInt(ADDR_WIDTH.W))
     val vaddr = Input(UInt(ADDR_WIDTH.W))
     val went  = Input(new TlbEntry)
     val valid = Output(Bool())
@@ -50,7 +51,7 @@ class TLB(val size: Int) extends Module {
   } .elsewhen (io.wen) {
     // write valid bit & data
     valid(pointer)      := true.B
-    data(pointer).vpn   := vpn
+    data(pointer).vpn   := io.waddr(ADDR_WIDTH - 1, PAGE_OFFSET_WIDTH)
     data(pointer).entry := io.went
     // increase pointer
     pointer := pointer + 1.U

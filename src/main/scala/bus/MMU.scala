@@ -60,6 +60,9 @@ class MMU(val size: Int, val isInst: Boolean) extends Module {
   // some other registers
   val entry = Reg(new TlbEntry)
   val addr  = Reg(UInt(ADDR_WIDTH.W))
+  // Fetch can redirect while a walk is waiting for memory. Keep every level
+  // and the eventual TLB fill associated with the original virtual address.
+  val walkVaddr = Reg(UInt(ADDR_WIDTH.W))
   val level = Reg(UInt(LEVEL_WIDTH.W))
   val pte   = io.data.rdata(PTE_WIDTH - 1, 0).asTypeOf(new PTE)
 
@@ -67,6 +70,7 @@ class MMU(val size: Int, val isInst: Boolean) extends Module {
   val tlb = Module(new TLB(size))
   tlb.io.flush  := io.flush
   tlb.io.wen    := state === sUpdate
+  tlb.io.waddr  := walkVaddr
   tlb.io.vaddr  := io.vaddr
   tlb.io.went   := entry
 
@@ -104,6 +108,7 @@ class MMU(val size: Int, val isInst: Boolean) extends Module {
         // entry not found in TLB
         when (io.lookup && !tlb.io.valid) {
           state := sAddr
+          walkVaddr := io.vaddr
           addr  := getPteAddr(io.basePpn, io.vaddr, (LEVELS - 1).U)
           level := (LEVELS - 1).U
         }
@@ -130,7 +135,7 @@ class MMU(val size: Int, val isInst: Boolean) extends Module {
           entry := pte.asTlbEntry()
           // current page is a superpage
           when (level > 0.U) {
-            entry.ppn := getSuperPpn(pte.ppn, io.vaddr, level - 1.U)
+            entry.ppn := getSuperPpn(pte.ppn, walkVaddr, level - 1.U)
           }
         }
       } .elsewhen (level === 0.U) {
@@ -139,7 +144,7 @@ class MMU(val size: Int, val isInst: Boolean) extends Module {
       } .otherwise {
         // fetch next PTE
         state := sAddr
-        addr  := getPteAddr(pte.ppn, io.vaddr, level - 1.U)
+        addr  := getPteAddr(pte.ppn, walkVaddr, level - 1.U)
         level := level - 1.U
       }
     }
