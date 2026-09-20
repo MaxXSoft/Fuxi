@@ -121,6 +121,7 @@ class Core extends Module {
   excMon.io.update.addr   := wb.io.excMon.addr
   excMon.io.update.set    := wb.io.excMon.set
   excMon.io.update.clear  := wb.io.excMon.clear
+  excMon.io.update.clearAll := wb.io.excMon.clearAll
 
   // hazard resolver
   resolve.io.aluReg   <> alu.io.alu.reg

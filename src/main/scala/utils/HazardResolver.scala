@@ -52,16 +52,12 @@ class HazardResolver extends Module {
   }
 
   def forwardExcMon(check: ExcMonCheckIO, excMon: ExcMonCheckIO) = {
-    when (io.wbExcMon.clear || io.wbExcMon.set) {
-      when (check.addr === io.wbExcMon.addr) {
-        when (io.wbExcMon.clear) {
-          check.valid := false.B
-        } .otherwise {
-          check.valid := true.B
-        }
-      } .otherwise {
-        check.valid := false.B
-      }
+    when (io.wbExcMon.clearAll) {
+      check.valid := false.B
+    } .elsewhen (io.wbExcMon.set) {
+      check.valid := check.addr === io.wbExcMon.addr
+    } .elsewhen (io.wbExcMon.clear && check.addr === io.wbExcMon.addr) {
+      check.valid := false.B
     } .otherwise {
       check.valid := excMon.valid
     }

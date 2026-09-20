@@ -109,7 +109,7 @@ class Mem extends Module {
              Mux(amoOp =/= AMO_OP_NOP, amo.io.regWdata, io.alu.reg.data))
 
   // exclusive monitor clear flag
-  val clearEm = wen || checkExcMon || amoOp =/= AMO_OP_NOP
+  val clearEm = wen || amoOp =/= AMO_OP_NOP
 
   // exception related signals
   // signals about memory accessing
@@ -211,5 +211,6 @@ class Mem extends Module {
   io.mem.excMon.addr  := addr
   io.mem.excMon.set   := setExcMon
   io.mem.excMon.clear := clearEm
+  io.mem.excMon.clearAll := checkExcMon
   io.mem.currentPc    := io.alu.currentPc
 }

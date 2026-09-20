@@ -111,12 +111,14 @@ class MemUnitTester(c: core.Mem) extends PeekPokeTester(c) {
   def expectEm(addr: Int, isSet: Boolean) = {
     expect(c.io.mem.excMon.addr, addr)
     expect(c.io.mem.excMon.set, isSet)
-    expect(c.io.mem.excMon.clear, !isSet)
+    expect(c.io.mem.excMon.clear, false)
+    expect(c.io.mem.excMon.clearAll, !isSet)
   }
 
   def expectEm(wen: Boolean) = {
     expect(c.io.mem.excMon.set, false)
     expect(c.io.mem.excMon.clear, wen)
+    expect(c.io.mem.excMon.clearAll, false)
   }
 
   // SB
