@@ -11,6 +11,7 @@ class AmoExecute extends Module {
     // control signals
     val op        = Input(UInt(AMO_OP_WIDTH.W))
     val flush     = Input(Bool())
+    val hold      = Input(Bool())
     val ready     = Output(Bool())
     // data from/to regfile (lsuData/result)
     val regOpr    = Input(UInt(DATA_WIDTH.W))
@@ -51,6 +52,10 @@ class AmoExecute extends Module {
   // finite state machine
   when (io.flush) {
     state := sIdle
+  } .elsewhen (state === sEnd) {
+    // Completion consumes no RAM transaction.  Wait only for the MEM stage
+    // to advance, including any outstanding CSR hazard.
+    when (!io.hold) { state := sIdle }
   } .elsewhen (io.ramValid) {
     switch (state) {
       // send read request to RAM
@@ -66,10 +71,6 @@ class AmoExecute extends Module {
       is (sStore) {
         // switch to next state
         state := sEnd
-      }
-      // take a breath
-      is (sEnd) {
-        state := sIdle
       }
     }
   }

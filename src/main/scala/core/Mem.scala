@@ -57,6 +57,7 @@ class Mem extends Module {
   val amo = Module(new AmoExecute)
   amo.io.op       := amoOp
   amo.io.flush    := io.flush
+  amo.io.hold     := io.csrBusy
   amo.io.regOpr   := io.alu.lsuData
   amo.io.ramValid := io.ram.valid
   amo.io.ramRdata := io.ram.rdata
@@ -175,7 +176,7 @@ class Mem extends Module {
   io.flushPc  := io.alu.currentPc + 4.U
 
   // RAM control signals
-  io.ram.en     := Mux(hasTrap, false.B, en)
+  io.ram.en     := !hasTrap && en && !(amoOp =/= AMO_OP_NOP && amo.io.ready)
   io.ram.wen    := ramWen
   io.ram.addr   := addr
   io.ram.wdata  := wdata

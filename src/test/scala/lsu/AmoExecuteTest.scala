@@ -24,6 +24,7 @@ class AmoExecuteUnitTester(c: AmoExecute) extends PeekPokeTester(c) {
 
     poke(c.io.op, AMO_OP_ADD)
     poke(c.io.flush, false)
+    poke(c.io.hold, false)
     poke(c.io.regOpr, opr2)
     poke(c.io.ramRdata, 0)
     simulateLatency()

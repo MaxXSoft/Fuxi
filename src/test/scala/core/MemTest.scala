@@ -241,7 +241,7 @@ class MemUnitTester(c: core.Mem) extends PeekPokeTester(c) {
   expectLsu(15, rdata + wdata)
   simulateLatency()
   expect(c.io.mem.reg.data, rdata)
-  expectLsu()
+  expect(c.io.ram.en, false)
   expectExc()
   expectEm(true)
 
