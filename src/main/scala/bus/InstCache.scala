@@ -39,6 +39,7 @@ class InstCache extends Module {
   val raddr       = Reg(UInt(ADDR_WIDTH.W))
   val dataOffset  = Reg(UInt(log2Ceil(dataMemSize).W))
   val readFault   = RegInit(false.B)
+  val discardRefill = RegInit(false.B)
 
   // cache line selectors
   val sramAddr    = Reg(UInt(ADDR_WIDTH.W))
@@ -58,14 +59,12 @@ class InstCache extends Module {
     is (sIdle) {
       // cache idle
       when (io.flush) {
-        // flush all valid bits
-        valid.foreach(v => v := false.B)
-        // reset state
         state := sIdle
       } .elsewhen (io.sram.en && !cacheHit) {
         // cache miss, switch state
         valid(lineSel) := false.B
         ren       := true.B
+        discardRefill := false.B
         raddr     := startAddr
         sramAddr  := io.sram.addr
         state     := sAddr
@@ -96,7 +95,7 @@ class InstCache extends Module {
     }
     is (sUpdate) {
       // update cache line & make data ready
-      valid(lineSel)  := true.B
+      valid(lineSel)  := !discardRefill
       tag(lineSel)    := tagSel
       state           := sIdle
     }
@@ -106,11 +105,19 @@ class InstCache extends Module {
     }
   }
 
+  // FENCE.I can finish while AXI is stalled. Invalidate every old line
+  // immediately, then drain (without installing) any outstanding refill.
+  // Keep ARVALID and the response handshake intact until the burst ends.
+  when (io.flush) {
+    valid.foreach(v => v := false.B)
+    when (state =/= sIdle) { discardRefill := true.B }
+  }
+
   // SRAM signals
-  io.sram.valid       := (state === sIdle && cacheHit) ||
-                         state === sAccessFault
+  val accessFault = state === sAccessFault && !discardRefill && !io.flush
+  io.sram.valid       := (state === sIdle && cacheHit && !io.flush) || accessFault
   io.sram.fault       := false.B
-  io.sram.accessFault := state === sAccessFault
+  io.sram.accessFault := accessFault
   io.sram.rdata       := lines.read(lineDataSel)
 
   // AXI signals
