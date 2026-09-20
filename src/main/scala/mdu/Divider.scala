@@ -36,6 +36,8 @@ class Divider(val oprWidth: Int) extends Module {
   // last divident & divisor
   val lastDivident  = RegInit(0.U(oprWidth.W))
   val lastDivisor   = RegInit(0.U(oprWidth.W))
+  // Matching operands may reuse only a completed, non-flushed result.
+  val resultValid   = RegInit(false.B)
 
   // divisor * 1
   val divisor     = RegInit(0.U(resultWidth.W))
@@ -44,7 +46,7 @@ class Divider(val oprWidth: Int) extends Module {
   // divisor * 1.5
   val maxDivisor  = divisor + minDivisor
   // start flag
-  val startFlag   = lastDivident =/= io.divident ||
+  val startFlag   = !resultValid || lastDivident =/= io.divident ||
                     lastDivisor =/= io.divisor
 
   // finite state machine
@@ -52,18 +54,21 @@ class Divider(val oprWidth: Int) extends Module {
     state   := sIdle
     result  := 0.U
     isDiv0  := false.B
+    resultValid := false.B
   } .otherwise {
     switch (state) {
       is (sIdle) {
         when (io.en) {
           when (startFlag) {
             // start new calculation
+            resultValid := false.B
             lastDivident  := io.divident
             lastDivisor   := io.divisor
             // switch to next state
             when (io.divisor === 0.U) {
               state   := sEnd
               isDiv0  := true.B
+              resultValid := true.B
             } .otherwise {
               state   := sRunning
               result  := Cat(0.U(oprWidth.W), io.divident, 0.U(1.W))
@@ -90,7 +95,10 @@ class Divider(val oprWidth: Int) extends Module {
         }
         // increase/check counter
         counter := counter + 1.U
-        when (counter === (cycleCount - 1).U) { state := sEnd }
+        when (counter === (cycleCount - 1).U) {
+          state := sEnd
+          resultValid := true.B
+        }
       }
       is (sEnd) {
         state := sIdle
