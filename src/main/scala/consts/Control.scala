@@ -98,7 +98,7 @@ object Control {
     DIVU      ->  List(Y, Y, Y, OPR_REG1, OPR_REG2, ALU_ADD,  BR_N,   LSU_NOP,  CSR_NOP,  MDU_DIVU,   EXC_NONE),
     REM       ->  List(Y, Y, Y, OPR_REG1, OPR_REG2, ALU_ADD,  BR_N,   LSU_NOP,  CSR_NOP,  MDU_REM,    EXC_NONE),
     REMU      ->  List(Y, Y, Y, OPR_REG1, OPR_REG2, ALU_ADD,  BR_N,   LSU_NOP,  CSR_NOP,  MDU_REMU,   EXC_NONE),
-    LRW       ->  List(Y, N, Y, OPR_REG1, OPR_ZERO, ALU_OR,   BR_N,   LSU_LR,   CSR_NOP,  MDU_NOP,    EXC_STAMO),
+    LRW       ->  List(Y, N, Y, OPR_REG1, OPR_ZERO, ALU_OR,   BR_N,   LSU_LR,   CSR_NOP,  MDU_NOP,    EXC_LOAD),
     SCW       ->  List(Y, Y, Y, OPR_REG1, OPR_ZERO, ALU_OR,   BR_N,   LSU_SC,   CSR_NOP,  MDU_NOP,    EXC_STAMO),
     AMOSWAPW  ->  List(Y, Y, Y, OPR_REG1, OPR_ZERO, ALU_OR,   BR_N,   LSU_SWAP, CSR_NOP,  MDU_NOP,    EXC_STAMO),
     AMOADDW   ->  List(Y, Y, Y, OPR_REG1, OPR_ZERO, ALU_OR,   BR_N,   LSU_ADD,  CSR_NOP,  MDU_NOP,    EXC_STAMO),

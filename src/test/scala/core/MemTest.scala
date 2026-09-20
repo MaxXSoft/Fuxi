@@ -214,7 +214,7 @@ class MemUnitTester(c: core.Mem) extends PeekPokeTester(c) {
 
   // LR/SC
   pokeLsu(LSU_LR, 0x12345678)
-  pokeExc(EXC_STAMO, 0x00000200, false, false)
+  pokeExc(EXC_LOAD, 0x00000200, false, false)
   pokeEm(0x12345678, false)
   simulateLatency()
   expectLsu()
