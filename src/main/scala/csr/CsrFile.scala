@@ -154,13 +154,14 @@ class CsrFile extends Module {
   ))
 
   // CSR status signals
-  val flagIntS  = sip.asUInt & sie.asUInt
-  val flagIntM  = mip.asUInt & mie.asUInt
+  val pending   = mip.asUInt & mie.asUInt
+  val flagIntS  = pending & mideleg.asUInt
+  val flagIntM  = pending & ~mideleg.asUInt
   val hasIntS   = Mux(mode < CSR_MODE_S ||
                           (mode === CSR_MODE_S && mstatus.sie),
-                      (flagIntS & mideleg.asUInt).orR, false.B)
+                      flagIntS.orR, false.B)
   val hasIntM   = Mux(mode <= CSR_MODE_S || mstatus.mie,
-                      (flagIntM & ~mideleg.asUInt).orR, false.B)
+                      flagIntM.orR, false.B)
   val hasInt    = hasIntM || hasIntS
   // Mem selects interrupts only at a precise instruction boundary.  Complete
   // xRET defensively even if an inconsistent record marks it as an interrupt.
@@ -171,13 +172,13 @@ class CsrFile extends Module {
   val hasExc    = io.except.hasTrap && !takeInt && !isXret
   val hasExcS   = hasExc && medeleg.asUInt(io.except.excCause(4, 0))
   val handExcS  = !mode(1) && hasExcS
-  val intCauseS = Mux(flagIntS(EXC_S_EXT_INT.litValue.toInt), EXC_S_EXT_INT,
-                  Mux(flagIntS(EXC_S_SOFT_INT.litValue.toInt), EXC_S_SOFT_INT,
-                                                EXC_S_TIMER_INT))
-  val intCauseM = Mux(flagIntM(EXC_M_EXT_INT.litValue.toInt), EXC_M_EXT_INT,
-                  Mux(flagIntM(EXC_M_SOFT_INT.litValue.toInt), EXC_M_SOFT_INT,
-                  Mux(flagIntM(EXC_M_TIMER_INT.litValue.toInt), EXC_M_TIMER_INT,
-                                                 intCauseS)))
+  // Apply delegation before priority selection for both trap targets.
+  def interruptCause(flags: UInt): UInt = PriorityMux(Seq(
+    EXC_M_EXT_INT, EXC_M_SOFT_INT, EXC_M_TIMER_INT,
+    EXC_S_EXT_INT, EXC_S_SOFT_INT, EXC_S_TIMER_INT,
+  ).map(cause => flags(cause.litValue.toInt) -> cause))
+  val intCauseS = interruptCause(flagIntS)
+  val intCauseM = interruptCause(flagIntM)
   val intCause  = Mux(handIntS, intCauseS, intCauseM)
   val cause     = Mux(takeInt, Cat(true.B, intCause),
                               Cat(false.B, io.except.excCause))
