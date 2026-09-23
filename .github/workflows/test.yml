@@ -76,7 +76,7 @@ jobs:
         sbt "Test / runMain mdu.MduTest"
 
     - name: Test Sim
-      run: sbt "Test / runMain sim.RamTest"
+      run: sbt "Test / runMain sim.RamTest" "Test / runMain sim.RomTest"
 
     - name: Test Stages
       run: |

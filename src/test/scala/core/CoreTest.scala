@@ -1,40 +1,22 @@
 package core
 
-import chisel3._
 import scala.io.Source
 import java.io.{File, PrintWriter}
 
-import io._
-import sim._
-import utils.{ArgParser, PeekPokeTester, TestDriver}
-
-class CoreWrapper(initFile: String) extends Module {
-  val io    = IO(new DebugIO)
-  val core  = Module(new Core)
-  val rom   = Module(new ROM(initFile))
-  val ram   = Module(new RAM)
-
-  core.io.irq.timer   := false.B
-  core.io.irq.soft    := false.B
-  core.io.irq.extern  := false.B
-  core.io.cache.flushDataDone        := true.B
-  core.io.cache.flushDataAccessFault := false.B
-  core.io.rom         <> rom.io
-  core.io.ram         <> ram.io
-  core.io.debug       <> io
-}
+import utils.{ArgParser, TestDriver}
 
 class CoreUnitTester(c: CoreWrapper, traceFile: String, genTrace: Boolean)
-      extends PeekPokeTester(c) {
+      extends CoreTester(c) {
   val endFlag = BigInt("deadc0de", 16)
 
   // perform trace comparison
   def runTrace(source: Source) = {
     for (line <- source.getLines()) {
       val pc :: addr :: data :: Nil = line.split(' ').toList
-      do {
+      runUntil(10000, s"waiting for trace PC $pc") {
         step(1)
-      } while (peek(c.io.regWen) == 0 || peek(c.io.regWaddr) == 0)
+        peek(c.io.regWen) != 0 && peek(c.io.regWaddr) != 0
+      }
       expect(c.io.pc, BigInt(pc, 16))
       expect(c.io.regWaddr, BigInt(addr, 10))
       expect(c.io.regWdata, BigInt(data, 16))
@@ -76,7 +58,8 @@ class CoreUnitTester(c: CoreWrapper, traceFile: String, genTrace: Boolean)
     printTrace()
   }
   else if (!genTrace) {
-    runTrace(Source.fromFile(traceFile))
+    val source = Source.fromFile(traceFile)
+    try runTrace(source) finally source.close()
   }
   else {
     generateTrace(new File(traceFile))
