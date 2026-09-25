@@ -1,6 +1,6 @@
 # Fuxi
 
-[![Test](https://github.com/MaxXSoft/Fuxi/workflows/Test/badge.svg)](https://github.com/MaxXSoft/Fuxi)
+[<img alt="build status" src="https://img.shields.io/github/actions/workflow/status/MaxXSoft/Fuxi/test.yml?branch=master&style=for-the-badge&label=ci">](https://github.com/MaxXSoft/Fuxi/actions?query=branch%3Amaster)
 
 Fuxi (伏羲) is a 32-bit pipelined RISC-V processor written in Chisel.
 
@@ -91,16 +91,8 @@ All provided programs:
 | mecall.txt  | Test machine mode environment call.
 | secall.txt  | Test supervisor mode environment call.
 
-### Running Other Test Benches
-
-> This part is under construction.
-
-As we see in [the top level module](src/main/scala/Fuxi.scala), the complete Fuxi processor consists of `Core` and `CoreBus`, the latter provides MMU, cache system and AXI4 interface for the `Core` part.
-
-All of the unit test cases currently contained in this repository can only test modules in the `Core` part, we are still preparing the test bench the entire processor system. For now, you can build a tiny SoC by yourself based on some AXI4 IP cores to run other test benches you want.
-
 ## Copyright and License
 
-Copyright (C) 2010-2020 MaxXing. License GPLv3.
+Copyright (C) 2020-2026 MaxXing. License GPLv3.
 
 Special thanks to [@Yukiteru Lee](https://github.com/wfly1998/).
