@@ -13,10 +13,11 @@ Fuxi (伏羲) is a 32-bit pipelined RISC-V processor written in Chisel.
 * Zicsr extension 2.0
 * M extension 2.0
 * A extension 2.0
+* C extension 2.0 (RV32 integer instructions)
 * Machine-level ISA 1.11
 * Supervisor-level ISA 1.11
 
-## Unimplemented Details
+## Unimplemented Features
 
 Fuxi processor is designed for running [GeeOS](https://github.com/MaxXSoft/GeeOS), or other simple operating systems or bare-metal software. Considering the complexity, the following functions has not yet been implemented:
 
@@ -26,10 +27,14 @@ Fuxi processor is designed for running [GeeOS](https://github.com/MaxXSoft/GeeOS
 
 ## Performance
 
-With default configuration:
+With default configuration (historical data, evaluated on Fuxi 0.0.1):
 
 * **Dhrystone 2.1**: 0.60 DMIPS/MHz.
 * **CoreMark**: 2.15 CoreMark/MHz.
+
+## Instruction Frontend
+
+The frontend fetches aligned 32-bit words, assembles mixed 16/32-bit instructions, and expands compressed instructions before the existing decoder. A four-entry instruction FIFO decouples fetch from decode; each entry retains its PC, prediction snapshot, raw instruction, and precise fetch-fault address. Both 16-bit and 32-bit instructions may start at a halfword boundary. Split-page instructions translate each page independently and report the faulting parcel in `mtval`/`stval` while keeping the instruction start in `mepc`/`sepc`.
 
 ## Getting Started
 
@@ -95,4 +100,4 @@ All provided programs:
 
 Copyright (C) 2020-2026 MaxXing. License GPLv3.
 
-Special thanks to [@Yukiteru Lee](https://github.com/wfly1998/).
+Special thanks to [@Yukiteru Lee](https://github.com/yukiiiteru).
