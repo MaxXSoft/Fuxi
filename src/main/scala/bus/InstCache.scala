@@ -114,7 +114,10 @@ class InstCache extends Module {
   }
 
   // SRAM signals
-  val accessFault = state === sAccessFault && !discardRefill && !io.flush
+  // A context change can finish the old virtual lookup before its refill.
+  // Deliver a refill error only to the physical lookup that started it.
+  val accessFault = state === sAccessFault && !discardRefill && !io.flush &&
+                    io.sram.en && io.sram.addr === sramAddr
   io.sram.valid       := (state === sIdle && cacheHit && !io.flush) || accessFault
   io.sram.fault       := false.B
   io.sram.accessFault := accessFault

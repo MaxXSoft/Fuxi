@@ -119,6 +119,12 @@ private[core] class CoreFetchFaultTester(c: CoreFetchFaultWrapper, scenario: Fet
   var beats = 0
   var sawSplitWrite = false
 
+  def physicalRegionMapped(base: BigInt): Boolean =
+    (base >= 0x200 && base < 0x400) ||
+      (base >= root && base < leaf + 0x1000) ||
+      (base >= firstPage && base < firstPage + 0x1000) ||
+      (base >= secondPage && base < secondPage + 0x1000)
+
   runUntil(3000, s"Sv32 instruction-fetch case ${scenario.name} did not finish") {
     // Exercise independently stalled AXI address and response channels.
     poke(c.io.inst.readAddr.ready, !active && cycle % 3 != 0)
@@ -127,7 +133,8 @@ private[core] class CoreFetchFaultTester(c: CoreFetchFaultWrapper, scenario: Fet
     poke(c.io.inst.readData.bits.data, memory.getOrElse(address + beat * 4, BigInt(0)))
     poke(c.io.inst.readData.bits.last, active && beat == beats - 1)
     poke(c.io.inst.readData.bits.resp,
-      if (scenario.accessFault && address == secondPage && beat == 3) 2 else 0)
+      if (!physicalRegionMapped(address) ||
+        (scenario.accessFault && address == secondPage && beat == 3)) 2 else 0)
 
     val acceptAddress = peek(c.io.inst.readAddr.valid) != 0 && peek(c.io.inst.readAddr.ready) != 0
     val acceptData = returning && peek(c.io.inst.readData.ready) != 0
@@ -193,6 +200,7 @@ private[core] class CoreFetchFaultTester(c: CoreFetchFaultWrapper, scenario: Fet
   }
 
   assert(reads.contains(firstPage + 0xfc0), "Did not fetch the end of the first physical page")
+  assert(!reads.contains(BigInt(0xfc0)), "MRET fetched its target before restoring Sv32 translation")
   assert(!reads.contains(firstPage + 0x1000), "Incorrectly continued at the adjacent physical page")
   if (scenario.secondPagePresent) assert(reads.contains(secondPage), "Skipped the second page translation")
   else assert(!reads.contains(secondPage), "Fetched an unmapped second page")
