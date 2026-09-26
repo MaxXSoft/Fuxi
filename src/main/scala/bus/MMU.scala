@@ -188,6 +188,12 @@ class MMU(val size: Int, val isInst: Boolean) extends Module {
   // output signals
   io.valid  := valid
   io.fault  := valid && fault
-  io.accessFault := state === sAccessFault && !walkCanceled
+  // A Bare-mode interval can retire the old lookup while its walk is paused.
+  // Do not deliver that walk's later failure to a different virtual address.
+  val faultOwner = io.en && io.vaddr === walkVaddr
+  // The LSU suppresses lookup when a fault appears, so gating data faults by
+  // lookup would create a combinational loop through its exception handling.
+  val faultLookup = if (isInst) io.lookup else true.B
+  io.accessFault := state === sAccessFault && !walkCanceled && faultOwner && faultLookup
   io.paddr  := paddr
 }

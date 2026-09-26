@@ -294,11 +294,108 @@ class MmuFlushTester(c: MMU) extends PeekPokeTester(c) {
   }
 }
 
+class MmuFaultOwnershipTester(c: MMU) extends PeekPokeTester(c) {
+  val original = BigInt("00400100", 16)
+  val redirected = BigInt("00800300", 16)
+  val bareAddress = BigInt("80000200", 16)
+  val rootPpn = BigInt(0x100)
+  val tablePpn = BigInt(0x200)
+  val superPpn = BigInt(0x80400)
+  def pteAddress(ppn: BigInt, address: BigInt, root: Boolean): BigInt =
+    (ppn << 12) + (((address >> (if (root) 22 else 12)) & 0x3ff) * 4)
+
+  poke(c.io.en, true)
+  poke(c.io.flush, false)
+  poke(c.io.basePpn, rootPpn)
+  poke(c.io.sum, false)
+  poke(c.io.smode, true)
+  poke(c.io.lookup, true)
+  poke(c.io.write, false)
+  poke(c.io.vaddr, original)
+  poke(c.io.data.valid, false)
+  poke(c.io.data.fault, false)
+  poke(c.io.data.accessFault, false)
+  poke(c.io.data.rdata, 0)
+
+  for (rootFault <- Seq(true, false);
+       owner <- Seq("redirected", "same", "disabled", "inactive")) {
+    poke(c.reset, 1)
+    step(1)
+    poke(c.reset, 0)
+    poke(c.io.en, true)
+    poke(c.io.lookup, true)
+    poke(c.io.vaddr, original)
+    poke(c.io.data.valid, false)
+    poke(c.io.data.accessFault, false)
+    step(1)
+    expect(c.io.data.en, true)
+    expect(c.io.data.addr, pteAddress(rootPpn, original, true))
+    if (!rootFault) {
+      poke(c.io.data.rdata, (tablePpn << 10) | 1)
+      poke(c.io.data.valid, true)
+      step(1)
+      poke(c.io.data.valid, false)
+      step(1)
+    }
+    val pendingAddress = pteAddress(if (rootFault) rootPpn else tablePpn, original, rootFault)
+    expect(c.io.data.addr, pendingAddress)
+
+    // A trap switches the demux to Bare accesses. The frontend can drain its
+    // old lookup through that path while this page-table walk remains stalled.
+    poke(c.io.en, false)
+    poke(c.io.vaddr, bareAddress)
+    for (_ <- 0 until 3) {
+      expect(c.io.valid, true)
+      expect(c.io.paddr, bareAddress)
+      expect(c.io.data.en, true)
+      expect(c.io.data.addr, pendingAddress)
+      step(1)
+    }
+    poke(c.io.en, true)
+    poke(c.io.lookup, owner != "inactive")
+    poke(c.io.vaddr, if (owner == "redirected") redirected else original)
+    poke(c.io.data.valid, true)
+    poke(c.io.data.accessFault, true)
+    step(1)
+    // Also cover a privilege transition on the cycle the error is exposed.
+    if (owner == "disabled") poke(c.io.en, false)
+    // Data requests deliberately drop lookup when their fault becomes visible.
+    expect(c.io.accessFault, owner == "same" || (owner == "inactive" && !c.isInst))
+    expect(c.io.fault, false)
+    expect(c.io.valid, owner == "disabled")
+    poke(c.io.data.valid, false)
+    poke(c.io.data.accessFault, false)
+    step(1)
+    expect(c.io.accessFault, false)
+
+    // Suppressing an obsolete fault must still release the walker. The next
+    // request uses the new VA and can populate an independent translation.
+    poke(c.io.en, true)
+    poke(c.io.lookup, true)
+    poke(c.io.vaddr, redirected)
+    step(1)
+    expect(c.io.data.en, true)
+    expect(c.io.data.addr, pteAddress(rootPpn, redirected, true))
+    poke(c.io.data.rdata, (superPpn << 10) | 0xcf)
+    poke(c.io.data.valid, true)
+    step(1)
+    poke(c.io.data.valid, false)
+    step(2)
+    expect(c.io.valid, true)
+    expect(c.io.fault, false)
+    expect(c.io.accessFault, false)
+    expect(c.io.paddr, (superPpn << 12) | (redirected & 0x3fffff))
+  }
+}
+
 object MmuTest extends App {
   if (!TestDriver.execute(args, () => new MMU(16, false)) {
     (c) => new MmuUnitTester(c)
   }) sys.exit(1)
   for (isInst <- Seq(true, false)) {
+    if (!TestDriver.execute(args, () => new MMU(16, isInst)) {
+      (c) => new MmuFaultOwnershipTester(c)
+    }) sys.exit(1)
     if (!TestDriver.execute(args, () => new MMU(16, isInst)) {
       (c) => new MmuRedirectTester(c)
     }) sys.exit(1)
