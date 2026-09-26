@@ -52,6 +52,7 @@ class Core(fetchQueueDepth: Int = 4) extends Module {
 
   // fetch stage
   fetch.io.flush    := control.io.flushIf
+  fetch.io.contextFlush := control.io.flush
   fetch.io.stall    := !ifid.io.enq.ready
   fetch.io.flushPc  := control.io.flushPc
   fetch.io.rom      <> io.rom

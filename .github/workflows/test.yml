@@ -81,6 +81,7 @@ jobs:
     - name: Test Stages
       run: |
         sbt "Test / runMain core.FetchTest"
+        sbt "Test / runMain core.CompressedDecoderTest"
         sbt "Test / runMain core.DecoderTest"
         sbt "Test / runMain core.AluTest"
         sbt "Test / runMain core.MemTest"
@@ -102,6 +103,8 @@ jobs:
         sbt "Test / runMain core.CoreCsrAliasTest"
         sbt "Test / runMain core.CoreRetirementTest"
         sbt "Test / runMain core.CoreInstretReadTest"
+        sbt "Test / runMain core.CoreCompressedTest"
+        sbt "Test / runMain core.CoreFetchFaultTest"
         sbt "Test / runMain core.CoreTest -if src/test/resources/fib.txt -tf src/test/resources/fib_trace.txt"
         sbt "Test / runMain core.CoreTest -if src/test/resources/mdu.txt -tf src/test/resources/mdu_trace.txt"
         sbt "Test / runMain core.CoreTest -if src/test/resources/mecall.txt -tf src/test/resources/mecall_trace.txt"

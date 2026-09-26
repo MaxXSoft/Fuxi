@@ -8,6 +8,7 @@ import utils.{PeekPokeTester, TestDriver}
 class FetchHarness(depth: Int) extends Module {
   val io = IO(new Bundle {
     val flush = Input(Bool())
+    val contextFlush = Input(Bool())
     val flushPc = Input(UInt(32.W))
     val stall = Input(Bool())
     val branch = Input(new BranchInfoIO)
@@ -19,6 +20,7 @@ class FetchHarness(depth: Int) extends Module {
   val queue = Module(new Queue(new FetchIO, depth,
                                pipe = true, flow = true, hasFlush = true))
   fetch.io.flush := io.flush
+  fetch.io.contextFlush := io.contextFlush
   fetch.io.flushPc := io.flushPc
   fetch.io.stall := !queue.io.enq.ready
   fetch.io.branch := io.branch
@@ -52,9 +54,10 @@ class FetchUnitTester(c: FetchHarness, depth: Int) extends PeekPokeTester(c) {
   poke(c.io.branch.target, 0)
 
   def tick(stall: Boolean = false, ready: Boolean = true,
-           redirect: Option[BigInt] = None): Option[Packet] = {
+           redirect: Option[BigInt] = None, contextChange: Boolean = true): Option[Packet] = {
     poke(c.io.stall, stall)
     poke(c.io.flush, redirect.nonEmpty)
+    poke(c.io.contextFlush, redirect.nonEmpty && contextChange)
     poke(c.io.flushPc, redirect.getOrElse(BigInt(0)))
     poke(c.io.rom.rdata, response)
     poke(c.io.rom.valid, ready)
@@ -184,6 +187,26 @@ class FetchUnitTester(c: FetchHarness, depth: Int) extends PeekPokeTester(c) {
   tick(redirect = Some(0xc02))
   val firstParcelFault = nextPacket()
   assert(firstParcelFault.pc == 0xc02 && firstParcelFault.page && firstParcelFault.fault == 0xc02)
+
+  // xRET/CSR flushes change the MMU context at the edge, unlike predictions.
+  // Do not accept their target using the outgoing translation/privilege state.
+  for (_ <- 0 until 8) tick()
+  expect(c.io.rom.en, false)
+  faults.clear()
+  poke(c.io.flush, true)
+  poke(c.io.contextFlush, true)
+  poke(c.io.flushPc, 0xd02)
+  expect(c.io.rom.en, false)
+  tick(redirect = Some(0xd02))
+  assert(nextPacket().pc == 0xd02)
+
+  // Decode branch recovery can still steer immediately without changing MMU state.
+  poke(c.io.flush, true)
+  poke(c.io.contextFlush, false)
+  poke(c.io.flushPc, 0xe02)
+  expect(c.io.rom.addr, 0xe00)
+  tick(redirect = Some(0xe02), contextChange = false)
+  assert(tick().exists(_.pc == 0xe02), "Unnecessary decode-target fetch bubble")
 }
 
 object FetchTest extends App {

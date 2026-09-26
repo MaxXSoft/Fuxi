@@ -17,6 +17,7 @@ class Fetch extends Module {
   val io = IO(new Bundle {
     // pipeline control signals
     val flush     = Input(Bool())
+    val contextFlush = Input(Bool())
     val stall     = Input(Bool())
     val flushPc   = Input(UInt(ADDR_WIDTH.W))
     // ROM interface
@@ -120,7 +121,9 @@ class Fetch extends Module {
   // Reserve room before issuing. Drain old requests with their old VA so
   // neither their data nor their faults can join the redirected stream.
   val room = count +& responseValid.asUInt < depth.U
-  val steerRequest = redirect && !requestActive
+  // A global flush may also change privilege or translation state at the edge.
+  // Predictions and decode branch recovery retain the current MMU context.
+  val steerRequest = redirect && !io.contextFlush && !requestActive
   io.rom.en := requestActive || steerRequest || (room && !faultBlocked)
   io.rom.addr := Mux(steerRequest, alignedTarget, requestAddr)
   io.rom.wen := 0.U
