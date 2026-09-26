@@ -169,7 +169,7 @@ class Mem extends Module {
   // exception pc & value
   val excPc     = io.alu.currentPc
   val excValue  = Mux(instIllg, io.alu.inst,
-                  Mux(instPage || instAccess, io.alu.currentPc,
+                  Mux(instPage || instAccess, io.alu.excValue,
                   Mux(fenceAccess, 0.U,
                   Mux(memExcept, io.alu.reg.data, io.alu.excValue))))
 

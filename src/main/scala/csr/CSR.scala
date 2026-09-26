@@ -141,7 +141,7 @@ class SepcCsr extends CsrBundle {
 
   override def <=(d: UInt) = {
     requireWidth(d)
-    data  := Cat(d(31, 2), 0.U(2.W))
+    data  := Cat(d(31, 1), 0.U(1.W))
   }
 }
 
@@ -242,7 +242,7 @@ class MisaCsr extends CsrBundle {
 
 object MisaCsr extends CsrObject[MisaCsr] {
   def apply() = new MisaCsr
-  override def default() = "h40141101".U.asTypeOf(apply())
+  override def default() = "h40141105".U.asTypeOf(apply())
 }
 
 // machine exception delegation register
@@ -364,7 +364,7 @@ class MepcCsr extends CsrBundle {
 
   override def <=(d: UInt) = {
     requireWidth(d)
-    data  := Cat(d(31, 2), 0.U(2.W))
+    data  := Cat(d(31, 1), 0.U(1.W))
   }
 }
 

@@ -50,6 +50,7 @@ class MemUnitTester(c: core.Mem) extends PeekPokeTester(c) {
     poke(c.io.alu.valid, true)
     poke(c.io.alu.inst, inst)
     poke(c.io.alu.currentPc, pc)
+    poke(c.io.alu.excValue, pc)
     poke(c.io.csrHasInt, hasInt)
     poke(c.io.csrMode, if (userMode) CSR_MODE_U else CSR_MODE_M)
   }

@@ -1,6 +1,7 @@
 package core
 
 import chisel3._
+import chisel3.util.Queue
 
 import io._
 import consts.Parameters._
@@ -9,7 +10,7 @@ import csr.CsrFile
 import lsu.ExclusiveMonitor
 import consts.Paging.PPN_WIDTH
 
-class Core extends Module {
+class Core(fetchQueueDepth: Int = 4) extends Module {
   val io = IO(new Bundle {
     // interrupt request
     val irq   = new InterruptIO
@@ -26,7 +27,8 @@ class Core extends Module {
 
   // all stages
   val fetch   = Module(new Fetch)
-  val ifid    = Module(new MidStage(new FetchIO))
+  val ifid    = Module(new Queue(new FetchIO, fetchQueueDepth,
+                                 pipe = true, flow = true, hasFlush = true))
   val decoder = Module(new Decoder)
   val idex    = Module(new MidStage(new DecoderIO))
   val alu     = Module(new ALU)
@@ -50,23 +52,24 @@ class Core extends Module {
 
   // fetch stage
   fetch.io.flush    := control.io.flushIf
-  fetch.io.stall    := control.io.stallIf
+  fetch.io.stall    := !ifid.io.enq.ready
   fetch.io.flushPc  := control.io.flushPc
   fetch.io.rom      <> io.rom
   fetch.io.branch   <> decoder.io.branch
-  ifid.io.flush     := control.io.flushIf
-  ifid.io.stallPrev := control.io.stallIf
-  ifid.io.stallNext := control.io.stallId
-  ifid.io.prev      <> fetch.io.fetch
+  ifid.io.flush.get := control.io.flushIf
+  ifid.io.enq.valid := fetch.io.fetch.valid
+  ifid.io.enq.bits  := fetch.io.fetch
+  ifid.io.deq.ready := !control.io.stallId
 
   // decoder stage
-  decoder.io.fetch    <> ifid.io.next
-  decoder.io.inst     := io.rom.rdata
+  decoder.io.fetch    := ifid.io.deq.bits
+  decoder.io.fetch.valid := ifid.io.deq.valid
+  decoder.io.flush    := control.io.flush
   decoder.io.stallId  := control.io.stallId
   decoder.io.read1    <> resolve.io.regRead1
   decoder.io.read2    <> resolve.io.regRead2
   idex.io.flush       := control.io.flush
-  idex.io.stallPrev   := control.io.stallId
+  idex.io.stallPrev   := control.io.stallId || !ifid.io.deq.valid
   idex.io.stallNext   := control.io.stallEx
   idex.io.prev        <> decoder.io.decoder
 
@@ -136,7 +139,6 @@ class Core extends Module {
   resolve.io.wbExcMon <> wb.io.excMon
 
   // pipeline controller
-  control.io.fetch      := fetch.io.stallReq
   control.io.alu        := alu.io.stallReq
   control.io.mem        := mem.io.stallReq
   control.io.decFlush   := decoder.io.flushIf

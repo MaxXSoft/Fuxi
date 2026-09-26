@@ -21,7 +21,9 @@ class DecoderUnitTester(c: Decoder) extends PeekPokeTester(c) {
     poke(c.io.fetch.predIndex, 0)
     poke(c.io.fetch.pageFault, false)
     poke(c.io.fetch.accessFault, false)
-    poke(c.io.inst, inst)
+    poke(c.io.fetch.inst, inst)
+    poke(c.io.fetch.faultAddr, pc)
+    poke(c.io.flush, false)
     poke(c.io.read1.data, reg1)
     poke(c.io.read2.data, reg2)
   }
@@ -132,7 +134,7 @@ class DecoderUnitTester(c: Decoder) extends PeekPokeTester(c) {
   expectAlu(ALU_ADD, MDU_NOP, pc, 4)
   expectLsu(LSU_NOP, 0)
   expectCsr(CSR_NOP, 0, 0)
-  expectExc(EXC_IADDR)
+  expectExc(EXC_NONE)
 
   // jalr ra, -1228(ra)
   pokeDecoder(0xb34080e7)

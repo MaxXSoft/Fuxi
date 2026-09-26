@@ -25,7 +25,8 @@ class DecoderTrainingHarness extends Module {
   decoder.io.fetch := 0.U.asTypeOf(new FetchIO)
   decoder.io.fetch.valid := io.valid
   decoder.io.fetch.pc := 0x200.U
-  decoder.io.inst := io.inst
+  decoder.io.fetch.inst := io.inst
+  decoder.io.flush := false.B
   decoder.io.stallId := io.stalled
   decoder.io.read1.data := io.operand
   decoder.io.read2.data := 0.U

@@ -9,6 +9,7 @@ object Parameters {
   val ADDR_ALIGN_WIDTH  = log2Ceil(ADDR_WIDTH / 8)
   val DATA_WIDTH        = 32
   val INST_WIDTH        = 32
+  val INST_ALIGN_WIDTH  = 1
 
   // register file
   val REG_COUNT       = 32
@@ -18,8 +19,8 @@ object Parameters {
   val GHR_WIDTH         = 5
   val PHT_SIZE          = 1 << GHR_WIDTH
   val BTB_INDEX_WIDTH   = 6
-  val BTB_PC_WIDTH      = ADDR_WIDTH - BTB_INDEX_WIDTH - ADDR_ALIGN_WIDTH
-  val BTB_TARGET_WIDTH  = ADDR_WIDTH - ADDR_ALIGN_WIDTH
+  val BTB_PC_WIDTH      = ADDR_WIDTH - BTB_INDEX_WIDTH - INST_ALIGN_WIDTH
+  val BTB_TARGET_WIDTH  = ADDR_WIDTH - INST_ALIGN_WIDTH
   val BTB_SIZE          = 1 << BTB_INDEX_WIDTH
 
   // exception

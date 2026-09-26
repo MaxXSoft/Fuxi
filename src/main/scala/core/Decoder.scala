@@ -8,7 +8,7 @@ import consts.Control._
 import consts.ExceptType._
 import consts.CsrOp._
 import consts.Instructions.NOP
-import consts.Parameters.{ADDR_WIDTH, ADDR_ALIGN_WIDTH, INST_WIDTH}
+import consts.Parameters.{ADDR_WIDTH, INST_ALIGN_WIDTH}
 import consts.MduOp.MDU_NOP
 import consts.LsuOp.LSU_NOP
 
@@ -16,10 +16,9 @@ class Decoder extends Module {
   val io = IO(new Bundle {
     // from fetch stage
     val fetch   = Input(new FetchIO)
-    // from ROM
-    val inst    = Input(UInt(INST_WIDTH.W))
     // pipeline control
     val stallId = Input(Bool())
+    val flush   = Input(Bool())
     val flushIf = Output(Bool())
     val flushPc = Output(UInt(ADDR_WIDTH.W))
     // regfile read channels
@@ -31,13 +30,12 @@ class Decoder extends Module {
     val decoder = Output(new DecoderIO)
   })
 
-  // fetch instruction data from ROM
-  // TODO: a little bit tricky and ugly, fix it?
-  val stallDelay  = RegNext(io.stallId)
-  val lastInst    = Reg(UInt(INST_WIDTH.W))
-  val inst        = Mux(!io.fetch.valid, NOP,
-                    Mux(stallDelay, lastInst, io.inst))
-  when (!stallDelay) { lastInst := io.inst }
+  val expand = Module(new CompressedDecoder)
+  expand.io.inst := io.fetch.inst
+  val inst = Mux(io.fetch.valid, expand.io.expanded, NOP)
+  val instBytes = Mux(expand.io.isCompressed, 2.U, 4.U)
+  val rawInst = Mux(expand.io.isCompressed,
+                    Cat(0.U(16.W), io.fetch.inst(15, 0)), io.fetch.inst)
 
   // regfile addresses
   val rd  = inst(11, 7)
@@ -61,7 +59,7 @@ class Decoder extends Module {
         OPR_IMMU  -> immU.asSInt,
         OPR_IMMR  -> rs2.zext,
         OPR_PC    -> io.fetch.pc.asSInt,
-        OPR_4     -> 4.S,
+        OPR_SIZE  -> instBytes.zext,
       ))
 
   // control signals
@@ -90,9 +88,9 @@ class Decoder extends Module {
                       Mux(isJump, targetJ, targetB))
   val branchMiss  = io.fetch.taken =/= branchTaken ||
                     (branchTaken && io.fetch.target =/= branchTarget)
-  val flushPc     = Mux(branchTaken, branchTarget, io.fetch.pc + 4.U)
+  val flushPc     = Mux(branchTaken, branchTarget, io.fetch.pc + instBytes)
   val addrFault   = branchTaken &&
-                    branchTarget(ADDR_ALIGN_WIDTH - 1, 0) =/= 0.U
+                    branchTarget(INST_ALIGN_WIDTH - 1, 0) =/= 0.U
 
   // CSR related signals
   val csrActOp  = MuxLookup(csrOp, CSR_NOP)(Seq(
@@ -106,8 +104,10 @@ class Decoder extends Module {
   // exception signal
   val exceptType  = Mux(io.fetch.pageFault, EXC_IPAGE,
                     Mux(io.fetch.accessFault, EXC_IACCESS,
-                    Mux(addrFault, EXC_IADDR, excType)))
-  val exceptValue = Mux(addrFault, branchTarget, 0.U)
+                    Mux(addrFault, EXC_IADDR,
+                    Mux(io.fetch.valid && expand.io.illegal, EXC_ILLEG, excType))))
+  val exceptValue = Mux(io.fetch.pageFault || io.fetch.accessFault,
+                        io.fetch.faultAddr, Mux(addrFault, branchTarget, 0.U))
 
   // operation related signals
   // cancel all unnecessary operations after fetching illegal instructions
@@ -119,7 +119,8 @@ class Decoder extends Module {
   val csrOperation  = Mux(illegalFetch, CSR_NOP, csrActOp)
 
   // pipeline control
-  io.flushIf  := !io.stallId && !addrFault && !illegalFetch && branchMiss
+  io.flushIf  := io.fetch.valid && !io.flush && !io.stallId &&
+                 !addrFault && !illegalFetch && branchMiss
   io.flushPc  := flushPc
 
   // regfile read signals
@@ -131,7 +132,7 @@ class Decoder extends Module {
   // branch information
   // A held instruction may still be waiting for forwarded operands. Train
   // only when this valid instruction can advance out of decode.
-  val branchUpdate = io.fetch.valid && !io.stallId && !illegalFetch
+  val branchUpdate = io.fetch.valid && !io.flush && !io.stallId && !illegalFetch
   io.branch.branch  := isBranch && branchUpdate
   io.branch.jump    := isJump && branchUpdate
   io.branch.taken   := branchTaken && branchUpdate
@@ -154,6 +155,6 @@ class Decoder extends Module {
   io.decoder.excType    := exceptType
   io.decoder.excValue   := exceptValue
   io.decoder.valid      := io.fetch.valid
-  io.decoder.inst       := inst
+  io.decoder.inst       := rawInst
   io.decoder.currentPc  := io.fetch.pc
 }

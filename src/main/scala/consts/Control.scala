@@ -25,7 +25,7 @@ object Control {
   val OPR_IMMU  = 5.U(OPR_WIDTH.W)  // with zeroed low 12-bit
   val OPR_IMMR  = 6.U(OPR_WIDTH.W)
   val OPR_PC    = 7.U(OPR_WIDTH.W)
-  val OPR_4     = 8.U(OPR_WIDTH.W)
+  val OPR_SIZE  = 8.U(OPR_WIDTH.W)
 
   // branch operation
   val BR_WIDTH  = log2Ceil(8)
@@ -72,8 +72,8 @@ object Control {
     BGE       ->  List(Y, Y, N, OPR_ZERO, OPR_ZERO, ALU_ADD,  BR_GE,  LSU_NOP,  CSR_NOP,  MDU_NOP,    EXC_NONE),
     BLTU      ->  List(Y, Y, N, OPR_ZERO, OPR_ZERO, ALU_ADD,  BR_LTU, LSU_NOP,  CSR_NOP,  MDU_NOP,    EXC_NONE),
     BGEU      ->  List(Y, Y, N, OPR_ZERO, OPR_ZERO, ALU_ADD,  BR_GEU, LSU_NOP,  CSR_NOP,  MDU_NOP,    EXC_NONE),
-    JAL       ->  List(N, N, Y, OPR_PC,   OPR_4,    ALU_ADD,  BR_AL,  LSU_NOP,  CSR_NOP,  MDU_NOP,    EXC_NONE),
-    JALR      ->  List(Y, N, Y, OPR_PC,   OPR_4,    ALU_ADD,  BR_AL,  LSU_NOP,  CSR_NOP,  MDU_NOP,    EXC_NONE),
+    JAL       ->  List(N, N, Y, OPR_PC,   OPR_SIZE, ALU_ADD,  BR_AL,  LSU_NOP,  CSR_NOP,  MDU_NOP,    EXC_NONE),
+    JALR      ->  List(Y, N, Y, OPR_PC,   OPR_SIZE, ALU_ADD,  BR_AL,  LSU_NOP,  CSR_NOP,  MDU_NOP,    EXC_NONE),
     LB        ->  List(Y, N, Y, OPR_REG1, OPR_IMMI, ALU_ADD,  BR_N,   LSU_LB,   CSR_NOP,  MDU_NOP,    EXC_LOAD),
     LH        ->  List(Y, N, Y, OPR_REG1, OPR_IMMI, ALU_ADD,  BR_N,   LSU_LH,   CSR_NOP,  MDU_NOP,    EXC_LOAD),
     LW        ->  List(Y, N, Y, OPR_REG1, OPR_IMMI, ALU_ADD,  BR_N,   LSU_LW,   CSR_NOP,  MDU_NOP,    EXC_LOAD),

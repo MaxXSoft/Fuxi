@@ -86,7 +86,8 @@ class CsrFileUnitTester(c: CsrFile) extends PeekPokeTester(c) {
   // CSR write
   pokeWrite(CSR_W, CSR_MEPC, 0x00000103)
   step(1)
-  testRead(CSR_R, CSR_MEPC, true, 0x00000100)
+  testRead(CSR_R, CSR_MEPC, true, 0x00000102)
+  testRead(CSR_R, CSR_MISA, true, 0x40141105)
   pokeWrite(CSR_RW, CSR_MEDELEG, 0xffff)
   step(1)
   pokeWrite(CSR_W, CSR_MIE, 0xffff)

@@ -22,6 +22,7 @@ class FetchIO extends StageIO {
   // instruction info
   val valid     = Bool()
   val pc        = UInt(ADDR_WIDTH.W)
+  val inst      = UInt(INST_WIDTH.W)
   // branch prediction result
   val taken     = Bool()
   val target    = UInt(ADDR_WIDTH.W)
@@ -30,6 +31,7 @@ class FetchIO extends StageIO {
   val pageFault = Bool()
   // instruction fetch physical access fault
   val accessFault = Bool()
+  val faultAddr = UInt(ADDR_WIDTH.W)
 }
 
 // ID stage

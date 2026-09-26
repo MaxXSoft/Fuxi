@@ -76,6 +76,7 @@ class CoreBus extends Module {
   idemux.io.sel2      := immu.io.valid
   idemux.io.in1       <> immu.io.data
   idemux.io.in2       <> io.rom
+  idemux.io.in2.en    := io.rom.en && !immu.io.fault && !immu.io.accessFault
   idemux.io.in2.addr  := immu.io.paddr
 
   // instruction cache
@@ -85,7 +86,7 @@ class CoreBus extends Module {
   icache.io.axi   <> io.inst
 
   // ROM interface
-  io.rom.valid       := immu.io.accessFault || idemux.io.in2.valid
+  io.rom.valid       := immu.io.fault || immu.io.accessFault || idemux.io.in2.valid
   io.rom.fault       := immu.io.fault
   io.rom.accessFault := immu.io.accessFault || idemux.io.in2.accessFault
 

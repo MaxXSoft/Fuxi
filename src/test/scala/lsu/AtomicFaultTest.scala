@@ -25,7 +25,8 @@ class AtomicFaultHarness extends Module {
   decoder.io.fetch := 0.U.asTypeOf(new FetchIO)
   decoder.io.fetch.valid := true.B
   decoder.io.fetch.pc := 0x200.U
-  decoder.io.inst := io.instruction
+  decoder.io.fetch.inst := io.instruction
+  decoder.io.flush := false.B
   decoder.io.stallId := false.B
   decoder.io.read1.data := io.address
   decoder.io.read2.data := 0.U

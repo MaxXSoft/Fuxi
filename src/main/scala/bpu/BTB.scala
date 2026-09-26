@@ -32,23 +32,23 @@ class BTB extends Module {
   val lines   = Mem(BTB_SIZE, new BtbLine)
 
   // branch info for BTB lines
-  val index   = io.pc(BTB_INDEX_WIDTH + ADDR_ALIGN_WIDTH - 1,
-                      ADDR_ALIGN_WIDTH)
-  val linePc  = io.pc(ADDR_WIDTH - 1, BTB_INDEX_WIDTH + ADDR_ALIGN_WIDTH)
+  val index   = io.pc(BTB_INDEX_WIDTH + INST_ALIGN_WIDTH - 1,
+                      INST_ALIGN_WIDTH)
+  val linePc  = io.pc(ADDR_WIDTH - 1, BTB_INDEX_WIDTH + INST_ALIGN_WIDTH)
 
   // write to BTB lines
   when (io.branch) {
     valids(index)       := true.B
     lines(index).jump   := io.jump
     lines(index).pc     := linePc
-    lines(index).target := io.target(ADDR_WIDTH - 1, ADDR_ALIGN_WIDTH)
+    lines(index).target := io.target(ADDR_WIDTH - 1, INST_ALIGN_WIDTH)
   }
 
   // signals about BTB lookup
-  val lookupIndex = io.lookupPc(BTB_INDEX_WIDTH + ADDR_ALIGN_WIDTH - 1,
-                                ADDR_ALIGN_WIDTH)
+  val lookupIndex = io.lookupPc(BTB_INDEX_WIDTH + INST_ALIGN_WIDTH - 1,
+                                INST_ALIGN_WIDTH)
   val lookupPcSel = io.lookupPc(ADDR_WIDTH - 1,
-                                BTB_INDEX_WIDTH + ADDR_ALIGN_WIDTH)
+                                BTB_INDEX_WIDTH + INST_ALIGN_WIDTH)
   val btbHit      = valids(lookupIndex) &&
                     lines(lookupIndex).pc === lookupPcSel
 
@@ -56,5 +56,5 @@ class BTB extends Module {
   io.lookupBranch := btbHit
   io.lookupJump   := Mux(btbHit, lines(lookupIndex).jump, false.B)
   io.lookupTarget := Cat(Mux(btbHit, lines(lookupIndex).target, 0.U),
-                         0.U(ADDR_ALIGN_WIDTH.W))
+                         0.U(INST_ALIGN_WIDTH.W))
 }

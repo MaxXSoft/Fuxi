@@ -26,8 +26,8 @@ class BranchPredictor extends Module {
   ghr.io.taken  := io.branchInfo.taken
 
   // wire PHT
-  val index = io.lookupPc(GHR_WIDTH + ADDR_ALIGN_WIDTH - 1,
-                          ADDR_ALIGN_WIDTH) ^ ghr.io.ghr    // G-share
+  val index = io.lookupPc(GHR_WIDTH + INST_ALIGN_WIDTH - 1,
+                          INST_ALIGN_WIDTH) ^ ghr.io.ghr    // G-share
   pht.io.lastBranch := io.branchInfo.branch
   pht.io.lastTaken  := io.branchInfo.taken
   pht.io.lastIndex  := io.branchInfo.index

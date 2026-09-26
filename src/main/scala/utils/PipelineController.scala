@@ -8,7 +8,6 @@ import consts.Parameters._
 class PipelineController extends Module {
   val io = IO(new Bundle {
     // stall request from pipeline stages
-    val fetch     = Input(Bool())
     val alu       = Input(Bool())
     val mem       = Input(Bool())
     // flush request from pipeline stages
@@ -25,8 +24,7 @@ class PipelineController extends Module {
     val csrSepc   = Input(UInt(ADDR_WIDTH.W))
     val csrMepc   = Input(UInt(ADDR_WIDTH.W))
     val csrTvec   = Input(UInt(ADDR_WIDTH.W))
-    // stall signals to each mig-stages
-    val stallIf   = Output(Bool())
+    // stall signals to the decode/execute pipeline; fetch has its own queue
     val stallId   = Output(Bool())
     val stallEx   = Output(Bool())
     val stallMm   = Output(Bool())
@@ -37,11 +35,10 @@ class PipelineController extends Module {
     val flushPc   = Output(UInt(ADDR_WIDTH.W))
   })
 
-  // stall signals (If -> Wb)
-  val stall = Mux(io.mem,           "b11110".U(5.W),
-              Mux(io.csr || io.alu, "b11100".U(5.W),
-              Mux(io.load,          "b11000".U(5.W),
-              Mux(io.fetch,         "b10000".U(5.W), 0.U))))
+  // stall signals (Id -> Wb)
+  val stall = Mux(io.mem,           "b1110".U(4.W),
+              Mux(io.csr || io.alu, "b1100".U(4.W),
+              Mux(io.load,          "b1000".U(4.W), 0.U)))
 
   // final exception PC
   val excPc   = Mux(io.except.isSret, io.csrSepc,
@@ -57,7 +54,6 @@ class PipelineController extends Module {
                   Mux(memFlush, io.memTarget, io.decTarget))
 
   // stall signals
-  io.stallIf  := stall(4)
   io.stallId  := stall(3)
   io.stallEx  := stall(2)
   io.stallMm  := stall(1)
