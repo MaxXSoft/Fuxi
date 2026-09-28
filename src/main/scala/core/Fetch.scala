@@ -90,7 +90,7 @@ class Fetch extends Module {
   io.fetch.predIndex := bpu.io.predIndex
   io.fetch.pageFault := pageFault
   io.fetch.accessFault := accessFault
-  io.fetch.faultAddr := Mux(firstFault, pc, Mux(split, pc + 2.U, pc))
+  io.fetch.faultAddr := Mux(split, pc + 2.U, pc)
 
   when (io.flush) {
     pc := io.flushPc
