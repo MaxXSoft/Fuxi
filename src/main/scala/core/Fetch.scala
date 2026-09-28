@@ -50,7 +50,7 @@ class Fetch extends Module {
   val head = RegInit(0.U(log2Ceil(depth).W))
   val tail = RegInit(0.U(log2Ceil(depth).W))
   val count = RegInit(0.U(log2Ceil(depth + 1).W))
-  val nextHead = (head + 1.U)(log2Ceil(depth) - 1, 0)
+  val nextHead = head + 1.U
   val responseValid = pending && !pendingKilled && !faultBlocked
   val response = Wire(new FetchWord)
   response.data := io.rom.rdata
