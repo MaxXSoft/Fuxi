@@ -4,6 +4,7 @@ import chisel3._
 import consts.Instructions.NOP
 import consts.Parameters.RESET_PC
 import sim.ROM
+import io.DebugIO
 import utils.PeekPokeTester
 
 case class ExpectedWriteback(pc: BigInt, rd: Int, data: BigInt)
@@ -99,6 +100,15 @@ class CoreTraceProgram extends CoreProgram(utils.InstructionImage.CompressedNops
 }
 
 abstract class CoreTester[T <: Module](c: T) extends PeekPokeTester(c) {
+  protected def sampleDebug(debug: DebugIO): ObservedInstruction =
+    ObservedInstruction(peek(debug.pc), if (peek(debug.regWen) != 0)
+      Some(peek(debug.regWaddr).toInt -> peek(debug.regWdata)) else None)
+
+  protected def checkTrap(observation: CoreObservation, checker: TrapChecker): Unit = {
+    if (peek(observation.trap) != 0)
+      checker.observe(peek(observation.trapPc), peek(observation.trapCause), peek(observation.trapValue))
+  }
+
   // The caller steps exactly once per iteration and chooses whether to sample
   // before or after that edge. This preserves retirement counter timing checks.
   protected def runUntil(maxCycles: Int, context: => String)(cycle: => Boolean): Unit = {
@@ -116,22 +126,12 @@ abstract class CoreTester[T <: Module](c: T) extends PeekPokeTester(c) {
 // Check selected writebacks in order, allowing unrelated instructions between them.
 class CoreProgramTester(c: CoreWrapper, program: CoreProgram, donePc: BigInt, maxCycles: Int)
     extends CoreTester(c) {
-  val pending = scala.collection.mutable.Queue.from(program.expected)
-  val checkedPcs = program.expected.map(_.pc).toSet
-  require(checkedPcs.size == program.expected.size, "Duplicate writeback checkpoint PC")
-
-  runUntil(maxCycles, s"missing writebacks: ${pending.mkString(", ")}") {
+  val checker = new WritebackChecker(program.expected)
+  runUntil(maxCycles, s"missing writebacks: ${checker.missing}") {
     step(1)
-    val writes = peek(c.io.regWen) != 0
-    val pc = peek(c.io.pc)
-    if (writes && checkedPcs(pc)) {
-      assert(pending.nonEmpty, s"Repeated writeback at PC 0x${pc.toString(16)}")
-      val expected = pending.dequeue()
-      expect(c.io.pc, expected.pc)
-      expect(c.io.regWaddr, expected.rd)
-      expect(c.io.regWdata, expected.data)
-    }
-    writes && pc == donePc
+    val actual = sampleDebug(c.io)
+    checker.observe(actual)
+    actual.write.nonEmpty && actual.pc == donePc
   }
-  assert(pending.isEmpty, s"Missing writebacks: ${pending.mkString(", ")}")
+  checker.checkComplete()
 }

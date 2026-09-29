@@ -1,10 +1,6 @@
 package core
 
-import chisel3._
-import chisel3.util.experimental.BoringUtils
-import consts.Parameters._
-import io.DebugIO
-import sim.{RAM, ROM}
+import sim.ROM
 import utils.TestDriver
 
 private[core] object CompressedFlowProgram extends CoreTraceProgram {
@@ -98,51 +94,10 @@ private[core] object CompressedTrapProgram extends CoreTraceProgram {
   place32(0x394, 0x30200073)
 }
 
-private[core] class CoreCompressedWrapper(program: CoreTraceProgram, depth: Int) extends Module {
-  val io = IO(new Bundle {
-    val debug = new DebugIO
-    val memoryStall = Input(Bool())
-    val fenceStall = Input(Bool())
-    val memoryRequest = Output(Bool())
-    val fenceRequest = Output(Bool())
-    val queueCount = Output(UInt(32.W))
-    val retired = Output(Bool())
-    val count = Output(UInt(64.W))
-    val trap = Output(Bool())
-    val trapPc = Output(UInt(32.W))
-    val trapCause = Output(UInt(32.W))
-    val trapValue = Output(UInt(32.W))
-  })
-  val core = Module(new Core(depth))
-  val rom = Module(new ROM(program.words))
-  val ram = Module(new RAM)
-  core.io.irq.timer := false.B
-  core.io.irq.soft := false.B
-  core.io.irq.extern := false.B
-  core.io.rom <> rom.io
-  core.io.ram <> ram.io
-  ram.io.en := core.io.ram.en && !io.memoryStall
-  core.io.ram.valid := ram.io.valid && !io.memoryStall
-  core.io.cache.flushDataDone := !io.fenceStall
-  core.io.cache.flushDataAccessFault := false.B
-  io.debug <> core.io.debug
-  io.memoryRequest := core.io.ram.en
-  io.fenceRequest := core.io.cache.flushData
-  io.queueCount := BoringUtils.bore(core.ifid.io.count)
-  io.retired := BoringUtils.bore(core.wb.io.csr.retired)
-  io.count := BoringUtils.bore(core.csrfile.minstret.data)
-  val except = BoringUtils.bore(core.mem.io.except)
-  io.trap := except.hasTrap && !except.isMret && !except.isSret
-  io.trapPc := except.excPc
-  io.trapCause := except.excCause
-  io.trapValue := except.excValue
-}
-
-private[core] class CoreCompressedTester(c: CoreCompressedWrapper, program: CoreTraceProgram,
+private[core] class CoreCompressedTester(c: CoreMemoryHarness, program: CoreTraceProgram,
                                          depth: Int, stall: Boolean) extends CoreTester(c) {
-  val expected = scala.collection.mutable.Queue.from(program.retired)
-  val traps = scala.collection.mutable.Queue.from(program.traps)
-  var retirementCount = 0
+  val retirements = new RetirementChecker(program.retired.toVector)
+  val traps = new TrapChecker(program.traps.toVector)
   var maxQueueCount = 0
   var memoryWait = 0
   var fenceWait = 0
@@ -151,7 +106,7 @@ private[core] class CoreCompressedTester(c: CoreCompressedWrapper, program: Core
   poke(c.io.memoryStall, false)
   poke(c.io.fenceStall, false)
 
-  runUntil(1800, s"missing retirements ${expected.mkString(", ")}") {
+  runUntil(1800, s"missing retirements ${retirements.missing}; traps ${traps.missing}") {
     if (peek(c.io.memoryRequest) == 0) memoryArmed = true
     else if (memoryArmed && stall) { memoryWait = 8; memoryArmed = false }
     if (peek(c.io.fenceRequest) == 0) fenceArmed = true
@@ -162,32 +117,20 @@ private[core] class CoreCompressedTester(c: CoreCompressedWrapper, program: Core
     fenceWait = math.max(0, fenceWait - 1)
     maxQueueCount = math.max(maxQueueCount, peek(c.io.queueCount).toInt)
 
-    expect(c.io.count, retirementCount)
-    if (peek(c.io.trap) != 0) {
-      assert(traps.nonEmpty, f"Unexpected trap at 0x${peek(c.io.trapPc)}%x")
-      val trap = traps.dequeue()
-      expect(c.io.trapPc, trap.pc)
-      expect(c.io.trapCause, trap.cause)
-      expect(c.io.trapValue, trap.value)
-    }
+    retirements.checkCount(peek(c.io.observation.count))
+    checkTrap(c.io.observation, traps)
     var done = false
-    if (peek(c.io.retired) != 0) {
-      assert(expected.nonEmpty, "Unexpected retirement after end of program")
-      val instruction = expected.dequeue()
-      expect(c.io.debug.pc, instruction.pc)
-      instruction.write.foreach { case (rd, data) =>
-        expect(c.io.debug.regWen, true)
-        expect(c.io.debug.regWaddr, rd)
-        expect(c.io.debug.regWdata, data)
-      }
-      retirementCount += 1
-      done = instruction.pc == program.donePc
+    if (peek(c.io.observation.retired) != 0) {
+      val actual = sampleDebug(c.io.observation.debug)
+      retirements.observe(actual)
+      done = actual.pc == program.donePc
     }
     step(1)
     done
   }
-  assert(expected.isEmpty && traps.isEmpty)
-  expect(c.io.count, program.retired.size)
+  retirements.checkComplete()
+  traps.checkComplete()
+  retirements.checkCount(peek(c.io.observation.count))
   if (stall) assert(maxQueueCount == depth, s"FIFO did not fill under forced stalls: $maxQueueCount/$depth")
 }
 
@@ -197,7 +140,7 @@ object CoreCompressedTest extends App {
     (CompressedFlowProgram, 4, true),
     (CompressedTrapProgram, 4, false),
   )) {
-    if (!TestDriver.execute(args, () => new CoreCompressedWrapper(program, depth)) {
+    if (!TestDriver.execute(args, () => new CoreMemoryHarness(ROM.Words(program.words), depth)) {
       c => new CoreCompressedTester(c, program, depth, stall)
     }) sys.exit(1)
   }

@@ -1,11 +1,9 @@
 package core
 
 import chisel3._
-import chisel3.util.experimental.BoringUtils
 import axi.AxiMaster
 import bus.CoreBus
 import consts.Parameters._
-import io.DebugIO
 import utils.{InstructionImage, TestDriver}
 
 private[core] case class FetchPageCase(name: String, secondPagePresent: Boolean,
@@ -13,15 +11,10 @@ private[core] case class FetchPageCase(name: String, secondPagePresent: Boolean,
 
 private[core] class CoreFetchFaultWrapper extends Module {
   val io = IO(new Bundle {
-    val debug = new DebugIO
+    val observation = new CoreObservation
     val inst = new AxiMaster(ADDR_WIDTH, DATA_WIDTH)
     val data = new AxiMaster(ADDR_WIDTH, DATA_WIDTH)
     val uncached = new AxiMaster(ADDR_WIDTH, DATA_WIDTH)
-    val retired = Output(Bool())
-    val trap = Output(Bool())
-    val trapPc = Output(UInt(32.W))
-    val trapCause = Output(UInt(32.W))
-    val trapValue = Output(UInt(32.W))
   })
   val core = Module(new Core(FETCH_QUEUE_DEPTH))
   val bus = Module(new CoreBus)
@@ -35,13 +28,7 @@ private[core] class CoreFetchFaultWrapper extends Module {
   bus.io.inst <> io.inst
   bus.io.data <> io.data
   bus.io.uncached <> io.uncached
-  io.debug <> core.io.debug
-  io.retired := BoringUtils.bore(core.wb.io.csr.retired)
-  val except = BoringUtils.bore(core.mem.io.except)
-  io.trap := except.hasTrap && !except.isMret && !except.isSret
-  io.trapPc := except.excPc
-  io.trapCause := except.excCause
-  io.trapValue := except.excValue
+  CoreObservation.connect(io.observation, core)
 }
 
 private[core] class CoreFetchFaultTester(c: CoreFetchFaultWrapper, scenario: FetchPageCase)
@@ -113,14 +100,18 @@ private[core] class CoreFetchFaultTester(c: CoreFetchFaultWrapper, scenario: Fet
   val donePc = if (willTrap) 0x38c else if (scenario.compressedJump) 0x202 else 0x1004
   val retired = scala.collection.mutable.ArrayBuffer.empty[BigInt]
   val reads = scala.collection.mutable.ArrayBuffer.empty[BigInt]
-  val checkedCsrs = scala.collection.mutable.Set.empty[Int]
-  var trapCount = 0
+  val traps = new TrapChecker(if (willTrap) Seq(ExpectedTrap(0xffe, expectedCause, 0x1000)) else Seq.empty)
+  val writebacks = new WritebackChecker((if (willTrap) Seq(
+    ExpectedWriteback(0x380, 6, expectedCause),
+    ExpectedWriteback(0x384, 7, 0xffe),
+    ExpectedWriteback(0x388, 28, 0x1000))
+    else if (!scenario.compressedJump) Seq(ExpectedWriteback(0xffe, 10, 42))
+    else Seq.empty) :+ ExpectedWriteback(donePc, 31, 1))
   var cycle = 0
   var active = false
   var address = BigInt(0)
   var beat = 0
   var beats = 0
-  var sawSplitWrite = false
 
   def physicalRegionMapped(base: BigInt): Boolean =
     (base >= 0x200 && base < 0x400) ||
@@ -152,40 +143,14 @@ private[core] class CoreFetchFaultTester(c: CoreFetchFaultWrapper, scenario: Fet
       expect(port.readAddr.valid, false)
       expect(port.writeAddr.valid, false)
     }
-    if (peek(c.io.trap) != 0) {
-      assert(willTrap && trapCount == 0, s"Unexpected trap in ${scenario.name}")
-      expect(c.io.trapPc, 0xffe)
-      expect(c.io.trapCause, expectedCause)
-      expect(c.io.trapValue, 0x1000)
-      trapCount += 1
-    }
-
+    checkTrap(c.io.observation, traps)
     var done = false
-    if (peek(c.io.retired) != 0) {
-      val pc = peek(c.io.debug.pc)
-      retired += pc
-      if (!scenario.compressedJump && pc == 0xffe) {
-        assert(!willTrap, "Faulting split instruction retired")
-        expect(c.io.debug.regWen, true)
-        expect(c.io.debug.regWaddr, 10)
-        expect(c.io.debug.regWdata, 42)
-        sawSplitWrite = true
-      }
-      if (willTrap) {
-        val checkpoint = Map(0x380 -> (6, expectedCause), 0x384 -> (7, 0xffe), 0x388 -> (28, 0x1000))
-        checkpoint.get(pc.toInt).foreach { case (rd, value) =>
-          expect(c.io.debug.regWen, true)
-          expect(c.io.debug.regWaddr, rd)
-          expect(c.io.debug.regWdata, value)
-          checkedCsrs += pc.toInt
-        }
-      }
-      if (pc == donePc) {
-        expect(c.io.debug.regWen, true)
-        expect(c.io.debug.regWaddr, 31)
-        expect(c.io.debug.regWdata, 1)
-        done = true
-      }
+    if (peek(c.io.observation.retired) != 0) {
+      val actual = sampleDebug(c.io.observation.debug)
+      retired += actual.pc
+      assert(!willTrap || actual.pc != 0xffe, "Faulting split instruction retired")
+      writebacks.observe(actual)
+      done = actual.pc == donePc
     }
     step(1)
     if (acceptData) {
@@ -208,15 +173,15 @@ private[core] class CoreFetchFaultTester(c: CoreFetchFaultWrapper, scenario: Fet
   if (scenario.secondPagePresent) assert(reads.contains(secondPage), "Skipped the second page translation")
   else assert(!reads.contains(secondPage), "Fetched an unmapped second page")
   if (willTrap) {
-    assert(trapCount == 1 && checkedCsrs.size == 3)
     assert(!retired.contains(BigInt(0xffe)))
   } else {
-    assert(trapCount == 0)
     assert(retired.count(_ == BigInt(0xffe)) == 1)
     if (!scenario.compressedJump) {
-      assert(sawSplitWrite && retired.contains(BigInt(0x1002)))
+      assert(retired.contains(BigInt(0x1002)))
     }
   }
+  traps.checkComplete()
+  writebacks.checkComplete()
   println(s"CoreFetchFault: ${scenario.name} passed after $cycle cycles.")
 }
 

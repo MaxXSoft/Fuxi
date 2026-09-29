@@ -65,5 +65,46 @@ object CoreTestSupportTest extends App {
   trace.place32(0x380, 0x13)
   assert(trace.retired.map(_.pc).toSeq == Seq(base, BigInt(0x380), BigInt(0x380)))
   assert(trace.pc == base + 6)
-  println("CoreTestSupport: layout contracts passed.")
+  def fails(body: => Unit): Unit = {
+    var failed = false
+    try body catch { case _: AssertionError => failed = true }
+    assert(failed, "Expected a mismatched execution event to fail")
+  }
+  // Preserve PeekPokeTester's signed-value normalization without silently
+  // truncating an oversized positive expected value.
+  fails(CoreChecks.writeback(ObservedInstruction(base, Some(6 -> BigInt(1))),
+    ExpectedWriteback(base, 6, (BigInt(1) << 32) + 1)))
+  val writes = new WritebackChecker(Seq(ExpectedWriteback(base, 6, -1), ExpectedWriteback(base + 4, 7, 2)))
+  writes.observe(ObservedInstruction(base + 8, Some(8 -> BigInt(99)))) // Unselected writeback.
+  writes.observe(ObservedInstruction(base, None))
+  fails(writes.checkComplete())
+  fails(writes.observe(ObservedInstruction(base + 4, Some(7 -> BigInt(2)))))
+  writes.observe(ObservedInstruction(base, Some(6 -> BigInt("ffffffff", 16))))
+  fails(writes.observe(ObservedInstruction(base, Some(6 -> BigInt(0)))))
+  writes.observe(ObservedInstruction(base + 4, Some(7 -> BigInt(2))))
+  writes.checkComplete()
+  fails(writes.observe(ObservedInstruction(base + 4, Some(7 -> BigInt(2)))))
+  rejects(new WritebackChecker(Seq.fill(2)(ExpectedWriteback(base, 6, 1))))
+
+  val retirements = new RetirementChecker(Seq(
+    ExpectedRetirement(base), ExpectedRetirement(base, Some(6 -> BigInt(2)))))
+  retirements.checkCount(0)
+  retirements.observe(ObservedInstruction(base, Some(9 -> BigInt(99)))) // None is unchecked.
+  retirements.checkCount(1)
+  fails(retirements.checkCount(0))
+  fails(retirements.checkComplete())
+  fails(retirements.observe(ObservedInstruction(base + 4, None)))
+  fails(retirements.observe(ObservedInstruction(base, None)))
+  retirements.observe(ObservedInstruction(base, Some(6 -> BigInt(2))))
+  retirements.checkComplete()
+  retirements.checkCount(2)
+  fails(retirements.observe(ObservedInstruction(base, None)))
+
+  val traps = new TrapChecker(Seq(ExpectedTrap(base, 12, 0x1000)))
+  fails(traps.checkComplete())
+  fails(traps.observe(base, 12, base))
+  traps.observe(base, 12, 0x1000)
+  traps.checkComplete()
+  fails(traps.observe(base, 12, 0x1000))
+  println("CoreTestSupport: layout and event-checker contracts passed.")
 }

@@ -17,9 +17,8 @@ class CoreUnitTester(c: CoreWrapper, traceFile: String, genTrace: Boolean)
         step(1)
         peek(c.io.regWen) != 0 && peek(c.io.regWaddr) != 0
       }
-      expect(c.io.pc, BigInt(pc, 16))
-      expect(c.io.regWaddr, BigInt(addr, 10))
-      expect(c.io.regWdata, BigInt(data, 16))
+      CoreChecks.writeback(sampleDebug(c.io),
+        ExpectedWriteback(BigInt(pc, 16), addr.toInt, BigInt(data, 16)))
     }
   }
 

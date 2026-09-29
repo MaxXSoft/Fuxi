@@ -1,8 +1,5 @@
 package core
 
-import chisel3._
-import chisel3.util.experimental.BoringUtils
-import consts.Parameters._
 import sim.ROM
 import utils.TestDriver
 
@@ -40,41 +37,28 @@ object RetirementProgram extends CoreProgram {
   }
 }
 
-class CoreRetirementWrapper(fenceFault: Boolean) extends Module {
-  val io = IO(new Bundle {
-    val retired = Output(Bool())
-    val pc = Output(UInt(ADDR_WIDTH.W))
-    val count = Output(UInt(64.W))
-  })
-  val system = Module(new CoreWrapper(ROM.Words(RetirementProgram.words), fenceFault))
-  io.retired := BoringUtils.bore(system.core.wb.io.csr.retired)
-  io.pc := system.io.pc
-  io.count := BoringUtils.bore(system.core.csrfile.minstret.data)
-}
-
-class CoreRetirementTester(c: CoreRetirementWrapper, fenceFault: Boolean) extends CoreTester(c) {
-  val expected = RetirementProgram.pcs(fenceFault)
-  val retiredPcs = scala.collection.mutable.ArrayBuffer.empty[BigInt]
-  runUntil(600, "Retirement program did not finish") {
+class CoreRetirementTester(c: CoreMemoryHarness, fenceFault: Boolean) extends CoreTester(c) {
+  val checker = new RetirementChecker(RetirementProgram.pcs(fenceFault).map(ExpectedRetirement(_)))
+  poke(c.io.memoryStall, false)
+  poke(c.io.fenceStall, false)
+  runUntil(600, s"Missing retirements: ${checker.missing}") {
+    checker.checkCount(peek(c.io.observation.count))
     var done = false
-    expect(c.io.count, retiredPcs.size)
-    if (peek(c.io.retired) != 0) {
-      val pc = peek(c.io.pc)
-      retiredPcs += pc
-      done = pc == RetirementProgram.donePc
+    if (peek(c.io.observation.retired) != 0) {
+      val actual = sampleDebug(c.io.observation.debug)
+      checker.observe(actual)
+      done = actual.pc == RetirementProgram.donePc
     }
     step(1)
     done
   }
-  expect(c.io.count, expected.size)
-  assert(retiredPcs.toSeq == expected,
-    s"Retired PCs: ${retiredPcs.map(_.toString(16)).mkString(", ")}; " +
-    s"expected: ${expected.map(_.toString(16)).mkString(", ")}")
+  checker.checkComplete()
+  checker.checkCount(peek(c.io.observation.count))
 }
 
 object CoreRetirementTest extends App {
   for (fenceFault <- Seq(false, true)) {
-    if (!TestDriver.execute(args, () => new CoreRetirementWrapper(fenceFault))(
+    if (!TestDriver.execute(args, () => new CoreMemoryHarness(ROM.Words(RetirementProgram.words), fenceFault = fenceFault))(
       c => new CoreRetirementTester(c, fenceFault))) sys.exit(1)
   }
 }
