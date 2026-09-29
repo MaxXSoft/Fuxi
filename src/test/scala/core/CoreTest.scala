@@ -55,12 +55,10 @@ class CoreUnitTester(c: CoreWrapper, traceFile: String, genTrace: Boolean)
 
   if (traceFile.isEmpty) {
     printTrace()
-  }
-  else if (!genTrace) {
+  } else if (!genTrace) {
     val source = Source.fromFile(traceFile)
     try runTrace(source) finally source.close()
-  }
-  else {
+  } else {
     generateTrace(new File(traceFile))
   }
 }

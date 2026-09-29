@@ -25,8 +25,7 @@ class Multiplier(val oprWidth: Int, val latency: Int = 0) extends Module {
   def generatePipe(en: Bool, data: UInt, latency: Int): (Bool, UInt) = {
     if (latency == 0) {
       (en, data)
-    }
-    else {
+    } else {
       val done  = RegNext(Mux(io.flush, false.B, en), false.B)
       val bits  = RegEnable(data, en)
       generatePipe(done, bits, latency - 1)

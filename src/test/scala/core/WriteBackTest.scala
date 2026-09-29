@@ -15,8 +15,7 @@ class WriteBackUnitTester(c: WriteBack) extends PeekPokeTester(c) {
     val v = (data >> (sel * 8)) & m
     if ((v & (1 << (width - 1))) != 0) {
       (~m | v) & mask
-    }
-    else {
+    } else {
       v
     }
   }

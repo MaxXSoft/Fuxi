@@ -50,8 +50,7 @@ class BpUnitTester(c: BranchPredictor) extends PeekPokeTester(c) {
         (!taken || (taken && peek(c.io.predTarget) == target))) {
       println(f"current: 0x$pc%x, target: 0x$target%x")
       i += 1
-    }
-    else {
+    } else {
       println(f"current: 0x$pc%x, MISS!, index: $lastIndex%d")
     }
     // update last status
