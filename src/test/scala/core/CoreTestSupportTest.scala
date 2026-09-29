@@ -14,20 +14,20 @@ object CoreTestSupportTest extends App {
 
   val base = RESET_PC.litValue
   val mixed = new CoreProgram(InstructionImage.CompressedNops)
-  mixed.emit16(0x0001)
+  mixed.emit16(InstEncoding.c_nop())
   mixed.expectWriteback(10, 42)
-  mixed.emit32(0x02a00513)
+  mixed.emit32(InstEncoding.addi(10, 0, 42))
   mixed.emit16(0x0000) // Deliberately illegal instructions are valid image data.
   assert(mixed.words == Seq(BigInt(0x05130001), BigInt(0x000002a0)))
   assert(mixed.expected == Seq(ExpectedWriteback(base + 2, 10, 42)))
   assert(mixed.pc == base + 8)
-  mixed.place16(base + 0x20, 0x0085)
+  mixed.place16(base + 0x20, InstEncoding.c_addi(1, 1))
   assert(mixed.pc == base + 8)
   assert(mixed.words(2) == InstructionImage.CompressedNops)
   assert(mixed.words(8) == 0x00010085)
 
   val legacy = new CoreProgram
-  legacy.emit32(0x13)
+  legacy.emit32(InstEncoding.nop())
   legacy.seekWord(3)
   assert(legacy.pc == legacy.pcAtWord(3))
   assert(legacy.words == Seq(BigInt(0x13))) // Seeking does not emit padding instructions.
@@ -48,14 +48,14 @@ object CoreTestSupportTest extends App {
 
   val edge = new CoreProgram
   edge.seekAddress(base + ROM.DEPTH * 4 - 2)
-  rejects(edge.emit32(0x13))
-  edge.emit16(1)
+  rejects(edge.emit32(InstEncoding.nop()))
+  edge.emit16(InstEncoding.c_nop())
   assert(edge.words.size == ROM.DEPTH)
-  rejects(edge.emit16(1))
+  rejects(edge.emit16(InstEncoding.c_nop()))
   rejects(new CoreProgram().words)
   rejects(mixed.seekAddress(base + 9))
-  rejects(mixed.place32(base + 1, 0x13))
-  rejects(mixed.place16(base, 1))
+  rejects(mixed.place32(base + 1, InstEncoding.nop()))
+  rejects(mixed.place16(base, InstEncoding.c_nop()))
   rejects(mixed.place32(base + 0x40, 1L << 32))
   rejects(mixed.place16(base + 0x40, -1))
 
@@ -70,11 +70,11 @@ object CoreTestSupportTest extends App {
   assert(sparse.read32(high + 4) == 0x1234)
 
   val trace = new CoreTraceProgram
-  trace.half(1)
-  trace.word(0x13, retires = false)
+  trace.half(InstEncoding.c_nop())
+  trace.word(InstEncoding.nop(), retires = false)
   trace.event(0x380)
   trace.event(0x380, Some(6 -> BigInt(2)))
-  trace.place32(0x380, 0x13)
+  trace.place32(0x380, InstEncoding.nop())
   assert(trace.retired.map(_.pc).toSeq == Seq(base, BigInt(0x380), BigInt(0x380)))
   assert(trace.pc == base + 6)
   def fails(body: => Unit): Unit = {

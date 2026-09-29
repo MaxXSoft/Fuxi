@@ -1,17 +1,18 @@
 package core
 
+import core.InstEncoding._
 import chisel3._
 import consts.CSR._
 import utils.TestDriver
 
 object CsrAliasProgram extends CoreProgram {
   def write(addr: UInt, value: Int): Unit = {
-    emit32(((value & 0xfff).toLong << 20) | 0x293) // addi t0, zero, value
-    emit32((addr.litValue.toLong << 20) | 0x29073) // csrw addr, t0
+    emit32(addi(5, 0, value)) // addi t0, zero, value
+    emit32(csrw(addr.litValue.toInt, 5)) // csrw addr, t0
   }
   def read(addr: UInt, value: Int): Unit = {
     expectWriteback(6, value)
-    emit32((addr.litValue.toLong << 20) | 0x2373) // csrrs t1, addr, zero
+    emit32(csrr(6, addr.litValue.toInt)) // csrrs t1, addr, zero
   }
   // Check both directions of every writable supervisor alias.
   write(CSR_MSTATUS, 2); read(CSR_SSTATUS, 2)

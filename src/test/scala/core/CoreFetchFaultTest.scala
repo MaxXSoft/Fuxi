@@ -43,21 +43,21 @@ private[core] class CoreFetchFaultTester(c: CoreFetchFaultWrapper, scenario: Fet
   def put(address: BigInt, instruction: Long): Unit = memory.place32(address, instruction)
   val boot = Seq(
     addi(5, 0, 0x380),
-    csr(0x305, 5), // Machine trap handler uses Bare addressing.
-    0x800002b7L,
+    csrw(0x305, 5), // Machine trap handler uses Bare addressing.
+    lui(5, 0x80000),
     addi(5, 5, 0x10),
-    csr(0x180, 5), // SATP = Sv32, root PPN = 0x10.
-    0x000012b7L,
+    csrw(0x180, 5), // SATP = Sv32, root PPN = 0x10.
+    lui(5, 1),
     addi(5, 5, -2),
-    csr(0x341, 5), // MEPC = 0xffe, preserving bit 1.
+    csrw(0x341, 5), // MEPC = 0xffe, preserving bit 1.
     addi(8, 0, 0x202),
     addi(5, 0, 1),
-    0x00b29293L,
-    csr(0x300, 5), // MPP = S, interrupts disabled.
-    0x30200073L,
+    slli(5, 5, 11),
+    csrw(0x300, 5), // MPP = S, interrupts disabled.
+    mret(),
   )
   boot.zipWithIndex.foreach { case (instruction, index) => put(0x200 + index * 4, instruction) }
-  Seq(csr(0x342, 0, 2, 6), csr(0x341, 0, 2, 7), csr(0x343, 0, 2, 28),
+  Seq(csrr(6, 0x342), csrr(7, 0x341), csrr(28, 0x343),
     addi(31, 0, 1), jal(0, 0)).zipWithIndex.foreach { case (instruction, index) =>
     put(0x380 + index * 4, instruction)
   }
@@ -68,17 +68,21 @@ private[core] class CoreFetchFaultTester(c: CoreFetchFaultWrapper, scenario: Fet
   if (scenario.compressedJump) {
     // The next virtual page is unmapped, but this final 16-bit instruction
     // jumps back into the first page and must never consume that page fault.
-    put(firstPage + 0xffc, 0x84020001L) // c.jr s0 at VA 0xffe
-    put(firstPage + 0x200, 0x4f850001L) // c.li t6, 1 at VA 0x202
-    put(firstPage + 0x204, 0x0001a001L)
+    memory.place16(firstPage + 0xffc, c_nop())
+    memory.place16(firstPage + 0xffe, c_jr(8)) // VA 0xffe
+    memory.place16(firstPage + 0x200, c_nop())
+    memory.place16(firstPage + 0x202, c_li(31, 1)) // VA 0x202
+    memory.place16(firstPage + 0x204, c_j(0))
+    memory.place16(firstPage + 0x206, c_nop())
   } else {
     val splitInstruction = addi(10, 0, 42)
-    memory.place16(firstPage + 0xffc, 0x0001)
+    memory.place16(firstPage + 0xffc, c_nop())
     memory.place16(firstPage + 0xffe, splitInstruction & 0xffff)
     memory.place16(secondPage, splitInstruction >>> 16)
-    memory.place16(secondPage + 2, 0x0001) // c.nop at VA 0x1002
+    memory.place16(secondPage + 2, c_nop()) // c.nop at VA 0x1002
     put(secondPage + 4, addi(31, 0, 1))
-    put(secondPage + 8, 0x0001a001L)
+    memory.place16(secondPage + 8, c_j(0))
+    memory.place16(secondPage + 10, c_nop())
   }
 
   for (port <- Seq(c.io.inst, c.io.data, c.io.uncached)) {

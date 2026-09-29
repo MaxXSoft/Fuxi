@@ -1,5 +1,6 @@
 package bus
 
+import core.InstEncoding
 import utils.{AxiTestSupport, PeekPokeTester, TestDriver}
 
 class CoreBusUnitTester(c: CoreBus) extends PeekPokeTester(c) with AxiTestSupport {
@@ -50,7 +51,7 @@ class CoreBusFenceTester(c: CoreBus) extends PeekPokeTester(c) with AxiTestSuppo
   val newInstruction = BigInt("80400100", 16)
   val oldPte = (BigInt(0x80000) << 10) | 0xcf
   val newPte = (BigInt(0x80400) << 10) | 0xcf
-  val instruction = BigInt("00500513", 16) // addi a0, zero, 5
+  val instruction = BigInt(InstEncoding.addi(10, 0, 5)) // addi a0, zero, 5
 
   def initialize(): Unit = {
     poke(c.io.rom.en, false)

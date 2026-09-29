@@ -1,5 +1,6 @@
 package core
 
+import core.InstEncoding._
 import chisel3.{Bool, UInt}
 import utils.{PeekPokeTester, TestDriver}
 
@@ -15,7 +16,7 @@ class DecoderUnitTester(c: Decoder) extends PeekPokeTester(c) {
   val reg1u = BigInt(reg1.toHexString, 16)
   val reg2  = 0x12345679
 
-  def pokeDecoder(inst: Int) = {
+  def pokeDecoder(inst: Long) = {
     poke(c.io.fetch.valid, true)
     poke(c.io.fetch.pc, pc)
     poke(c.io.fetch.predIndex, 0)
@@ -77,7 +78,7 @@ class DecoderUnitTester(c: Decoder) extends PeekPokeTester(c) {
   def expectExc(excType: UInt) = expect(c.io.decoder.excType, excType)
 
   // add a1, a2, a1
-  pokeDecoder(0x00b605b3)
+  pokeDecoder(add(11, 12, 11))
   step(1)
   expectBranch(false, false, false, 0)
   expectReg(Some(11), Some(12), Some(11))
@@ -87,7 +88,7 @@ class DecoderUnitTester(c: Decoder) extends PeekPokeTester(c) {
   expectExc(EXC_NONE)
 
   // slti t0, t1, -3
-  pokeDecoder(0xffd32293)
+  pokeDecoder(slti(5, 6, -3))
   step(1)
   expectBranch(false, false, false, 0)
   expectReg(Some(5), Some(6), None)
@@ -97,7 +98,7 @@ class DecoderUnitTester(c: Decoder) extends PeekPokeTester(c) {
   expectExc(EXC_NONE)
 
   // auipc ra, 1048575
-  pokeDecoder(0xfffff097)
+  pokeDecoder(auipc(1, 0xfffff))
   step(1)
   expectBranch(false, false, false, 0)
   expectReg(Some(1), None, None)
@@ -107,7 +108,7 @@ class DecoderUnitTester(c: Decoder) extends PeekPokeTester(c) {
   expectExc(EXC_NONE)
 
   // slli a1, a1, 31
-  pokeDecoder(0x01f59593)
+  pokeDecoder(slli(11, 11, 31))
   step(1)
   expectBranch(false, false, false, 0)
   expectReg(Some(11), Some(11), None)
@@ -117,7 +118,7 @@ class DecoderUnitTester(c: Decoder) extends PeekPokeTester(c) {
   expectExc(EXC_NONE)
 
   // blt a1, a0, 40
-  pokeDecoder(0x02a5c463)
+  pokeDecoder(blt(11, 10, 40))
   step(1)
   expectBranch(true, false, true, pc + 40)
   expectReg(None, Some(11), Some(10))
@@ -127,7 +128,7 @@ class DecoderUnitTester(c: Decoder) extends PeekPokeTester(c) {
   expectExc(EXC_NONE)
 
   // jal s0, 353190
-  pokeDecoder(0x3a65646f)
+  pokeDecoder(jal(8, 353190))
   step(1)
   expectBranch(true, true, true, pc + 353190)
   expectReg(Some(8), None, None)
@@ -137,7 +138,7 @@ class DecoderUnitTester(c: Decoder) extends PeekPokeTester(c) {
   expectExc(EXC_NONE)
 
   // jalr ra, -1228(ra)
-  pokeDecoder(0xb34080e7)
+  pokeDecoder(jalr(1, 1, -1228))
   step(1)
   expectBranch(true, true, true, (reg1u - 1228) & 0xfffffffe)
   expectReg(Some(1), Some(1), None)
@@ -147,7 +148,7 @@ class DecoderUnitTester(c: Decoder) extends PeekPokeTester(c) {
   expectExc(EXC_NONE)
 
   // lb a0, -9(s0)
-  pokeDecoder(0xff740503)
+  pokeDecoder(lb(10, 8, -9))
   step(1)
   expectBranch(false, false, false, 0)
   expectReg(Some(10), Some(8), None)
@@ -157,7 +158,7 @@ class DecoderUnitTester(c: Decoder) extends PeekPokeTester(c) {
   expectExc(EXC_LOAD)
 
   // sw ra, 12(sp)
-  pokeDecoder(0x00112623)
+  pokeDecoder(sw(1, 2, 12))
   step(1)
   expectBranch(false, false, false, 0)
   expectReg(None, Some(2), Some(1))
@@ -167,7 +168,7 @@ class DecoderUnitTester(c: Decoder) extends PeekPokeTester(c) {
   expectExc(EXC_STAMO)
 
   // csrrw sp, mscratch, sp
-  pokeDecoder(0x34011173)
+  pokeDecoder(csrrw(2, 0x340, 2))
   step(1)
   expectBranch(false, false, false, 0)
   expectReg(Some(2), Some(2), None)
@@ -177,7 +178,7 @@ class DecoderUnitTester(c: Decoder) extends PeekPokeTester(c) {
   expectExc(EXC_NONE)
 
   // csrrsi zero, mstatus, 8
-  pokeDecoder(0x30046073)
+  pokeDecoder(csrrsi(0, 0x300, 8))
   step(1)
   expectBranch(false, false, false, 0)
   expectReg(Some(0), None, None)
@@ -187,7 +188,7 @@ class DecoderUnitTester(c: Decoder) extends PeekPokeTester(c) {
   expectExc(EXC_NONE)
 
   // csrr a0, mepc
-  pokeDecoder(0x34102573)
+  pokeDecoder(csrr(10, 0x341))
   step(1)
   expectBranch(false, false, false, 0)
   expectReg(Some(10), Some(0), None)
@@ -197,7 +198,7 @@ class DecoderUnitTester(c: Decoder) extends PeekPokeTester(c) {
   expectExc(EXC_NONE)
 
   // csrw mepc, a0
-  pokeDecoder(0x34151073)
+  pokeDecoder(csrw(0x341, 10))
   step(1)
   expectBranch(false, false, false, 0)
   expectReg(Some(0), Some(10), None)
@@ -207,7 +208,7 @@ class DecoderUnitTester(c: Decoder) extends PeekPokeTester(c) {
   expectExc(EXC_NONE)
 
   // mul a2, a0, a1
-  pokeDecoder(0x02b50633)
+  pokeDecoder(mul(12, 10, 11))
   step(1)
   expectBranch(false, false, false, 0)
   expectReg(Some(12), Some(10), Some(11))
@@ -217,7 +218,7 @@ class DecoderUnitTester(c: Decoder) extends PeekPokeTester(c) {
   expectExc(EXC_NONE)
 
   // ecall
-  pokeDecoder(0x00000073)
+  pokeDecoder(ecall())
   step(1)
   expectBranch(false, false, false, 0)
   expectReg(None, None, None)
@@ -232,7 +233,7 @@ class DecoderUnitTester(c: Decoder) extends PeekPokeTester(c) {
   expectExc(EXC_ILLEG)
 
   // instruction access fault overrides the fetched instruction
-  pokeDecoder(0x00b605b3)
+  pokeDecoder(add(11, 12, 11))
   poke(c.io.fetch.accessFault, true)
   step(1)
   expectLsu(LSU_NOP, 0)

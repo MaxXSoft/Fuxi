@@ -101,6 +101,7 @@ jobs:
 
     - name: Test Core
       run: |
+        sbt "Test / runMain core.InstEncodingTest"
         sbt "Test / runMain core.CoreTestSupportTest"
         sbt "Test / runMain core.CoreCsrAliasTest"
         sbt "Test / runMain core.CoreRetirementTest"

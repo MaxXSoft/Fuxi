@@ -6,16 +6,16 @@ import utils.TestDriver
 
 class ScSequenceProgram(gap: Int, interveningSc: Boolean) extends CoreProgram {
   emit32All(Seq(addi(1, 0, 0x100), addi(2, 0, 0x104), addi(3, 0, 7),
-    sw(0, 1, 0), sw(0, 2, 0), lr(4, 1)))
+    sw(0, 1, 0), sw(0, 2, 0), lr_w(4, 1)))
   if (interveningSc) {
     expectWriteback(5, 1)
-    emit32(sc(5, 3, 2))
+    emit32(sc_w(5, 3, 2))
   } else emit32(sw(3, 2, 0))
-  emit32All(Seq.fill(gap)(addi(0, 0, 0)))
+  emit32All(Seq.fill(gap)(nop()))
   expectWriteback(6, if (interveningSc) 1 else 0)
-  emit32(sc(6, 3, 1))
+  emit32(sc_w(6, 3, 1))
   expectWriteback(7, if (interveningSc) 0 else 7)
-  emit32(0x0000a383) // lw t2, 0(ra)
+  emit32(lw(7, 1, 0)) // lw t2, 0(ra)
   val donePc = finish()
 }
 

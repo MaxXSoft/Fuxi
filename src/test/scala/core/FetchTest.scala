@@ -1,5 +1,6 @@
 package core
 
+import core.InstEncoding._
 import chisel3._
 import chisel3.util.Queue
 import io._
@@ -87,8 +88,8 @@ class FetchUnitTester(c: FetchHarness, depth: Int) extends PeekPokeTester(c) {
   var address = BigInt(0x200)
   val expected = (0 until 120).map { i =>
     val compressed = i % 3 != 1
-    val inst = if (compressed) BigInt(0x0085 + ((i % 15) << 7))
-               else BigInt(0x12300513 + ((i % 15) << 7))
+    val inst = if (compressed) BigInt(c_addi(1 + i % 15, 1))
+               else BigInt(addi(10 + i % 15, 0, 0x123))
     val pc = address
     put(pc, inst, if (compressed) 2 else 4)
     address += (if (compressed) 2 else 4)
@@ -120,7 +121,7 @@ class FetchUnitTester(c: FetchHarness, depth: Int) extends PeekPokeTester(c) {
 
   // A split instruction's second parcel can fail independently of its PC.
   for (kind <- Seq(1, 2)) {
-    put(0xffe, 0x12300513, 4)
+    put(0xffe, addi(10, 0, 0x123), 4)
     faults(0x1000) = kind
     tick(redirect = Some(0xffe))
     val packet = nextPacket()
@@ -130,7 +131,7 @@ class FetchUnitTester(c: FetchHarness, depth: Int) extends PeekPokeTester(c) {
     faults.clear()
   }
   // A compressed last-halfword instruction needs no next-page permission.
-  put(0xffe, 0x0085, 2)
+  put(0xffe, c_addi(1, 1), 2)
   faults(0x1000) = 1
   tick(redirect = Some(0xffe))
   val lastHalfword = nextPacket()
@@ -147,15 +148,15 @@ class FetchUnitTester(c: FetchHarness, depth: Int) extends PeekPokeTester(c) {
   tick(stall = true, ready = false, redirect = Some(0x704))
   tick(stall = true, ready = false, redirect = Some(0x702))
   for (_ <- 0 until 3) tick(stall = true, ready = false)
-  put(0x702, 0x0085, 2)
+  put(0x702, c_addi(1, 1), 2)
   tick(stall = true)
   faults.clear()
   val redirected = nextPacket()
-  assert(redirected.pc == 0x702 && redirected.inst == 0x0085 && !redirected.access)
+  assert(redirected.pc == 0x702 && redirected.inst == c_addi(1, 1) && !redirected.access)
 
   // BTB steering keeps older FIFO entries, but skips sequential younger data.
-  put(0x802, 0xa001, 2)
-  put(0x906, 0x0085, 2)
+  put(0x802, c_j(0), 2)
+  put(0x906, c_addi(1, 1), 2)
   poke(c.io.branch.branch, true)
   poke(c.io.branch.jump, true)
   poke(c.io.branch.taken, true)
@@ -173,8 +174,8 @@ class FetchUnitTester(c: FetchHarness, depth: Int) extends PeekPokeTester(c) {
   poke(c.io.branch.jump, true)
   poke(c.io.branch.pc, 0xa00)
   poke(c.io.branch.target, 0xb00)
-  put(0xa00, 0x1000006f, 4)
-  put(0xb00, 0x0085, 2)
+  put(0xa00, jal(0, 0x100), 4)
+  put(0xb00, c_addi(1, 1), 2)
   tick(stall = true, redirect = Some(0xa00))
   poke(c.io.branch.branch, false)
   poke(c.io.branch.jump, false)

@@ -1,5 +1,6 @@
 package lsu
 
+import core.InstEncoding._
 import chisel3._
 import chisel3.util._
 import core._
@@ -56,9 +57,9 @@ object AtomicFaultTest extends App {
   if (!TestDriver.execute(args, () => new AtomicFaultHarness) { c => new PeekPokeTester(c) {
     // Decode real LR/SC/AMO encodings through the ALU and memory stage.
     for ((instruction, alignment, page, access) <- Seq(
-      (0x1000a22f, 4, 13, 5), // lr.w x4, (x1)
-      (0x1830a22f, 6, 15, 7), // sc.w x4, x3, (x1)
-      (0x0030a22f, 6, 15, 7)  // amoadd.w x4, x3, (x1)
+      (lr_w(4, 1), 4, 13, 5), // lr.w x4, (x1)
+      (sc_w(4, 3, 1), 6, 15, 7), // sc.w x4, x3, (x1)
+      (amoadd_w(4, 3, 1), 6, 15, 7)  // amoadd.w x4, x3, (x1)
     )) {
       poke(c.io.instruction, instruction)
       poke(c.io.address, 0x101)

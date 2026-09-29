@@ -14,7 +14,7 @@ current PC, before the following instruction is emitted. `finish()` appends an
 
 ```scala
 val program = new CoreProgram(utils.InstructionImage.CompressedNops)
-program.emit16(0x0001) // c.nop
+program.emit16(InstEncoding.c_nop())
 program.expectWriteback(10, 42)
 program.emit32(InstEncoding.addi(10, 0, 42)) // starts at RESET_PC + 2
 val donePc = program.finish()
@@ -36,6 +36,13 @@ tests that rewrite memory, plus aligned `read32` and word-range export. Set the
 fill pattern explicitly: zero for ordinary memory/page tables, `0x13` for
 32-bit NOPs, or `InstructionImage.CompressedNops` for compressed NOPs. Keep
 physical placement separate from virtual execution PCs in translation tests.
+
+`core.InstEncoding` provides mnemonic encoders for program stimuli, with
+register/immediate/alignment validation. Compressed mnemonics use the `c_`
+prefix; U-type immediates are unsigned 20-bit fields. HINT operands are preserved.
+Illegal encodings, packed-byte expectations and independent decoder reference
+vectors deliberately remain literal. `core.InstEncodingTest` checks fixed
+encoding vectors and invalid operands and is included in CI.
 
 ## Execution expectations and clock ownership
 

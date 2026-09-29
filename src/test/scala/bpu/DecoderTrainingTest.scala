@@ -1,5 +1,6 @@
 package bpu
 
+import core.InstEncoding._
 import chisel3._
 
 import core.Decoder
@@ -45,7 +46,7 @@ class DecoderTrainingHarness extends Module {
 class DecoderTrainingTester(c: DecoderTrainingHarness) extends PeekPokeTester(c) {
   poke(c.io.valid, true)
   poke(c.io.stalled, false)
-  poke(c.io.inst, 0x00009463) // bne x1, x0, +8
+  poke(c.io.inst, bne(1, 0, 8)) // bne x1, x0, +8
   poke(c.io.operand, 0)
   step(GHR_WIDTH + 1) // known history and strongly not-taken PHT entry
   expect(c.io.predictionIndex, 0)
@@ -78,7 +79,7 @@ class DecoderTrainingTester(c: DecoderTrainingHarness) extends PeekPokeTester(c)
   expect(c.io.predictionIndex, 1)
 
   // A stalled jump must not replace the prior target or shift the history.
-  poke(c.io.inst, 0x0200006f) // jal x0, +32
+  poke(c.io.inst, jal(0, 32)) // jal x0, +32
   poke(c.io.valid, true)
   poke(c.io.stalled, true)
   for (_ <- 0 until 3) {

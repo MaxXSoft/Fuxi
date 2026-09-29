@@ -1,5 +1,6 @@
 package core
 
+import core.InstEncoding._
 import chisel3._
 import consts.CSR._
 import utils.TestDriver
@@ -18,14 +19,19 @@ object InstretReadProgram extends CoreProgram {
   }
   def read(addr: UInt): Unit = {
     expectWriteback(6, value(addr))
-    emit32((addr.litValue.toLong << 20) | 0x2373) // csrr t1, addr
+    emit32(csrr(6, addr.litValue.toInt)) // csrr t1, addr
   }
   def modify(addr: UInt, data: Int, operation: Int = 1, returnOld: Boolean = false): Unit = {
-    emit32(((data & 0xfff).toLong << 20) | 0x293) // li t0, signed 12-bit data
+    emit32(addi(5, 0, data)) // li t0, signed 12-bit data
     val old = value(addr)
     if (returnOld) expectWriteback(6, old)
-    super.emit32((addr.litValue.toLong << 20) | (5L << 15) | (operation << 12) |
-      (if (returnOld) 6L << 7 else 0L) | 0x73)
+    val rd = if (returnOld) 6 else 0
+    val instruction = operation match {
+      case 1 => csrrw(rd, addr.litValue.toInt, 5)
+      case 2 => csrrs(rd, addr.litValue.toInt, 5)
+      case 3 => csrrc(rd, addr.litValue.toInt, 5)
+    }
+    super.emit32(instruction)
     val operand = BigInt(data) & mask32
     assign(addr, if (operation == 1) operand
                  else if (operation == 2) old | operand else old & ~operand)
@@ -34,12 +40,12 @@ object InstretReadProgram extends CoreProgram {
   modify(CSR_MINSTRETH, 0)
   modify(CSR_MINSTRET, 0)
   read(CSR_MINSTRET) // A CSR write overrides its own retirement increment.
-  emit32(0x13)
+  emit32(nop())
   read(CSR_INSTRET)  // Includes both the preceding CSR read and the NOP.
-  emit32(0x00100293)
-  emit32(0x00502023) // sw t0, 0(zero)
-  emit32(0x00002383) // lw t2, 0(zero)
-  emit32(0x00738433) // add s0, t2, t2 (load-use bubbles)
+  emit32(addi(5, 0, 1))
+  emit32(sw(5, 0, 0)) // sw t0, 0(zero)
+  emit32(lw(7, 0, 0)) // lw t2, 0(zero)
+  emit32(add(8, 7, 7)) // add s0, t2, t2 (load-use bubbles)
   read(CSR_MINSTRET)
   read(CSR_INSTRET)
 
@@ -47,7 +53,7 @@ object InstretReadProgram extends CoreProgram {
   for (addr <- Seq(CSR_MINSTRETH, CSR_INSTRETH)) {
     modify(CSR_MINSTRETH, 0)
     modify(CSR_MINSTRET, -1)
-    emit32(0x13)
+    emit32(nop())
     read(addr)
   }
 

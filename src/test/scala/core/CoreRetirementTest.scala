@@ -1,33 +1,34 @@
 package core
 
+import core.InstEncoding._
 import sim.ROM
 import utils.TestDriver
 
 object RetirementProgram extends CoreProgram {
   emit32All(Seq[Long](
-    0x30000293, // li t0, trap handler at 0x300
-    0x30529073, // csrw mtvec, t0
-    0x02a00293, // li t0, 42
-    0x00502023, // sw t0, 0(zero)
-    0x00002303, // lw t1, 0(zero)
-    0x006303b3, // add t2, t1, t1 (load-use bubbles)
-    0x00000013, // architectural nop
-    0x00300e13, // li t3, 3
-    0x03c3ceb3, // div t4, t2, t3 (multicycle stall)
-    0x01de8463, // beq t4, t4, +8
-    0x06300413, // squashed addi
-    0x00000013, // nop at branch target
-    0x0000100f, // fence.i
-    0x12000073, // sfence.vma
-    0x00000073, // ecall: does not retire
+    addi(5, 0, 0x300), // li t0, trap handler at 0x300
+    csrw(0x305, 5), // csrw mtvec, t0
+    addi(5, 0, 42), // li t0, 42
+    sw(5, 0, 0), // sw t0, 0(zero)
+    lw(6, 0, 0), // lw t1, 0(zero)
+    add(7, 6, 6), // add t2, t1, t1 (load-use bubbles)
+    nop(), // architectural nop
+    addi(28, 0, 3), // li t3, 3
+    div(29, 7, 28), // div t4, t2, t3 (multicycle stall)
+    beq(29, 29, 8), // beq t4, t4, +8
+    addi(8, 0, 99), // squashed addi
+    nop(), // nop at branch target
+    fence_i(), // fence.i
+    sfence_vma(), // sfence.vma
+    ecall(), // ecall: does not retire
   ))
   val donePc = finish()
   seekWord(64)
   emit32All(Seq[Long](
-    0x341022f3, // csrr t0, mepc
-    0x00428293, // addi t0, t0, 4
-    0x34129073, // csrw mepc, t0
-    0x30200073, // mret: retires
+    csrr(5, 0x341), // csrr t0, mepc
+    addi(5, 5, 4), // addi t0, t0, 4
+    csrw(0x341, 5), // csrw mepc, t0
+    mret(), // mret: retires
   ))
   def pcs(fenceFault: Boolean): Seq[BigInt] = {
     val handler = Seq(64, 65, 66, 67)
