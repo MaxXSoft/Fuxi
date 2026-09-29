@@ -1,4 +1,4 @@
-package core
+package core.integration
 
 import sim.ROM
 import utils.{Checker, CoreMemoryHarness, CoreTester, CoreTraceProgram, ExpectedTrap,

@@ -1,4 +1,4 @@
-package lsu
+package core.integration
 
 import utils.InstEncoding._
 import utils.{CoreProgram, CoreProgramTester, CoreWrapper, TestDriver}

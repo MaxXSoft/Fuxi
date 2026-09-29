@@ -1,4 +1,4 @@
-package core
+package core.stages
 
 import chisel3._
 import utils.{PeekPokeTester, TestDriver}

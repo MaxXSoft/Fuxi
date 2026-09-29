@@ -1,4 +1,4 @@
-package core
+package core.integration
 
 import scala.io.Source
 import java.io.{File, PrintWriter}

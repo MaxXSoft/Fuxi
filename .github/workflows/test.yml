@@ -72,7 +72,6 @@ jobs:
         sbt "Test / runMain lsu.AmoExecuteTest"
         sbt "Test / runMain lsu.ExclusiveMonitorTest"
         sbt "Test / runMain lsu.AtomicMemoryTest"
-        sbt "Test / runMain lsu.ScSequenceTest"
         sbt "Test / runMain lsu.AtomicFaultTest"
         sbt "Test / runMain lsu.AtomicPermissionTest"
 
@@ -85,14 +84,14 @@ jobs:
     - name: Test Sim
       run: sbt "Test / runMain sim.RamTest" "Test / runMain sim.RomTest"
 
-    - name: Test Stages
+    - name: Test Core Stages
       run: |
-        sbt "Test / runMain core.FetchTest"
-        sbt "Test / runMain core.CompressedDecoderTest"
-        sbt "Test / runMain core.DecoderTest"
-        sbt "Test / runMain core.AluTest"
-        sbt "Test / runMain core.MemTest"
-        sbt "Test / runMain core.WriteBackTest"
+        sbt "Test / runMain core.stages.FetchTest"
+        sbt "Test / runMain core.stages.CompressedDecoderTest"
+        sbt "Test / runMain core.stages.DecoderTest"
+        sbt "Test / runMain core.stages.AluTest"
+        sbt "Test / runMain core.stages.MemTest"
+        sbt "Test / runMain core.stages.WriteBackTest"
 
     - name: Test Bus
       run: |
@@ -105,14 +104,15 @@ jobs:
     - name: Test peripheral AXI handshakes
       run: soc/tests/run.sh
 
-    - name: Test Core
+    - name: Test Core Integration
       run: |
-        sbt "Test / runMain core.CoreCsrAliasTest"
-        sbt "Test / runMain core.CoreRetirementTest"
-        sbt "Test / runMain core.CoreInstretReadTest"
-        sbt "Test / runMain core.CoreCompressedTest"
-        sbt "Test / runMain core.CoreFetchFaultTest"
-        sbt "Test / runMain core.CoreTest -if src/test/resources/fib.txt -tf src/test/resources/fib_trace.txt"
-        sbt "Test / runMain core.CoreTest -if src/test/resources/mdu.txt -tf src/test/resources/mdu_trace.txt"
-        sbt "Test / runMain core.CoreTest -if src/test/resources/mecall.txt -tf src/test/resources/mecall_trace.txt"
-        sbt "Test / runMain core.CoreTest -if src/test/resources/secall.txt -tf src/test/resources/secall_trace.txt"
+        sbt "Test / runMain core.integration.ScSequenceTest"
+        sbt "Test / runMain core.integration.CoreCsrAliasTest"
+        sbt "Test / runMain core.integration.CoreRetirementTest"
+        sbt "Test / runMain core.integration.CoreInstretReadTest"
+        sbt "Test / runMain core.integration.CoreCompressedTest"
+        sbt "Test / runMain core.integration.CoreFetchFaultTest"
+        sbt "Test / runMain core.integration.CoreTest -if src/test/resources/fib.txt -tf src/test/resources/fib_trace.txt"
+        sbt "Test / runMain core.integration.CoreTest -if src/test/resources/mdu.txt -tf src/test/resources/mdu_trace.txt"
+        sbt "Test / runMain core.integration.CoreTest -if src/test/resources/mecall.txt -tf src/test/resources/mecall_trace.txt"
+        sbt "Test / runMain core.integration.CoreTest -if src/test/resources/secall.txt -tf src/test/resources/secall_trace.txt"

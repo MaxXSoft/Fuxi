@@ -1,5 +1,6 @@
-package core
+package core.stages
 
+import core.Fetch
 import utils.InstEncoding._
 import chisel3._
 import chisel3.util.Queue

@@ -1,5 +1,6 @@
-package core
+package core.stages
 
+import core.CompressedDecoder
 import utils.{PeekPokeTester, TestDriver}
 
 class CompressedDecoderTester(c: CompressedDecoder) extends PeekPokeTester(c) {

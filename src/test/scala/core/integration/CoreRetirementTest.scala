@@ -1,4 +1,4 @@
-package core
+package core.integration
 
 import utils.InstEncoding._
 import sim.ROM

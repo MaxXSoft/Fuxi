@@ -1,5 +1,6 @@
-package core
+package core.stages
 
+import core.ALU
 import chisel3.UInt
 import utils.{PeekPokeTester, TestDriver}
 

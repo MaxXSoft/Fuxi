@@ -1,4 +1,4 @@
-# Scala test support
+# Scala tests and shared support
 
 Tests are executable `App`s, run with `sbt 'Test / runMain package.TestName'`.
 `utils.TestDriver` runs the Chisel simulation and reports failures through the
@@ -9,6 +9,30 @@ Harnesses and reference models used by a single test stay in that test file.
 The CI `Test Utilities` step runs the support tests, including
 `utils.CoreWritebackLoopTest`, which validates writeback selection with a real Core.
 
+## Test layout
+
+Directory names match Scala packages. Group tests by their primary verification
+subject; using a simulator alone does not make a test a Core integration test.
+
+| Directory / package | Contents | CI step |
+| --- | --- | --- |
+| `utils` | Shared helpers and their regression tests | Test Utilities |
+| `core/stages` / `core.stages` | Fetch, compressed decoder, decoder, ALU, memory and writeback stage tests | Test Core Stages |
+| `core/integration` / `core.integration` | Full-core instruction streams, traps, retirement and LR/SC sequences | Test Core Integration |
+| `bpu`, `bus`, `csr`, `lsu`, `mdu`, `sim` | Subsystem tests, including focused combinations of modules | Corresponding subsystem step |
+
+`core.integration.ScSequenceTest` runs a complete Core program to check LR/SC
+reservation and forwarding behavior. Focused combinations such as
+`lsu.AtomicFaultTest` and `bpu.DecoderTrainingTest` stay with their subsystem.
+
+For example:
+
+```sh
+sbt 'Test / runMain utils.CoreTestSupportTest'
+sbt 'Test / runMain core.stages.DecoderTest'
+sbt 'Test / runMain core.integration.CoreTest -if src/test/resources/fib.txt -tf src/test/resources/fib_trace.txt'
+```
+
 ## Programs and instruction images
 
 Use `utils.CoreProgram` for ROM-backed programs. `emit32` appends 32 bits and
@@ -18,6 +42,8 @@ current PC, before the following instruction is emitted. `finish()` appends an
 32-bit x31 = 1 marker followed by a compressed `c.j 0` loop and returns the marker PC.
 
 ```scala
+import utils.{CoreProgram, InstEncoding}
+
 val program = new CoreProgram(utils.InstructionImage.CompressedNops)
 program.emit16(InstEncoding.c_nop())
 program.expectWriteback(10, 42)

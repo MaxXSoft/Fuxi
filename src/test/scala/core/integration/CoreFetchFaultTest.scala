@@ -1,5 +1,6 @@
-package core
+package core.integration
 
+import core.Core
 import chisel3._
 import axi.AxiMaster
 import bus.CoreBus

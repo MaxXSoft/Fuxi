@@ -1,5 +1,6 @@
-package core
+package core.stages
 
+import core.Decoder
 import utils.InstEncoding._
 import chisel3.{Bool, UInt}
 import utils.{PeekPokeTester, TestDriver}
