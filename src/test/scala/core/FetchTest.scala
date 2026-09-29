@@ -72,8 +72,8 @@ class FetchUnitTester(c: FetchHarness, depth: Int) extends PeekPokeTester(c) {
     heldAddress = if (enabled && !ready) Some(addr) else None
     val packet = if (peek(c.io.fetch.valid) != 0 && !stall && redirect.isEmpty) {
       Some(Packet(peek(c.io.fetch.pc), peek(c.io.fetch.inst),
-        peek(c.io.fetch.pageFault) != 0, peek(c.io.fetch.accessFault) != 0,
-        peek(c.io.fetch.faultAddr)))
+                  peek(c.io.fetch.pageFault) != 0, peek(c.io.fetch.accessFault) != 0,
+                  peek(c.io.fetch.faultAddr)))
     } else None
     val nextResponse = if (enabled && ready) {
       acceptedReads += 1

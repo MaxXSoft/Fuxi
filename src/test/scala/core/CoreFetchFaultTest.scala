@@ -9,7 +9,7 @@ import io.DebugIO
 import utils.TestDriver
 
 private[core] case class FetchPageCase(name: String, secondPagePresent: Boolean,
-                                     accessFault: Boolean = false, compressedJump: Boolean = false)
+                                       accessFault: Boolean = false, compressedJump: Boolean = false)
 
 private[core] class CoreFetchFaultWrapper extends Module {
   val io = IO(new Bundle {

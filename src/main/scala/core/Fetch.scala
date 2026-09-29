@@ -71,11 +71,11 @@ class Fetch extends Module {
   val accessFault = first.accessFault || (split && second.accessFault)
   val instructionFault = pageFault || accessFault
   val instruction = Mux(compressed, Cat(0.U(16.W), parcel),
-                      Mux(pc(1), Cat(second.data(15, 0), parcel), first.data))
+                    Mux(pc(1), Cat(second.data(15, 0), parcel), first.data))
   val sequentialPc = pc + Mux(compressed, 2.U, 4.U)
   val emit = instructionValid && !io.stall
   val predictedRedirect = emit && !instructionFault && bpu.io.predTaken &&
-                            bpu.io.predTarget =/= sequentialPc
+                          bpu.io.predTarget =/= sequentialPc
   val redirect = io.flush || predictedRedirect
   val target = Mux(io.flush, io.flushPc, bpu.io.predTarget)
   val alignedTarget = Cat(target(ADDR_WIDTH - 1, 2), 0.U(2.W))
@@ -128,6 +128,7 @@ class Fetch extends Module {
   io.rom.addr := Mux(steerRequest, alignedTarget, requestAddr)
   io.rom.wen := 0.U
   io.rom.wdata := 0.U
+
   val accepted = io.rom.en && io.rom.valid
   pending := accepted
   when (accepted) {
@@ -135,6 +136,7 @@ class Fetch extends Module {
     pendingPageFault := io.rom.fault
     pendingAccessFault := io.rom.accessFault
   }
+
   // An idle request port can fetch the target in this cycle. Waiting an extra
   // cycle here would add a bubble to every predicted taken branch.
   when (steerRequest) {
