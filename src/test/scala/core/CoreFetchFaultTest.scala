@@ -100,6 +100,7 @@ private[core] class CoreFetchFaultTester(c: CoreFetchFaultWrapper, scenario: Fet
     ExpectedWriteback(0x388, 28, 0x1000))
     else if (!scenario.compressedJump) Seq(ExpectedWriteback(0xffe, 10, 42))
     else Seq.empty) :+ ExpectedWriteback(donePc, 31, 1))
+  val checkers: Seq[Checker] = Seq(writebacks, traps)
   var cycle = 0
 
   def physicalRegionMapped(base: BigInt): Boolean =
@@ -112,7 +113,7 @@ private[core] class CoreFetchFaultTester(c: CoreFetchFaultWrapper, scenario: Fet
     (request, beat) => if (!physicalRegionMapped(request.address) ||
       (scenario.accessFault && request.address == secondPage && beat == 3)) 2 else 0)
 
-  runUntil(3000, s"Sv32 instruction-fetch case ${scenario.name} did not finish") {
+  runUntil(3000, s"Sv32 case ${scenario.name}; missing events: ${checkers.map(_.missing).mkString("; ")}") {
     // Exercise independently stalled AXI address and response channels.
     responder.beforeStep(allowAddress = cycle % 3 != 0, allowData = cycle % 5 != 1).foreach { request =>
       assert(request.beats == 16, "Expected the real 64-byte I-cache refill")
@@ -150,8 +151,7 @@ private[core] class CoreFetchFaultTester(c: CoreFetchFaultWrapper, scenario: Fet
       assert(retired.contains(BigInt(0x1002)))
     }
   }
-  traps.checkComplete()
-  writebacks.checkComplete()
+  checkers.foreach(_.checkComplete())
   println(s"CoreFetchFault: ${scenario.name} passed after $cycle cycles.")
 }
 

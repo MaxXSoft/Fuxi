@@ -99,6 +99,7 @@ private[core] class CoreCompressedTester(c: CoreMemoryHarness, program: CoreTrac
                                          depth: Int, stall: Boolean) extends CoreTester(c) {
   val retirements = new RetirementChecker(program.retired.toVector)
   val traps = new TrapChecker(program.traps.toVector)
+  val checkers: Seq[Checker] = Seq(retirements, traps)
   var maxQueueCount = 0
   var memoryWait = 0
   var fenceWait = 0
@@ -107,7 +108,7 @@ private[core] class CoreCompressedTester(c: CoreMemoryHarness, program: CoreTrac
   poke(c.io.memoryStall, false)
   poke(c.io.fenceStall, false)
 
-  runUntil(1800, s"missing retirements ${retirements.missing}; traps ${traps.missing}") {
+  runUntil(1800, s"Missing events: ${checkers.map(_.missing).mkString("; ")}") {
     if (peek(c.io.memoryRequest) == 0) memoryArmed = true
     else if (memoryArmed && stall) { memoryWait = 8; memoryArmed = false }
     if (peek(c.io.fenceRequest) == 0) fenceArmed = true
@@ -129,8 +130,7 @@ private[core] class CoreCompressedTester(c: CoreMemoryHarness, program: CoreTrac
     step(1)
     done
   }
-  retirements.checkComplete()
-  traps.checkComplete()
+  checkers.foreach(_.checkComplete())
   retirements.checkCount(peek(c.io.observation.count))
   if (stall) assert(maxQueueCount == depth, s"FIFO did not fill under forced stalls: $maxQueueCount/$depth")
 }

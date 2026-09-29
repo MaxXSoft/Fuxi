@@ -92,11 +92,45 @@ object CoreTestSupportTest extends App {
   fails(writes.checkComplete())
   fails(writes.observe(ObservedInstruction(base + 4, Some(7 -> BigInt(2)))))
   writes.observe(ObservedInstruction(base, Some(6 -> BigInt("ffffffff", 16))))
-  fails(writes.observe(ObservedInstruction(base, Some(6 -> BigInt(0)))))
+  writes.observe(ObservedInstruction(base, Some(6 -> BigInt(0)))) // Unselected second visit.
   writes.observe(ObservedInstruction(base + 4, Some(7 -> BigInt(2))))
   writes.checkComplete()
-  fails(writes.observe(ObservedInstruction(base + 4, Some(7 -> BigInt(2)))))
+  writes.observe(ObservedInstruction(base + 4, Some(7 -> BigInt(2))))
+  fails(writes.checkOccurrences(base + 4, 1))
+  writes.checkOccurrences(base + 4, 2)
   rejects(new WritebackChecker(Seq.fill(2)(ExpectedWriteback(base, 6, 1))))
+
+  rejects(ExpectedWriteback(base, 6, 1, occurrence = 0))
+  rejects(new WritebackChecker(Seq(ExpectedWriteback(base, 6, 2, 2), ExpectedWriteback(base, 6, 1, 1))))
+  val loop = new WritebackChecker(Seq(
+    ExpectedWriteback(base, 10, 2, occurrence = 2),
+    ExpectedWriteback(base, 10, 5, occurrence = 5)))
+  loop.observe(ObservedInstruction(base, None))
+  loop.checkOccurrences(base, 0)
+  loop.observe(ObservedInstruction(base, Some(10 -> BigInt(1))))
+  val missingLoop = loop.missing
+  fails(loop.observe(ObservedInstruction(base, Some(10 -> BigInt(99)))))
+  assert(loop.missing == missingLoop) // Failed validation must not consume the head.
+  loop.checkOccurrences(base, 1)
+  loop.observe(ObservedInstruction(base, Some(10 -> BigInt(2))))
+  for (i <- 3 to 4) {
+    loop.observe(ObservedInstruction(base + 4, Some(11 -> BigInt(100))))
+    loop.observe(ObservedInstruction(base, Some(10 -> BigInt(i))))
+  }
+  fails(loop.checkComplete()) // The fifth visit has not happened.
+  loop.observe(ObservedInstruction(base, Some(10 -> BigInt(5))))
+  loop.observe(ObservedInstruction(base, Some(10 -> BigInt(6)))) // Selection is not a total-count bound.
+  loop.checkComplete()
+  loop.checkOccurrences(base, 6)
+  fails(loop.checkOccurrences(base, 5))
+
+  val interleaved = new WritebackChecker(Seq(
+    ExpectedWriteback(base, 10, 2, 2), ExpectedWriteback(base + 4, 11, 3, 1)))
+  interleaved.observe(ObservedInstruction(base, Some(10 -> BigInt(1))))
+  fails(interleaved.observe(ObservedInstruction(base + 4, Some(11 -> BigInt(3)))))
+  interleaved.observe(ObservedInstruction(base, Some(10 -> BigInt(2))))
+  interleaved.observe(ObservedInstruction(base + 4, Some(11 -> BigInt(3))))
+  interleaved.checkComplete()
 
   val retirements = new RetirementChecker(Seq(
     ExpectedRetirement(base), ExpectedRetirement(base, Some(6 -> BigInt(2)))))
@@ -114,9 +148,12 @@ object CoreTestSupportTest extends App {
 
   val traps = new TrapChecker(Seq(ExpectedTrap(base, 12, 0x1000)))
   fails(traps.checkComplete())
-  fails(traps.observe(base, 12, base))
-  traps.observe(base, 12, 0x1000)
+  fails(traps.observe(ObservedTrap(base, 12, base)))
+  traps.observe(ObservedTrap(base, 12, 0x1000))
   traps.checkComplete()
-  fails(traps.observe(base, 12, 0x1000))
+  fails(traps.observe(ObservedTrap(base, 12, 0x1000)))
+  val all: Seq[Checker] = Seq(writes, loop, interleaved, retirements, traps)
+  assert(all.forall(_.missing.isEmpty))
+  all.foreach(_.checkComplete())
   println("CoreTestSupport: layout and event-checker contracts passed.")
 }

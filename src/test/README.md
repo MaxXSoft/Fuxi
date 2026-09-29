@@ -51,14 +51,29 @@ expectations by default. Use `retires = false` for faulting or squashed code and
 `event` to describe out-of-line execution, including repeated PCs. Placement
 alone never infers dynamic execution. Its default gap fill is compressed NOPs.
 
-- `WritebackChecker` checks selected unique PCs in order, allowing unrelated
-  writebacks. `CoreProgramTester` supplies the simple clock loop around it.
+- `WritebackChecker` checks selected `(PC, occurrence)` pairs in declaration
+  order. Occurrences start at one and count write-enable events at that PC,
+  not cycles or loop iterations. Repeated PCs are supported; duplicate pairs
+  and decreasing occurrences at the same PC are rejected. Unselected visits
+  (including visits after the last checkpoint) are allowed. Use
+  `checkOccurrences(pc, total)` when the total number of writes also matters.
+  `CoreProgramTester` supplies the simple clock loop around it.
 - `RetirementChecker` checks every retirement, including repeated PCs. An
   expected `write = None` leaves writeback unchecked. Counter checking is
   optional because CSR writes can replace the retirement counter.
 - `TrapChecker` checks trap PC/cause/value, missing events and extra events.
 - `CoreChecks.writeback` also serves the external trace-file comparison, which
   still checks every non-x0 writeback rather than selected checkpoints.
+
+`expectWriteback(rd, data, occurrence = 1)` registers a checkpoint at the current
+PC. Register multiple occurrences before emitting a loop instruction, for example
+`expectWriteback(10, 2, occurrence = 2)` and `expectWriteback(10, 5, occurrence = 5)`.
+`CoreWritebackLoopTest` exercises this against an actual six-iteration core program.
+
+`Checker` exposes diagnostics and completion; `EventChecker[A]` adds typed event
+observation. `OrderedChecker[E, A]` privately owns the pending queue and shares
+`missing`, `checkComplete` and validate-before-consume behavior. The concrete
+checkers retain event selection, comparisons and domain-specific counters.
 
 Checkers never step the clock. Tests sample retirement and `minstret` before
 an edge, then step once so that the observed retirement updates the counter.

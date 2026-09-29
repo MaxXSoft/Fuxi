@@ -7,7 +7,9 @@ import sim.ROM
 import io.DebugIO
 import utils.PeekPokeTester
 
-case class ExpectedWriteback(pc: BigInt, rd: Int, data: BigInt)
+case class ExpectedWriteback(pc: BigInt, rd: Int, data: BigInt, occurrence: Int = 1) {
+  require(occurrence > 0, "Writeback occurrence must be positive")
+}
 
 // Program layout is separate from its dynamic execution expectations.
 class CoreProgram(fillWord: BigInt = NOP.litValue) {
@@ -49,9 +51,9 @@ class CoreProgram(fillWord: BigInt = NOP.litValue) {
     cursor = address
   }
 
-  def expectWriteback(rd: Int, data: BigInt): Unit = {
+  def expectWriteback(rd: Int, data: BigInt, occurrence: Int = 1): Unit = {
     require(rd > 0 && rd < 32, "Expected writeback must target x1 through x31")
-    checks += ExpectedWriteback(pc, rd, data)
+    checks += ExpectedWriteback(pc, rd, data, occurrence)
   }
 
   def finish(): BigInt = {
@@ -100,9 +102,9 @@ abstract class CoreTester[T <: Module](c: T) extends PeekPokeTester(c) {
     ObservedInstruction(peek(debug.pc), if (peek(debug.regWen) != 0)
       Some(peek(debug.regWaddr).toInt -> peek(debug.regWdata)) else None)
 
-  protected def checkTrap(observation: CoreObservation, checker: TrapChecker): Unit = {
+  protected def checkTrap(observation: CoreObservation, checker: EventChecker[ObservedTrap]): Unit = {
     if (peek(observation.trap) != 0)
-      checker.observe(peek(observation.trapPc), peek(observation.trapCause), peek(observation.trapValue))
+      checker.observe(ObservedTrap(peek(observation.trapPc), peek(observation.trapCause), peek(observation.trapValue)))
   }
 }
 
