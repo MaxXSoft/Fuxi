@@ -3,7 +3,7 @@ package csr
 import chisel3._
 import consts.CSR._
 import consts.CsrOp._
-import utils.TestDriver
+import utils.{CsrRegressionTester, TestDriver}
 
 class CsrCounterAccessTester(c: CsrFile) extends CsrRegressionTester(c) {
   val counters = Seq(CSR_CYCLE, CSR_CYCLEH, CSR_INSTRET, CSR_INSTRETH)

@@ -1,8 +1,7 @@
-package bus
+package utils
 
 import chisel3._
 import axi.AxiMaster
-import utils.{AxiReadRequest, AxiTestSupport, PeekPokeTester, TestDriver}
 
 class AxiReadTestHarness extends Module {
   val io = IO(new Bundle {

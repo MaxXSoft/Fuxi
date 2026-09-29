@@ -1,9 +1,9 @@
-package csr
+package utils
 
 import chisel3._
 import consts.CSR._
 import consts.CsrOp._
-import utils.PeekPokeTester
+import csr.CsrFile
 
 abstract class CsrRegressionTester(c: CsrFile) extends PeekPokeTester(c) {
   def resetCsr(): Unit = {

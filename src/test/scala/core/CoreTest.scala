@@ -3,7 +3,7 @@ package core
 import scala.io.Source
 import java.io.{File, PrintWriter}
 
-import utils.{ArgParser, TestDriver}
+import utils.{ArgParser, CoreChecks, CoreTester, CoreWrapper, ExpectedWriteback, TestDriver}
 
 class CoreUnitTester(c: CoreWrapper, traceFile: String, genTrace: Boolean)
       extends CoreTester(c) {

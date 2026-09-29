@@ -1,9 +1,9 @@
 package core
 
-import core.InstEncoding._
+import utils.InstEncoding._
 import chisel3._
 import consts.CSR._
-import utils.TestDriver
+import utils.{CoreProgram, CoreProgramTester, CoreWrapper, TestDriver}
 
 object InstretReadProgram extends CoreProgram {
   private val mask32 = (BigInt(1) << 32) - 1

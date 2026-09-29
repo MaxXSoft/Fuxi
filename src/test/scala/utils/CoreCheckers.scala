@@ -1,4 +1,4 @@
-package core
+package utils
 
 import consts.Parameters.DATA_WIDTH
 

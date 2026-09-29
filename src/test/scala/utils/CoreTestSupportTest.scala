@@ -1,8 +1,7 @@
-package core
+package utils
 
 import consts.Parameters.RESET_PC
 import sim.ROM
-import utils.InstructionImage
 
 // Pure Scala regressions for layout contracts that RTL tests otherwise obscure.
 object CoreTestSupportTest extends App {

@@ -1,7 +1,6 @@
-package core
+package utils
 
 import InstEncoding._
-import utils.TestDriver
 
 class WritebackLoopProgram extends CoreProgram {
   emit32(addi(10, 0, 0))

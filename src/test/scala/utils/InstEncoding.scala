@@ -1,4 +1,4 @@
-package core
+package utils
 
 // Operand encoders for test stimuli. Decoder oracles and fixed encoding vectors
 // remain independent. Raw image writes can still construct reserved encodings.

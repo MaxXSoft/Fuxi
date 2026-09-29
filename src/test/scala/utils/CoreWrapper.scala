@@ -1,6 +1,7 @@
-package core
+package utils
 
 import chisel3._
+import core.Core
 import chisel3.util.experimental.BoringUtils
 import consts.Parameters.FETCH_QUEUE_DEPTH
 import io.DebugIO

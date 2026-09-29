@@ -1,6 +1,6 @@
 package core
 
-import core.InstEncoding._
+import utils.InstEncoding._
 import chisel3.{Bool, UInt}
 import utils.{PeekPokeTester, TestDriver}
 

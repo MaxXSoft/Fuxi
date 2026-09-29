@@ -1,6 +1,6 @@
 package bpu
 
-import core.InstEncoding._
+import utils.InstEncoding._
 import chisel3._
 
 import core.Decoder

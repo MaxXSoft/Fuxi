@@ -49,6 +49,13 @@ jobs:
           --top-module FuxiWrapper \
           verilog/build/Fuxi.v verilog/FuxiWrapper.v
 
+    - name: Test Utilities
+      run: |
+        sbt "Test / runMain utils.InstEncodingTest"
+        sbt "Test / runMain utils.CoreTestSupportTest"
+        sbt "Test / runMain utils.AxiTestSupportTest"
+        sbt "Test / runMain utils.CoreWritebackLoopTest"
+
     - name: Test BPU
       run: sbt "Test / runMain bpu.BranchPredictorTest" "Test / runMain bpu.DecoderTrainingTest"
 
@@ -89,7 +96,6 @@ jobs:
 
     - name: Test Bus
       run: |
-        sbt "Test / runMain bus.AxiTestSupportTest"
         sbt "Test / runMain bus.TlbTest"
         sbt "Test / runMain bus.MmuTest"
         sbt "Test / runMain bus.UncachedTest"
@@ -101,9 +107,6 @@ jobs:
 
     - name: Test Core
       run: |
-        sbt "Test / runMain core.InstEncodingTest"
-        sbt "Test / runMain core.CoreTestSupportTest"
-        sbt "Test / runMain core.CoreWritebackLoopTest"
         sbt "Test / runMain core.CoreCsrAliasTest"
         sbt "Test / runMain core.CoreRetirementTest"
         sbt "Test / runMain core.CoreInstretReadTest"

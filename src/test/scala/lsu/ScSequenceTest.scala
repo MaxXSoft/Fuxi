@@ -1,8 +1,7 @@
 package lsu
 
-import core._
-import core.InstEncoding._
-import utils.TestDriver
+import utils.InstEncoding._
+import utils.{CoreProgram, CoreProgramTester, CoreWrapper, TestDriver}
 
 class ScSequenceProgram(gap: Int, interveningSc: Boolean) extends CoreProgram {
   emit32All(Seq(addi(1, 0, 0x100), addi(2, 0, 0x104), addi(3, 0, 7),

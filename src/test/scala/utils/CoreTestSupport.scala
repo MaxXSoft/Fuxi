@@ -1,11 +1,10 @@
-package core
+package utils
 
 import chisel3._
 import consts.Instructions.NOP
 import consts.Parameters.RESET_PC
 import sim.ROM
 import io.DebugIO
-import utils.PeekPokeTester
 
 case class ExpectedWriteback(pc: BigInt, rd: Int, data: BigInt, occurrence: Int = 1) {
   require(occurrence > 0, "Writeback occurrence must be positive")

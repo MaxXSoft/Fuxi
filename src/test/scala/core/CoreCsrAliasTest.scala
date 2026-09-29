@@ -1,9 +1,9 @@
 package core
 
-import core.InstEncoding._
+import utils.InstEncoding._
 import chisel3._
 import consts.CSR._
-import utils.TestDriver
+import utils.{CoreProgram, CoreProgramTester, CoreWrapper, TestDriver}
 
 object CsrAliasProgram extends CoreProgram {
   def write(addr: UInt, value: Int): Unit = {

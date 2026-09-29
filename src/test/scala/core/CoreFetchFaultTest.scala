@@ -4,7 +4,8 @@ import chisel3._
 import axi.AxiMaster
 import bus.CoreBus
 import consts.Parameters._
-import utils.{AxiTestSupport, InstructionImage, TestDriver}
+import utils.{AxiTestSupport, Checker, CoreObservation, CoreTester, ExpectedTrap, ExpectedWriteback,
+              InstEncoding, InstructionImage, TestDriver, TrapChecker, WritebackChecker}
 
 private[core] case class FetchPageCase(name: String, secondPagePresent: Boolean,
                                        accessFault: Boolean = false, compressedJump: Boolean = false)

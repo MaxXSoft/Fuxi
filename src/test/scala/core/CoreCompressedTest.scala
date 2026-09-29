@@ -1,7 +1,8 @@
 package core
 
 import sim.ROM
-import utils.TestDriver
+import utils.{Checker, CoreMemoryHarness, CoreTester, CoreTraceProgram, ExpectedTrap,
+              InstEncoding, RetirementChecker, TestDriver, TrapChecker}
 
 private[core] object CompressedFlowProgram extends CoreTraceProgram {
   import InstEncoding._

@@ -1,4 +1,4 @@
-package core
+package utils
 
 // Fixed vectors are independent of the encoder implementation and RTL oracle.
 object InstEncodingTest extends App {

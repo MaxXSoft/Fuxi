@@ -1,6 +1,6 @@
 package bus
 
-import core.InstEncoding
+import utils.InstEncoding
 import utils.{AxiTestSupport, PeekPokeTester, TestDriver}
 
 class CoreBusUnitTester(c: CoreBus) extends PeekPokeTester(c) with AxiTestSupport {

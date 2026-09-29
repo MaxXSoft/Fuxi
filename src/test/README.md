@@ -2,11 +2,16 @@
 
 Tests are executable `App`s, run with `sbt 'Test / runMain package.TestName'`.
 `utils.TestDriver` runs the Chisel simulation and reports failures through the
-process exit code. Shared fixtures live only in test sources.
+process exit code. Shared fixtures live only in test sources. Reusable helpers
+and their own tests are colocated in `utils`, including the Core harnesses and
+CSR regression helpers.
+Harnesses and reference models used by a single test stay in that test file.
+The CI `Test Utilities` step runs the support tests, including
+`utils.CoreWritebackLoopTest`, which validates writeback selection with a real Core.
 
 ## Programs and instruction images
 
-Use `core.CoreProgram` for ROM-backed programs. `emit32` appends 32 bits and
+Use `utils.CoreProgram` for ROM-backed programs. `emit32` appends 32 bits and
 `emit16` appends 16 bits; both advance a byte-addressed `pc`. A 32-bit instruction
 may start at a halfword boundary. `expectWriteback` records a checkpoint at the
 current PC, before the following instruction is emitted. `finish()` appends an
@@ -37,11 +42,11 @@ fill pattern explicitly: zero for ordinary memory/page tables, `0x13` for
 32-bit NOPs, or `InstructionImage.CompressedNops` for compressed NOPs. Keep
 physical placement separate from virtual execution PCs in translation tests.
 
-`core.InstEncoding` provides mnemonic encoders for program stimuli, with
+`utils.InstEncoding` provides mnemonic encoders for program stimuli, with
 register/immediate/alignment validation. Compressed mnemonics use the `c_`
 prefix; U-type immediates are unsigned 20-bit fields. HINT operands are preserved.
 Illegal encodings, packed-byte expectations and independent decoder reference
-vectors deliberately remain literal. `core.InstEncodingTest` checks fixed
+vectors deliberately remain literal. `utils.InstEncodingTest` checks fixed
 encoding vectors and invalid operands and is included in CI.
 
 ## Execution expectations and clock ownership
@@ -99,6 +104,6 @@ availability can be delayed independently; a presented response remains stable
 under backpressure. Explicit flush schedules and bus-specific assertions belong
 in each test. The atomic-memory read/write model remains test-specific.
 
-`core.CoreTestSupportTest` covers image boundaries and checker failure behavior;
-`bus.AxiTestSupportTest` checks read-response ownership and backpressure. Both
+`utils.CoreTestSupportTest` covers image boundaries and checker failure behavior;
+`utils.AxiTestSupportTest` checks read-response ownership and backpressure. Both
 are included in the existing CI test entry points.

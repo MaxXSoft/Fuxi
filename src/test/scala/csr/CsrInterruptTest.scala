@@ -2,7 +2,7 @@ package csr
 
 import chisel3._
 import consts.CSR._
-import utils.TestDriver
+import utils.{CsrRegressionTester, TestDriver}
 
 class CsrInterruptTester(c: CsrFile) extends CsrRegressionTester(c) {
   val sources = Seq(9, 1, 5)

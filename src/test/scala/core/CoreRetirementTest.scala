@@ -1,8 +1,8 @@
 package core
 
-import core.InstEncoding._
+import utils.InstEncoding._
 import sim.ROM
-import utils.TestDriver
+import utils.{CoreMemoryHarness, CoreProgram, CoreTester, ExpectedRetirement, RetirementChecker, TestDriver}
 
 object RetirementProgram extends CoreProgram {
   emit32All(Seq[Long](

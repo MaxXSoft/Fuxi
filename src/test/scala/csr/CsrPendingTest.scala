@@ -3,7 +3,7 @@ package csr
 import chisel3._
 import consts.CSR._
 import consts.CsrOp._
-import utils.TestDriver
+import utils.{CsrRegressionTester, TestDriver}
 
 class CsrPendingTester(c: CsrFile) extends CsrRegressionTester(c) {
   // External SEIP contributes to the CSR read result, but never to the

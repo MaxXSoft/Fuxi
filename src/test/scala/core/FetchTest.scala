@@ -1,6 +1,6 @@
 package core
 
-import core.InstEncoding._
+import utils.InstEncoding._
 import chisel3._
 import chisel3.util.Queue
 import io._
