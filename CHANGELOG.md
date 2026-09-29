@@ -2,6 +2,28 @@
 
 All notable changes to the Fuxi will be documented in this file.
 
+## Unreleased
+
+### Added
+
+- Added RV32C integer compressed instruction support.
+- Added halfword-aligned mixed-width instruction fetching.
+- Added a configurable decoupled instruction fetch queue.
+- Added split-page fetch handling with precise fault addresses.
+- Added reusable test infrastructure and its regressions.
+
+### Changed
+
+- Reorganized core tests into stage and integration suites.
+- Consolidated shared test fixtures and execution checkers.
+- Updated CI and documentation for the new frontend and test layout.
+
+### Fixed
+
+- Fixed redirected fetches using stale translation contexts.
+- Fixed instruction refill faults attaching to unrelated lookups.
+- Fixed page-walk access faults attaching to unrelated lookups.
+
 ## 0.0.2 - 2026-09-25
 
 ### Added
