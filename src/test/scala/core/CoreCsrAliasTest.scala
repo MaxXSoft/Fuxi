@@ -6,12 +6,12 @@ import utils.TestDriver
 
 object CsrAliasProgram extends CoreProgram {
   def write(addr: UInt, value: Int): Unit = {
-    emit(((value & 0xfff).toLong << 20) | 0x293) // addi t0, zero, value
-    emit((addr.litValue.toLong << 20) | 0x29073) // csrw addr, t0
+    emit32(((value & 0xfff).toLong << 20) | 0x293) // addi t0, zero, value
+    emit32((addr.litValue.toLong << 20) | 0x29073) // csrw addr, t0
   }
   def read(addr: UInt, value: Int): Unit = {
     expectWriteback(6, value)
-    emit((addr.litValue.toLong << 20) | 0x2373) // csrrs t1, addr, zero
+    emit32((addr.litValue.toLong << 20) | 0x2373) // csrrs t1, addr, zero
   }
   // Check both directions of every writable supervisor alias.
   write(CSR_MSTATUS, 2); read(CSR_SSTATUS, 2)

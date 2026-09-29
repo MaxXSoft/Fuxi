@@ -16,7 +16,7 @@ object CoreTestSupportTest extends App {
   val mixed = new CoreProgram(InstructionImage.CompressedNops)
   mixed.emit16(0x0001)
   mixed.expectWriteback(10, 42)
-  mixed.emit(0x02a00513)
+  mixed.emit32(0x02a00513)
   mixed.emit16(0x0000) // Deliberately illegal instructions are valid image data.
   assert(mixed.words == Seq(BigInt(0x05130001), BigInt(0x000002a0)))
   assert(mixed.expected == Seq(ExpectedWriteback(base + 2, 10, 42)))
@@ -27,16 +27,28 @@ object CoreTestSupportTest extends App {
   assert(mixed.words(8) == 0x00010085)
 
   val legacy = new CoreProgram
-  legacy.emit(0x13)
-  legacy.seek(3)
-  assert(legacy.pc == legacy.pcAt(3))
-  assert(legacy.words == Seq.fill(3)(BigInt(0x13)))
+  legacy.emit32(0x13)
+  legacy.seekWord(3)
+  assert(legacy.pc == legacy.pcAtWord(3))
+  assert(legacy.words == Seq(BigInt(0x13))) // Seeking does not emit padding instructions.
   val marker = legacy.finish()
+  assert(legacy.words.take(3) == Seq.fill(3)(BigInt(0x13)))
+  assert(legacy.pc == marker + 6)
+  assert((legacy.words.last & 0xffff) == 0xa001)
+  legacy.seekWord(8) // A compressed tail leaves a halfword-aligned cursor.
+  legacy.emit32(InstEncoding.addi(0, 0, 0))
   assert(marker == base + 12 && legacy.expected.last == ExpectedWriteback(marker, 31, 1))
+
+  val tracedEnd = new CoreTraceProgram
+  val tracedMarker = tracedEnd.finish()
+  assert(tracedEnd.pc == tracedMarker + 6)
+  assert(tracedEnd.words.head == legacy.words(3))
+  assert((tracedEnd.words.last & 0xffff) == 0xa001)
+  assert(tracedEnd.retired.toVector == Seq(ExpectedRetirement(tracedMarker, Some(31 -> BigInt(1)))))
 
   val edge = new CoreProgram
   edge.seekAddress(base + ROM.DEPTH * 4 - 2)
-  rejects(edge.emit(0x13))
+  rejects(edge.emit32(0x13))
   edge.emit16(1)
   assert(edge.words.size == ROM.DEPTH)
   rejects(edge.emit16(1))

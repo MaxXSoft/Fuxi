@@ -33,7 +33,7 @@ private[core] class CoreFetchFaultWrapper extends Module {
 
 private[core] class CoreFetchFaultTester(c: CoreFetchFaultWrapper, scenario: FetchPageCase)
     extends CoreTester(c) with AxiTestSupport {
-  import RiscvTestEncoding._
+  import InstEncoding._
   val memory = new InstructionImage
   val root = BigInt(0x10000)
   val leaf = BigInt(0x11000)

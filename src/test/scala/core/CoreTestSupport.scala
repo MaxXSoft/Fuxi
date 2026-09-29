@@ -21,10 +21,10 @@ class CoreProgram(fillWord: BigInt = NOP.litValue) {
   }
   def expected: Seq[ExpectedWriteback] = checks.toVector
   def pc: BigInt = cursor
-  def pcAt(wordIndex: Int): BigInt = RESET_PC.litValue + 4 * wordIndex
+  def pcAtWord(wordIndex: Int): BigInt = RESET_PC.litValue + 4 * wordIndex
 
   private def checkAddress(address: BigInt, size: Int): Unit =
-    require(address >= RESET_PC.litValue && address + size <= pcAt(ROM.DEPTH),
+    require(address >= RESET_PC.litValue && address + size <= pcAtWord(ROM.DEPTH),
       "Program exceeds ROM capacity")
 
   def place16(address: BigInt, instruction: Int): Unit = {
@@ -36,16 +36,12 @@ class CoreProgram(fillWord: BigInt = NOP.litValue) {
     image.place32(address, instruction)
   }
   def emit16(instruction: Int): Unit = { place16(pc, instruction); cursor += 2 }
-  // Keep emit overridable: InstretReadProgram models CSR counter writes here.
-  def emit(word: Long): Unit = { place32(pc, word); cursor += 4 }
-  def emitAll(words: Seq[Long]): Unit = words.foreach(emit)
+  // Keep emit32 overridable: InstretReadProgram models CSR counter writes here.
+  def emit32(word: Long): Unit = { place32(pc, word); cursor += 4 }
+  def emit32All(words: Seq[Long]): Unit = words.foreach(emit32)
 
-  // Legacy word-offset placement preserves one architectural NOP per gap word.
-  def seek(wordIndex: Int): Unit = {
-    require((pc & 3) == 0 && pcAt(wordIndex) >= pc && wordIndex < ROM.DEPTH,
-      "Invalid word program offset")
-    while (pc < pcAt(wordIndex)) emit(NOP.litValue.longValue)
-  }
+  // Word indices are relative to RESET_PC; both seek methods only move the cursor.
+  def seekWord(wordIndex: Int): Unit = seekAddress(pcAtWord(wordIndex))
   // Sparse placement uses the image's fill pattern and adds no execution events.
   def seekAddress(address: BigInt): Unit = {
     checkAddress(address, 2)
@@ -61,8 +57,8 @@ class CoreProgram(fillWord: BigInt = NOP.litValue) {
   def finish(): BigInt = {
     val donePc = pc
     expectWriteback(31, 1)
-    emit(0x00100f93) // addi t6, zero, 1
-    emit(0x0000006f) // j .
+    emit32(InstEncoding.addi(31, 0, 1))
+    emit16(InstEncoding.c_j(0))
     donePc
   }
 }
@@ -88,13 +84,13 @@ class CoreTraceProgram extends CoreProgram(utils.InstructionImage.CompressedNops
   }
   def word(instruction: Long, write: Option[(Int, BigInt)] = None, retires: Boolean = true): BigInt = {
     val address = pc
-    emit(instruction)
+    emit32(instruction)
     if (retires) event(address, write)
     address
   }
   override def finish(): BigInt = {
-    donePc = word(RiscvTestEncoding.addi(31, 0, 1), Some(31 -> BigInt(1)))
-    half(0xa001, retires = false) // c.j .; execution stops at the marker above
+    donePc = word(InstEncoding.addi(31, 0, 1), Some(31 -> BigInt(1)))
+    half(InstEncoding.c_j(0), retires = false) // c.j .; execution stops at the marker above
     donePc
   }
 }

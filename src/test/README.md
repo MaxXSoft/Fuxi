@@ -6,27 +6,28 @@ process exit code. Shared fixtures live only in test sources.
 
 ## Programs and instruction images
 
-Use `core.CoreProgram` for ROM-backed programs. `emit` appends 32 bits and
+Use `core.CoreProgram` for ROM-backed programs. `emit32` appends 32 bits and
 `emit16` appends 16 bits; both advance a byte-addressed `pc`. A 32-bit instruction
 may start at a halfword boundary. `expectWriteback` records a checkpoint at the
 current PC, before the following instruction is emitted. `finish()` appends an
-x31 = 1 marker followed by a loop and returns the marker PC.
+32-bit x31 = 1 marker followed by a compressed `c.j 0` loop and returns the marker PC.
 
 ```scala
 val program = new CoreProgram(utils.InstructionImage.CompressedNops)
 program.emit16(0x0001) // c.nop
 program.expectWriteback(10, 42)
-program.emit(RiscvTestEncoding.addi(10, 0, 42)) // starts at RESET_PC + 2
+program.emit32(InstEncoding.addi(10, 0, 42)) // starts at RESET_PC + 2
 val donePc = program.finish()
 // new CoreWrapper(program.words), then CoreProgramTester(..., donePc, maxCycles)
 ```
 
-`seek(wordIndex)` and `pcAt(wordIndex)` retain word-offset units. `seek` pads
-with one 32-bit NOP per word and requires a word-aligned cursor. `seekAddress`
-uses an absolute, halfword-aligned address and leaves sparse gaps. `place16` and
+`seekWord(wordIndex)` and `pcAtWord(wordIndex)` use word indices relative to RESET_PC.
+`seekAddress` uses an absolute, halfword-aligned address. Both seek methods only
+move the cursor forward; gaps use the image fill pattern once code is placed
+beyond them. Neither seek method emits instructions or updates reference counters. `place16` and
 `place32` place out-of-line code without changing the cursor. Overlaps, invalid
 widths and ROM overflow are rejected; illegal instruction *encodings* are
-allowed so that trap tests can construct them. `emit` remains overridable for
+allowed so that trap tests can construct them. `emit32` remains overridable for
 instruction-specific reference models such as the instret-write tests.
 
 `utils.InstructionImage` provides the same little-endian packing without ROM

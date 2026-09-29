@@ -1,7 +1,7 @@
 package core
 
 // Operand encoders for integration-test programs; decoder oracles remain independent.
-object RiscvTestEncoding {
+object InstEncoding {
   def addi(rd: Int, rs1: Int, imm: Int): Long =
     ((imm & 0xfff).toLong << 20) | (rs1 << 15) | (rd << 7) | 0x13
   def csr(addr: Int, rs1: Int, funct3: Int = 1, rd: Int = 0): Long =
@@ -19,6 +19,7 @@ object RiscvTestEncoding {
       6 -> 7, 7 -> 6, 3 -> 5, 2 -> 4, 1 -> 3, 5 -> 2)
     (funct3 << 13) | 1 | fields.map { case (from, to) => ((offset >>> from) & 1) << to }.sum
   }
+  def c_j(offset: Int): Int = cj(5, offset)
   def lwsp(rd: Int, offset: Int): Int =
     0x4002 | (rd << 7) | ((offset & 32) << 7) | ((offset & 28) << 2) | ((offset & 192) >> 4)
   def lr(rd: Int, base: Int): Long =

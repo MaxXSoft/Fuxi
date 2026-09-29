@@ -8,7 +8,8 @@ object InstretReadProgram extends CoreProgram {
   private val mask32 = (BigInt(1) << 32) - 1
   private var count = BigInt(0)
 
-  override def emit(word: Long): Unit = { super.emit(word); count += 1 }
+  override def emit16(half: Int): Unit = { super.emit16(half); count += 1 }
+  override def emit32(word: Long): Unit = { super.emit32(word); count += 1 }
   def high(addr: UInt): Boolean = (addr.litValue & 0x80) != 0
   def value(addr: UInt): BigInt = if (high(addr)) count >> 32 else count & mask32
   def assign(addr: UInt, data: BigInt): Unit = {
@@ -17,13 +18,13 @@ object InstretReadProgram extends CoreProgram {
   }
   def read(addr: UInt): Unit = {
     expectWriteback(6, value(addr))
-    emit((addr.litValue.toLong << 20) | 0x2373) // csrr t1, addr
+    emit32((addr.litValue.toLong << 20) | 0x2373) // csrr t1, addr
   }
   def modify(addr: UInt, data: Int, operation: Int = 1, returnOld: Boolean = false): Unit = {
-    emit(((data & 0xfff).toLong << 20) | 0x293) // li t0, signed 12-bit data
+    emit32(((data & 0xfff).toLong << 20) | 0x293) // li t0, signed 12-bit data
     val old = value(addr)
     if (returnOld) expectWriteback(6, old)
-    super.emit((addr.litValue.toLong << 20) | (5L << 15) | (operation << 12) |
+    super.emit32((addr.litValue.toLong << 20) | (5L << 15) | (operation << 12) |
       (if (returnOld) 6L << 7 else 0L) | 0x73)
     val operand = BigInt(data) & mask32
     assign(addr, if (operation == 1) operand
@@ -33,12 +34,12 @@ object InstretReadProgram extends CoreProgram {
   modify(CSR_MINSTRETH, 0)
   modify(CSR_MINSTRET, 0)
   read(CSR_MINSTRET) // A CSR write overrides its own retirement increment.
-  emit(0x13)
+  emit32(0x13)
   read(CSR_INSTRET)  // Includes both the preceding CSR read and the NOP.
-  emit(0x00100293)
-  emit(0x00502023) // sw t0, 0(zero)
-  emit(0x00002383) // lw t2, 0(zero)
-  emit(0x00738433) // add s0, t2, t2 (load-use bubbles)
+  emit32(0x00100293)
+  emit32(0x00502023) // sw t0, 0(zero)
+  emit32(0x00002383) // lw t2, 0(zero)
+  emit32(0x00738433) // add s0, t2, t2 (load-use bubbles)
   read(CSR_MINSTRET)
   read(CSR_INSTRET)
 
@@ -46,7 +47,7 @@ object InstretReadProgram extends CoreProgram {
   for (addr <- Seq(CSR_MINSTRETH, CSR_INSTRETH)) {
     modify(CSR_MINSTRETH, 0)
     modify(CSR_MINSTRET, -1)
-    emit(0x13)
+    emit32(0x13)
     read(addr)
   }
 

@@ -4,7 +4,7 @@ import sim.ROM
 import utils.TestDriver
 
 private[core] object CompressedFlowProgram extends CoreTraceProgram {
-  import RiscvTestEncoding._
+  import InstEncoding._
   def write(rd: Int, data: BigInt): Option[(Int, BigInt)] = Some(rd -> data)
 
   half(0x0001) // C.NOP makes the following full-width instruction straddle words.
@@ -60,7 +60,7 @@ private[core] object CompressedFlowProgram extends CoreTraceProgram {
 }
 
 private[core] object CompressedTrapProgram extends CoreTraceProgram {
-  import RiscvTestEncoding._
+  import InstEncoding._
   def write(rd: Int, data: BigInt): Option[(Int, BigInt)] = Some(rd -> data)
   word(addi(5, 0, 0x380), write(5, 0x380))
   word(csr(0x305, 5))

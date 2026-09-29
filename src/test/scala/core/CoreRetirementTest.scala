@@ -4,7 +4,7 @@ import sim.ROM
 import utils.TestDriver
 
 object RetirementProgram extends CoreProgram {
-  emitAll(Seq[Long](
+  emit32All(Seq[Long](
     0x30000293, // li t0, trap handler at 0x300
     0x30529073, // csrw mtvec, t0
     0x02a00293, // li t0, 42
@@ -22,8 +22,8 @@ object RetirementProgram extends CoreProgram {
     0x00000073, // ecall: does not retire
   ))
   val donePc = finish()
-  seek(64)
-  emitAll(Seq[Long](
+  seekWord(64)
+  emit32All(Seq[Long](
     0x341022f3, // csrr t0, mepc
     0x00428293, // addi t0, t0, 4
     0x34129073, // csrw mepc, t0
@@ -33,7 +33,7 @@ object RetirementProgram extends CoreProgram {
     val handler = Seq(64, 65, 66, 67)
     val fences = if (fenceFault) handler ++ handler else Seq(12, 13)
     ((0 to 9) ++ Seq(11) ++ fences ++ handler ++ Seq(15))
-      .map(pcAt)
+      .map(pcAtWord)
   }
 }
 
