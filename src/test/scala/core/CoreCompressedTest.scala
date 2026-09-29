@@ -7,58 +7,9 @@ import io.DebugIO
 import sim.{RAM, ROM}
 import utils.TestDriver
 
-private[core] case class RvcRetirement(pc: BigInt, write: Option[(Int, BigInt)] = None)
-private[core] case class RvcTrap(pc: BigInt, cause: BigInt, value: BigInt)
-
-private[core] class RvcProgram {
-  private val parcels = scala.collection.mutable.Map.empty[Int, Int]
-  val retired = scala.collection.mutable.ArrayBuffer.empty[RvcRetirement]
-  val traps = scala.collection.mutable.ArrayBuffer.empty[RvcTrap]
-  var pc = RESET_PC.litValue.toInt
-  var donePc = 0
-
-  def place16(address: Int, instruction: Int): Unit = {
-    require((address & 1) == 0 && instruction >= 0 && instruction < 65536)
-    require(address >= RESET_PC.litValue.toInt && address < RESET_PC.litValue.toInt + ROM.DEPTH * 4)
-    require(!parcels.contains(address), f"Overlapping instruction parcel at 0x$address%x")
-    parcels(address) = instruction
-  }
-  def place32(address: Int, instruction: Long): Unit = {
-    place16(address, (instruction & 0xffff).toInt)
-    place16(address + 2, ((instruction >>> 16) & 0xffff).toInt)
-  }
-  def event(address: Int, write: Option[(Int, BigInt)] = None): Unit =
-    retired += RvcRetirement(address, write)
-  def half(instruction: Int, write: Option[(Int, BigInt)] = None, retires: Boolean = true): Int = {
-    val address = pc
-    place16(address, instruction)
-    if (retires) event(address, write)
-    pc += 2
-    address
-  }
-  def word(instruction: Long, write: Option[(Int, BigInt)] = None, retires: Boolean = true): Int = {
-    val address = pc
-    place32(address, instruction)
-    if (retires) event(address, write)
-    pc += 4
-    address
-  }
-  def finish(): Unit = {
-    donePc = word(RiscvTestEncoding.addi(31, 0, 1), Some(31 -> BigInt(1)))
-    half(0xa001, retires = false)
-  }
-  def words: Seq[BigInt] = {
-    val base = RESET_PC.litValue.toInt
-    (base to (parcels.keys.max | 3) by 4).map { address =>
-      BigInt(parcels.getOrElse(address, 1)) |
-        (BigInt(parcels.getOrElse(address + 2, 1)) << 16)
-    }
-  }
-}
-
-private[core] object CompressedFlowProgram extends RvcProgram {
+private[core] object CompressedFlowProgram extends CoreTraceProgram {
   import RiscvTestEncoding._
-  def write(rd: Int, data: Int): Option[(Int, BigInt)] = Some(rd -> BigInt(data))
+  def write(rd: Int, data: BigInt): Option[(Int, BigInt)] = Some(rd -> data)
 
   half(0x0001) // C.NOP makes the following full-width instruction straddle words.
   word(addi(2, 0, 128), write(2, 128))
@@ -70,7 +21,7 @@ private[core] object CompressedFlowProgram extends RvcProgram {
   half(0x962a, write(12, 24)) // c.add a2, a0: load-use hazard
 
   private val firstReturn = pc + 2
-  half(cj(1, 0x300 - pc), write(1, firstReturn))
+  half(cj(1, (0x300 - pc).toInt), write(1, firstReturn))
   event(0x300, write(10, 13))
   event(0x302)
 
@@ -109,18 +60,18 @@ private[core] object CompressedFlowProgram extends RvcProgram {
   place16(0x320, 0x8686) // c.mv a3, ra
   place16(0x322, 0x8082)
   place16(0x342, ci(0, 12, 1))
-  place32(0x344, jal(0, thirdReturn - 0x344))
+  place32(0x344, jal(0, (thirdReturn - 0x344).toInt))
 }
 
-private[core] object CompressedTrapProgram extends RvcProgram {
+private[core] object CompressedTrapProgram extends CoreTraceProgram {
   import RiscvTestEncoding._
-  def write(rd: Int, data: Int): Option[(Int, BigInt)] = Some(rd -> BigInt(data))
+  def write(rd: Int, data: BigInt): Option[(Int, BigInt)] = Some(rd -> data)
   word(addi(5, 0, 0x380), write(5, 0x380))
   word(csr(0x305, 5))
   for ((instruction, cause) <- Seq(0x0000 -> 2, 0x9c01 -> 2, 0x9002 -> 3, 0x0000 -> 2)) {
     val faultPc = half(instruction, retires = false)
     val value = if (cause == 2) instruction else 0
-    traps += RvcTrap(faultPc, cause, value)
+    traps += ExpectedTrap(faultPc, cause, value)
     event(0x380, write(6, cause))
     event(0x384, write(7, faultPc))
     event(0x388, write(28, value))
@@ -135,7 +86,7 @@ private[core] object CompressedTrapProgram extends RvcProgram {
   word(csr(0x100, 5))
   word(0x10200073)
   word(addi(20, 0, 99), retires = false)
-  pc = 0x362
+  seekAddress(0x362)
   half(ci(2, 10, 9), write(10, 9))
   finish()
 
@@ -147,7 +98,7 @@ private[core] object CompressedTrapProgram extends RvcProgram {
   place32(0x394, 0x30200073)
 }
 
-private[core] class CoreCompressedWrapper(program: RvcProgram, depth: Int) extends Module {
+private[core] class CoreCompressedWrapper(program: CoreTraceProgram, depth: Int) extends Module {
   val io = IO(new Bundle {
     val debug = new DebugIO
     val memoryStall = Input(Bool())
@@ -187,7 +138,7 @@ private[core] class CoreCompressedWrapper(program: RvcProgram, depth: Int) exten
   io.trapValue := except.excValue
 }
 
-private[core] class CoreCompressedTester(c: CoreCompressedWrapper, program: RvcProgram,
+private[core] class CoreCompressedTester(c: CoreCompressedWrapper, program: CoreTraceProgram,
                                          depth: Int, stall: Boolean) extends CoreTester(c) {
   val expected = scala.collection.mutable.Queue.from(program.retired)
   val traps = scala.collection.mutable.Queue.from(program.traps)

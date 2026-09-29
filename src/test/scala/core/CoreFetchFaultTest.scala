@@ -6,7 +6,7 @@ import axi.AxiMaster
 import bus.CoreBus
 import consts.Parameters._
 import io.DebugIO
-import utils.TestDriver
+import utils.{InstructionImage, TestDriver}
 
 private[core] case class FetchPageCase(name: String, secondPagePresent: Boolean,
                                        accessFault: Boolean = false, compressedJump: Boolean = false)
@@ -47,13 +47,13 @@ private[core] class CoreFetchFaultWrapper extends Module {
 private[core] class CoreFetchFaultTester(c: CoreFetchFaultWrapper, scenario: FetchPageCase)
     extends CoreTester(c) {
   import RiscvTestEncoding._
-  val memory = scala.collection.mutable.Map.empty[BigInt, BigInt]
+  val memory = new InstructionImage
   val root = BigInt(0x10000)
   val leaf = BigInt(0x11000)
   val firstPage = BigInt(0x20000)
   val secondPage = BigInt(0x40000)
 
-  def put(address: BigInt, instruction: Long): Unit = memory(address) = BigInt(instruction)
+  def put(address: BigInt, instruction: Long): Unit = memory.place32(address, instruction)
   val boot = Seq(
     addi(5, 0, 0x380),
     csr(0x305, 5), // Machine trap handler uses Bare addressing.
@@ -75,9 +75,9 @@ private[core] class CoreFetchFaultTester(c: CoreFetchFaultWrapper, scenario: Fet
     put(0x380 + index * 4, instruction)
   }
 
-  memory(root) = ((leaf >> 12) << 10) | 1
-  memory(leaf) = ((firstPage >> 12) << 10) | 0x4b // V,R,X,A; supervisor executable.
-  memory(leaf + 4) = if (scenario.secondPagePresent) ((secondPage >> 12) << 10) | 0x4b else 0
+  memory.place32(root, ((leaf >> 12) << 10) | 1)
+  memory.place32(leaf, ((firstPage >> 12) << 10) | 0x4b) // V,R,X,A; supervisor executable.
+  memory.place32(leaf + 4, if (scenario.secondPagePresent) ((secondPage >> 12) << 10) | 0x4b else 0)
   if (scenario.compressedJump) {
     // The next virtual page is unmapped, but this final 16-bit instruction
     // jumps back into the first page and must never consume that page fault.
@@ -85,8 +85,11 @@ private[core] class CoreFetchFaultTester(c: CoreFetchFaultWrapper, scenario: Fet
     put(firstPage + 0x200, 0x4f850001L) // c.li t6, 1 at VA 0x202
     put(firstPage + 0x204, 0x0001a001L)
   } else {
-    put(firstPage + 0xffc, 0x05130001L) // low half of addi a0, zero, 42 at VA 0xffe
-    put(secondPage, 0x000102a0L) // high half at VA 0x1000, then c.nop at VA 0x1002
+    val splitInstruction = addi(10, 0, 42)
+    memory.place16(firstPage + 0xffc, 0x0001)
+    memory.place16(firstPage + 0xffe, splitInstruction & 0xffff)
+    memory.place16(secondPage, splitInstruction >>> 16)
+    memory.place16(secondPage + 2, 0x0001) // c.nop at VA 0x1002
     put(secondPage + 4, addi(31, 0, 1))
     put(secondPage + 8, 0x0001a001L)
   }
@@ -130,7 +133,7 @@ private[core] class CoreFetchFaultTester(c: CoreFetchFaultWrapper, scenario: Fet
     poke(c.io.inst.readAddr.ready, !active && cycle % 3 != 0)
     val returning = active && cycle % 5 != 1
     poke(c.io.inst.readData.valid, returning)
-    poke(c.io.inst.readData.bits.data, memory.getOrElse(address + beat * 4, BigInt(0)))
+    poke(c.io.inst.readData.bits.data, memory.read32(address + beat * 4))
     poke(c.io.inst.readData.bits.last, active && beat == beats - 1)
     poke(c.io.inst.readData.bits.resp,
       if (!physicalRegionMapped(address) ||

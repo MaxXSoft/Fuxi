@@ -3,7 +3,7 @@ package core
 import chisel3._
 import chisel3.util.Queue
 import io._
-import utils.{PeekPokeTester, TestDriver}
+import utils.{InstructionImage, PeekPokeTester, TestDriver}
 
 class FetchHarness(depth: Int) extends Module {
   val io = IO(new Bundle {
@@ -36,15 +36,15 @@ class FetchHarness(depth: Int) extends Module {
 
 class FetchUnitTester(c: FetchHarness, depth: Int) extends PeekPokeTester(c) {
   case class Packet(pc: BigInt, inst: BigInt, page: Boolean, access: Boolean, fault: BigInt)
-  val bytes = scala.collection.mutable.Map.empty[BigInt, Int]
+  val image = new InstructionImage(InstructionImage.CompressedNops)
   val faults = scala.collection.mutable.Map.empty[BigInt, Int]
   var response = BigInt(0)
   var heldAddress: Option[BigInt] = None
   var acceptedReads = 0
-  def put(pc: BigInt, inst: BigInt, size: Int): Unit =
-    for (i <- 0 until size) bytes(pc + i) = ((inst >> (8 * i)) & 255).toInt
-  def word(addr: BigInt): BigInt =
-    (0 until 4).map(i => BigInt(bytes.getOrElse(addr + i, if (i % 2 == 0) 1 else 0)) << (8 * i)).reduce(_ | _)
+  def put(pc: BigInt, inst: BigInt, size: Int): Unit = size match {
+    case 2 => image.replace16(pc, inst)
+    case 4 => image.replace32(pc, inst)
+  }
 
   poke(c.io.branch.branch, false)
   poke(c.io.branch.jump, false)
@@ -77,7 +77,7 @@ class FetchUnitTester(c: FetchHarness, depth: Int) extends PeekPokeTester(c) {
     } else None
     val nextResponse = if (enabled && ready) {
       acceptedReads += 1
-      word(addr)
+      image.read32(addr)
     } else response
     step(1)
     response = nextResponse
