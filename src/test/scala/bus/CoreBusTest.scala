@@ -1,8 +1,8 @@
 package bus
 
-import utils.{PeekPokeTester, TestDriver}
+import utils.{AxiTestSupport, PeekPokeTester, TestDriver}
 
-class CoreBusUnitTester(c: CoreBus) extends PeekPokeTester(c) {
+class CoreBusUnitTester(c: CoreBus) extends PeekPokeTester(c) with AxiTestSupport {
   poke(c.io.rom.en, false)
   poke(c.io.rom.wen, 0)
   poke(c.io.rom.addr, 0)
@@ -25,17 +25,7 @@ class CoreBusUnitTester(c: CoreBus) extends PeekPokeTester(c) {
   poke(c.io.cache.flushData, true)
 
   for (bus <- Seq(c.io.inst, c.io.data, c.io.uncached)) {
-    poke(bus.readAddr.ready, false)
-    poke(bus.readData.valid, false)
-    poke(bus.readData.bits.data, 0)
-    poke(bus.readData.bits.id, 0)
-    poke(bus.readData.bits.last, false)
-    poke(bus.readData.bits.resp, 0)
-    poke(bus.writeAddr.ready, false)
-    poke(bus.writeData.ready, false)
-    poke(bus.writeResp.valid, false)
-    poke(bus.writeResp.bits.id, 0)
-    poke(bus.writeResp.bits.resp, 0)
+    idleAxi(bus)
   }
 
   step(1)
@@ -52,7 +42,7 @@ class CoreBusUnitTester(c: CoreBus) extends PeekPokeTester(c) {
 }
 
 
-class CoreBusFenceTester(c: CoreBus) extends PeekPokeTester(c) {
+class CoreBusFenceTester(c: CoreBus) extends PeekPokeTester(c) with AxiTestSupport {
   val vaddr = BigInt("00400100", 16)
   val oldRoot = BigInt("00100000", 16)
   val newRoot = BigInt("00200000", 16)
@@ -81,17 +71,7 @@ class CoreBusFenceTester(c: CoreBus) extends PeekPokeTester(c) {
     poke(c.io.cache.flushInst, false)
     poke(c.io.cache.flushData, false)
     for (bus <- Seq(c.io.inst, c.io.data, c.io.uncached)) {
-      poke(bus.readAddr.ready, false)
-      poke(bus.readData.valid, false)
-      poke(bus.readData.bits.data, 0)
-      poke(bus.readData.bits.id, 0)
-      poke(bus.readData.bits.last, false)
-      poke(bus.readData.bits.resp, 0)
-      poke(bus.writeAddr.ready, false)
-      poke(bus.writeData.ready, false)
-      poke(bus.writeResp.valid, false)
-      poke(bus.writeResp.bits.id, 0)
-      poke(bus.writeResp.bits.resp, 0)
+      idleAxi(bus)
     }
     poke(c.reset, 1)
     step(1)
@@ -134,10 +114,7 @@ class CoreBusFenceTester(c: CoreBus) extends PeekPokeTester(c) {
 
   def beat(index: Int, data: BigInt, response: Int = 0): Unit = {
     expect(c.io.inst.readData.ready, true)
-    poke(c.io.inst.readData.valid, true)
-    poke(c.io.inst.readData.bits.data, data)
-    poke(c.io.inst.readData.bits.resp, response)
-    poke(c.io.inst.readData.bits.last, index == 15)
+    driveAxiRead(c.io.inst, data, last = index == 15, response = response)
     advance()
     poke(c.io.inst.readData.valid, false)
   }

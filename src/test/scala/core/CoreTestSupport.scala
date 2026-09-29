@@ -108,19 +108,6 @@ abstract class CoreTester[T <: Module](c: T) extends PeekPokeTester(c) {
     if (peek(observation.trap) != 0)
       checker.observe(peek(observation.trapPc), peek(observation.trapCause), peek(observation.trapValue))
   }
-
-  // The caller steps exactly once per iteration and chooses whether to sample
-  // before or after that edge. This preserves retirement counter timing checks.
-  protected def runUntil(maxCycles: Int, context: => String)(cycle: => Boolean): Unit = {
-    require(maxCycles > 0)
-    var done = false
-    var cycles = 0
-    while (cycles < maxCycles && !done) {
-      done = cycle
-      cycles += 1
-    }
-    assert(done, s"Timed out after $maxCycles cycles: $context")
-  }
 }
 
 // Check selected writebacks in order, allowing unrelated instructions between them.

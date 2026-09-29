@@ -13,6 +13,19 @@ abstract class PeekPokeTester[T <: Module](val dut: T) extends PeekPokeAPI {
 
   private implicit val sourceInfo: SourceInfo = UnlocatableSourceInfo
 
+  // The caller steps exactly once per iteration and chooses whether to sample
+  // before or after that edge. This preserves retirement counter timing checks.
+  protected def runUntil(maxCycles: Int, context: => String)(cycle: => Boolean): Unit = {
+    require(maxCycles > 0)
+    var done = false
+    var cycles = 0
+    while (cycles < maxCycles && !done) {
+      done = cycle
+      cycles += 1
+    }
+    assert(done, s"Timed out after $maxCycles cycles: $context")
+  }
+
   protected def step(cycles: Int): Unit = {
     toTestableClock(dut.clock).step(cycles)
     t += cycles

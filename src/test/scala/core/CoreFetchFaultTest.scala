@@ -4,7 +4,7 @@ import chisel3._
 import axi.AxiMaster
 import bus.CoreBus
 import consts.Parameters._
-import utils.{InstructionImage, TestDriver}
+import utils.{AxiTestSupport, InstructionImage, TestDriver}
 
 private[core] case class FetchPageCase(name: String, secondPagePresent: Boolean,
                                        accessFault: Boolean = false, compressedJump: Boolean = false)
@@ -32,7 +32,7 @@ private[core] class CoreFetchFaultWrapper extends Module {
 }
 
 private[core] class CoreFetchFaultTester(c: CoreFetchFaultWrapper, scenario: FetchPageCase)
-    extends CoreTester(c) {
+    extends CoreTester(c) with AxiTestSupport {
   import RiscvTestEncoding._
   val memory = new InstructionImage
   val root = BigInt(0x10000)
@@ -82,24 +82,13 @@ private[core] class CoreFetchFaultTester(c: CoreFetchFaultWrapper, scenario: Fet
   }
 
   for (port <- Seq(c.io.inst, c.io.data, c.io.uncached)) {
-    poke(port.readAddr.ready, false)
-    poke(port.readData.valid, false)
-    poke(port.readData.bits.id, 0)
-    poke(port.readData.bits.data, 0)
-    poke(port.readData.bits.resp, 0)
-    poke(port.readData.bits.last, false)
-    poke(port.writeAddr.ready, false)
-    poke(port.writeData.ready, false)
-    poke(port.writeResp.valid, false)
-    poke(port.writeResp.bits.id, 0)
-    poke(port.writeResp.bits.resp, 0)
+    idleAxi(port)
   }
 
   val willTrap = !scenario.compressedJump && (!scenario.secondPagePresent || scenario.accessFault)
   val expectedCause = if (scenario.accessFault) 1 else 12
   val donePc = if (willTrap) 0x38c else if (scenario.compressedJump) 0x202 else 0x1004
   val retired = scala.collection.mutable.ArrayBuffer.empty[BigInt]
-  val reads = scala.collection.mutable.ArrayBuffer.empty[BigInt]
   val traps = new TrapChecker(if (willTrap) Seq(ExpectedTrap(0xffe, expectedCause, 0x1000)) else Seq.empty)
   val writebacks = new WritebackChecker((if (willTrap) Seq(
     ExpectedWriteback(0x380, 6, expectedCause),
@@ -108,10 +97,6 @@ private[core] class CoreFetchFaultTester(c: CoreFetchFaultWrapper, scenario: Fet
     else if (!scenario.compressedJump) Seq(ExpectedWriteback(0xffe, 10, 42))
     else Seq.empty) :+ ExpectedWriteback(donePc, 31, 1))
   var cycle = 0
-  var active = false
-  var address = BigInt(0)
-  var beat = 0
-  var beats = 0
 
   def physicalRegionMapped(base: BigInt): Boolean =
     (base >= 0x200 && base < 0x400) ||
@@ -119,25 +104,14 @@ private[core] class CoreFetchFaultTester(c: CoreFetchFaultWrapper, scenario: Fet
       (base >= firstPage && base < firstPage + 0x1000) ||
       (base >= secondPage && base < secondPage + 0x1000)
 
+  val responder = new AxiReadResponder(c.io.inst, memory.read32,
+    (request, beat) => if (!physicalRegionMapped(request.address) ||
+      (scenario.accessFault && request.address == secondPage && beat == 3)) 2 else 0)
+
   runUntil(3000, s"Sv32 instruction-fetch case ${scenario.name} did not finish") {
     // Exercise independently stalled AXI address and response channels.
-    poke(c.io.inst.readAddr.ready, !active && cycle % 3 != 0)
-    val returning = active && cycle % 5 != 1
-    poke(c.io.inst.readData.valid, returning)
-    poke(c.io.inst.readData.bits.data, memory.read32(address + beat * 4))
-    poke(c.io.inst.readData.bits.last, active && beat == beats - 1)
-    poke(c.io.inst.readData.bits.resp,
-      if (!physicalRegionMapped(address) ||
-        (scenario.accessFault && address == secondPage && beat == 3)) 2 else 0)
-
-    val acceptAddress = peek(c.io.inst.readAddr.valid) != 0 && peek(c.io.inst.readAddr.ready) != 0
-    val acceptData = returning && peek(c.io.inst.readData.ready) != 0
-    val newAddress = if (acceptAddress) peek(c.io.inst.readAddr.bits.addr) else BigInt(0)
-    val newBeats = if (acceptAddress) peek(c.io.inst.readAddr.bits.len).toInt + 1 else 0
-    if (acceptAddress) {
-      expect(c.io.inst.readAddr.bits.size, 2)
-      assert(newBeats == 16, "Expected the real 64-byte I-cache refill")
-      reads += newAddress
+    responder.beforeStep(allowAddress = cycle % 3 != 0, allowData = cycle % 5 != 1).foreach { request =>
+      assert(request.beats == 16, "Expected the real 64-byte I-cache refill")
     }
     for (port <- Seq(c.io.data, c.io.uncached)) {
       expect(port.readAddr.valid, false)
@@ -153,20 +127,12 @@ private[core] class CoreFetchFaultTester(c: CoreFetchFaultWrapper, scenario: Fet
       done = actual.pc == donePc
     }
     step(1)
-    if (acceptData) {
-      beat += 1
-      if (beat == beats) active = false
-    }
-    if (acceptAddress) {
-      active = true
-      address = newAddress
-      beats = newBeats
-      beat = 0
-    }
+    responder.afterStep()
     cycle += 1
     done
   }
 
+  val reads = responder.requests.map(_.address)
   assert(reads.contains(firstPage + 0xfc0), "Did not fetch the end of the first physical page")
   assert(!reads.contains(BigInt(0xfc0)), "MRET fetched its target before restoring Sv32 translation")
   assert(!reads.contains(firstPage + 0x1000), "Incorrectly continued at the adjacent physical page")

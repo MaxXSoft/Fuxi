@@ -89,6 +89,7 @@ jobs:
 
     - name: Test Bus
       run: |
+        sbt "Test / runMain bus.AxiTestSupportTest"
         sbt "Test / runMain bus.TlbTest"
         sbt "Test / runMain bus.MmuTest"
         sbt "Test / runMain bus.UncachedTest"

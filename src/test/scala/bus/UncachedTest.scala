@@ -1,24 +1,14 @@
 package bus
 
-import utils.{PeekPokeTester, TestDriver}
+import utils.{AxiTestSupport, PeekPokeTester, TestDriver}
 
-class UncachedUnitTester(c: Uncached) extends PeekPokeTester(c) {
+class UncachedUnitTester(c: Uncached) extends PeekPokeTester(c) with AxiTestSupport {
   def initialize() = {
     poke(c.io.sram.en, false)
     poke(c.io.sram.wen, 0)
     poke(c.io.sram.addr, 0)
     poke(c.io.sram.wdata, 0)
-    poke(c.io.axi.readAddr.ready, false)
-    poke(c.io.axi.readData.valid, false)
-    poke(c.io.axi.readData.bits.data, 0)
-    poke(c.io.axi.readData.bits.id, 0)
-    poke(c.io.axi.readData.bits.last, false)
-    poke(c.io.axi.readData.bits.resp, 0)
-    poke(c.io.axi.writeAddr.ready, false)
-    poke(c.io.axi.writeData.ready, false)
-    poke(c.io.axi.writeResp.valid, false)
-    poke(c.io.axi.writeResp.bits.id, 0)
-    poke(c.io.axi.writeResp.bits.resp, 0)
+    idleAxi(c.io.axi)
   }
 
   def testWrite(response: Int, fault: Boolean) = {
@@ -70,10 +60,7 @@ class UncachedUnitTester(c: Uncached) extends PeekPokeTester(c) {
 
     expect(c.io.axi.readData.ready, true)
     expect(c.io.sram.valid, false)
-    poke(c.io.axi.readData.bits.data, data)
-    poke(c.io.axi.readData.bits.last, true)
-    poke(c.io.axi.readData.bits.resp, response)
-    poke(c.io.axi.readData.valid, true)
+    driveAxiRead(c.io.axi, data, last = true, response = response)
     step(1)
     poke(c.io.axi.readData.valid, false)
 

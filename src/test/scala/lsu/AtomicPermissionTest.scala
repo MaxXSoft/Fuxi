@@ -5,7 +5,7 @@ import io._
 import consts.CSR.CSR_MODE_S
 import consts.LsuOp._
 import consts.ExceptType._
-import utils.{PeekPokeTester, TestDriver}
+import utils.{AxiTestSupport, PeekPokeTester, TestDriver}
 
 class AtomicPermissionHarness extends Module {
   val io = IO(new Bundle {
@@ -64,27 +64,18 @@ class AtomicPermissionHarness extends Module {
 }
 
 class AtomicPermissionTester(c: AtomicPermissionHarness, writable: Boolean, dirty: Boolean)
-    extends PeekPokeTester(c) {
+    extends PeekPokeTester(c) with AxiTestSupport {
   for (port <- Seq(c.io.pageTable, c.io.demand)) {
-    poke(port.readAddr.ready, false)
-    poke(port.readData.valid, false)
-    poke(port.readData.bits.id, 0)
-    poke(port.readData.bits.data, 0)
-    poke(port.readData.bits.last, false)
-    poke(port.readData.bits.resp, 0)
-    poke(port.writeAddr.ready, false)
-    poke(port.writeData.ready, false)
-    poke(port.writeResp.valid, false)
-    poke(port.writeResp.bits.id, 0)
-    poke(port.writeResp.bits.resp, 0)
+    idleAxi(port)
   }
   poke(c.io.op, LSU_LR)
   poke(c.io.flush, false)
 
   def waitFor(condition: => Boolean): Unit = {
-    var elapsed = 0
-    while (!condition && elapsed < 100) { step(1); elapsed += 1 }
-    assert(condition, "atomic permission check timed out")
+    if (!condition) runUntil(100, "atomic permission check timed out") {
+      step(1)
+      condition
+    }
   }
   def read(port: _root_.axi.AxiMaster, value: BigInt, address: BigInt): Unit = {
     waitFor(peek(port.readAddr.valid) != 0)
@@ -96,9 +87,7 @@ class AtomicPermissionTester(c: AtomicPermissionHarness, writable: Boolean, dirt
     poke(port.readAddr.ready, false)
     for (i <- 0 until beats) {
       step(2)
-      poke(port.readData.bits.data, value)
-      poke(port.readData.bits.last, i == beats - 1)
-      poke(port.readData.valid, true)
+      driveAxiRead(port, value, last = i == beats - 1)
       waitFor(peek(port.readData.ready) != 0)
       step(1)
       poke(port.readData.valid, false)

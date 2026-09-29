@@ -1,8 +1,8 @@
 package bus
 
-import utils.{PeekPokeTester, TestDriver}
+import utils.{AxiTestSupport, PeekPokeTester, TestDriver}
 
-class InstCacheFlushTester(c: InstCache) extends PeekPokeTester(c) {
+class InstCacheFlushTester(c: InstCache) extends PeekPokeTester(c) with AxiTestSupport {
   val oldLine = BigInt("80000000", 16)
   val pendingLine = oldLine + 64
   poke(c.io.sram.en, false)
@@ -10,17 +10,7 @@ class InstCacheFlushTester(c: InstCache) extends PeekPokeTester(c) {
   poke(c.io.sram.addr, oldLine)
   poke(c.io.sram.wdata, 0)
   poke(c.io.flush, false)
-  poke(c.io.axi.readAddr.ready, false)
-  poke(c.io.axi.readData.valid, false)
-  poke(c.io.axi.readData.bits.data, 0)
-  poke(c.io.axi.readData.bits.id, 0)
-  poke(c.io.axi.readData.bits.last, false)
-  poke(c.io.axi.readData.bits.resp, 0)
-  poke(c.io.axi.writeAddr.ready, false)
-  poke(c.io.axi.writeData.ready, false)
-  poke(c.io.axi.writeResp.valid, false)
-  poke(c.io.axi.writeResp.bits.id, 0)
-  poke(c.io.axi.writeResp.bits.resp, 0)
+  idleAxi(c.io.axi)
 
   def begin(address: BigInt): Unit = {
     poke(c.io.sram.addr, address)
@@ -36,9 +26,7 @@ class InstCacheFlushTester(c: InstCache) extends PeekPokeTester(c) {
     poke(c.io.axi.readAddr.ready, false)
   }
   def beat(index: Int, data: BigInt): Unit = {
-    poke(c.io.axi.readData.valid, true)
-    poke(c.io.axi.readData.bits.data, data + index)
-    poke(c.io.axi.readData.bits.last, index == 15)
+    driveAxiRead(c.io.axi, data + index, last = index == 15)
     expect(c.io.axi.readData.ready, true)
     step(1)
     poke(c.io.axi.readData.valid, false)
@@ -96,7 +84,7 @@ class InstCacheFlushTester(c: InstCache) extends PeekPokeTester(c) {
   }
 }
 
-class InstCacheFaultOwnershipTester(c: InstCache) extends PeekPokeTester(c) {
+class InstCacheFaultOwnershipTester(c: InstCache) extends PeekPokeTester(c) with AxiTestSupport {
   val oldWord = BigInt("80000004", 16)
   val newWord = BigInt("80000048", 16)
   poke(c.io.sram.en, false)
@@ -104,17 +92,7 @@ class InstCacheFaultOwnershipTester(c: InstCache) extends PeekPokeTester(c) {
   poke(c.io.sram.addr, oldWord)
   poke(c.io.sram.wdata, 0)
   poke(c.io.flush, false)
-  poke(c.io.axi.readAddr.ready, false)
-  poke(c.io.axi.readData.valid, false)
-  poke(c.io.axi.readData.bits.data, 0)
-  poke(c.io.axi.readData.bits.id, 0)
-  poke(c.io.axi.readData.bits.last, false)
-  poke(c.io.axi.readData.bits.resp, 0)
-  poke(c.io.axi.writeAddr.ready, false)
-  poke(c.io.axi.writeData.ready, false)
-  poke(c.io.axi.writeResp.valid, false)
-  poke(c.io.axi.writeResp.bits.id, 0)
-  poke(c.io.axi.writeResp.bits.resp, 0)
+  idleAxi(c.io.axi)
 
   def address(expected: BigInt): Unit = {
     expect(c.io.axi.readAddr.valid, true)
@@ -125,10 +103,8 @@ class InstCacheFaultOwnershipTester(c: InstCache) extends PeekPokeTester(c) {
   }
   def refill(fault: Boolean): Unit = {
     for (beat <- 0 until 16) {
-      poke(c.io.axi.readData.valid, true)
-      poke(c.io.axi.readData.bits.data, 0x12340000 + beat)
-      poke(c.io.axi.readData.bits.resp, if (fault && beat == 3) 2 else 0)
-      poke(c.io.axi.readData.bits.last, beat == 15)
+      driveAxiRead(c.io.axi, 0x12340000 + beat, last = beat == 15,
+        response = if (fault && beat == 3) 2 else 0)
       expect(c.io.axi.readData.ready, true)
       step(1)
       poke(c.io.axi.readData.valid, false)

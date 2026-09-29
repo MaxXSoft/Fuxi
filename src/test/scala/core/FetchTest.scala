@@ -100,22 +100,21 @@ class FetchUnitTester(c: FetchHarness, depth: Int) extends PeekPokeTester(c) {
   assert(acceptedReads >= depth, "Fetch did not run ahead of stalled Decode")
   val random = new scala.util.Random(0x46555849L)
   var seen = 0
-  var cycles = 0
-  while (seen < expected.size && cycles < 1500) {
+  runUntil(1500, s"Missing fetch packets: ${expected.size - seen}") {
     tick(stall = random.nextInt(4) == 0, ready = random.nextInt(3) != 0).foreach { packet =>
       assert((packet.pc, packet.inst) == expected(seen), s"Packet $seen: $packet != ${expected(seen)}")
       assert(!packet.page && !packet.access)
       seen += 1
     }
-    cycles += 1
+    seen == expected.size
   }
-  assert(seen == expected.size)
 
   def nextPacket(): Packet = {
     var found: Option[Packet] = None
-    var n = 0
-    while (found.isEmpty && n < 100) { found = tick(); n += 1 }
-    assert(found.nonEmpty, "No instruction after redirect")
+    runUntil(100, "No instruction after redirect") {
+      found = tick()
+      found.nonEmpty
+    }
     found.get
   }
 
