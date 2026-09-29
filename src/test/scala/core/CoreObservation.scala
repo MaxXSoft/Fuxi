@@ -15,17 +15,16 @@ class CoreObservation extends Bundle {
   val trapPc = Output(UInt(ADDR_WIDTH.W))
   val trapCause = Output(UInt(DATA_WIDTH.W))
   val trapValue = Output(UInt(DATA_WIDTH.W))
-}
 
-object CoreObservation {
-  def connect(observation: CoreObservation, core: Core): Unit = {
-    observation.debug <> core.io.debug
-    observation.retired := BoringUtils.bore(core.wb.io.csr.retired)
-    observation.count := BoringUtils.bore(core.csrfile.minstret.data)
+  // Call from the harness after this bundle is bound through IO.
+  def connect(core: Core): Unit = {
+    debug <> core.io.debug
+    retired := BoringUtils.bore(core.wb.io.csr.retired)
+    count := BoringUtils.bore(core.csrfile.minstret.data)
     val except = BoringUtils.bore(core.mem.io.except)
-    observation.trap := except.hasTrap && !except.isMret && !except.isSret
-    observation.trapPc := except.excPc
-    observation.trapCause := except.excCause
-    observation.trapValue := except.excValue
+    trap := except.hasTrap && !except.isMret && !except.isSret
+    trapPc := except.excPc
+    trapCause := except.excCause
+    trapValue := except.excValue
   }
 }

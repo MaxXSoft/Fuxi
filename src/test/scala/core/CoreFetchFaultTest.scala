@@ -28,7 +28,7 @@ private[core] class CoreFetchFaultWrapper extends Module {
   bus.io.inst <> io.inst
   bus.io.data <> io.data
   bus.io.uncached <> io.uncached
-  CoreObservation.connect(io.observation, core)
+  io.observation.connect(core)
 }
 
 private[core] class CoreFetchFaultTester(c: CoreFetchFaultWrapper, scenario: FetchPageCase)

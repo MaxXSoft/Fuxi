@@ -32,7 +32,7 @@ class CoreMemoryHarness(init: ROM.Init, depth: Int = FETCH_QUEUE_DEPTH,
   io.memoryRequest := core.io.ram.en
   io.fenceRequest := core.io.cache.flushData
   io.queueCount := BoringUtils.bore(core.ifid.io.count)
-  CoreObservation.connect(io.observation, core)
+  io.observation.connect(core)
 }
 
 // Preserve the small DebugIO interface for simple programs and external traces.

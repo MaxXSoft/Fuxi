@@ -86,8 +86,9 @@ pipeline stages. `checkComplete()` must run before a test succeeds.
 `CoreMemoryHarness` wires Core/ROM/RAM and exposes memory/fence stall inputs,
 request signals and fetch-queue occupancy. Always initialize both stall inputs.
 `CoreWrapper` ties stalls off and preserves the small `DebugIO` interface for
-simple programs and file-backed traces. `CoreObservation.connect` centralizes
-retirement, counter and trap probes; MRET/SRET are excluded from trap events.
+simple programs and file-backed traces. Call `io.observation.connect(core)` from
+the harness after binding the bundle through `IO` to connect the retirement,
+counter and trap probes; MRET/SRET are excluded from trap events.
 CoreBus integration tests keep their actual bus wiring and share these probes.
 
 Mix in `utils.AxiTestSupport` for AXI input initialization and read-beat driving.
