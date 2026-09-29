@@ -7,28 +7,6 @@ import io.DebugIO
 import sim.{RAM, ROM}
 import utils.TestDriver
 
-private[core] object RvcTestEncoding {
-  def addi(rd: Int, rs1: Int, imm: Int): Long =
-    ((imm & 0xfff).toLong << 20) | (rs1 << 15) | (rd << 7) | 0x13
-  def csr(addr: Int, rs1: Int, funct3: Int = 1, rd: Int = 0): Long =
-    (addr.toLong << 20) | (rs1 << 15) | (funct3 << 12) | (rd << 7) | 0x73
-  def sw(rs2: Int, rs1: Int, imm: Int): Long =
-    ((imm & 0xfe0).toLong << 20) | (rs2 << 20) | (rs1 << 15) |
-      (2 << 12) | ((imm & 31) << 7) | 0x23
-  def jal(rd: Int, offset: Int): Long =
-    ((offset & 0x100000).toLong << 11) | ((offset & 0x7fe).toLong << 20) |
-      ((offset & 0x800) << 9) | (offset & 0xff000) | (rd << 7) | 0x6f
-  def ci(funct3: Int, rd: Int, imm: Int): Int =
-    (funct3 << 13) | ((imm & 32) << 7) | (rd << 7) | ((imm & 31) << 2) | 1
-  def cj(funct3: Int, offset: Int): Int = {
-    val fields = Seq(11 -> 12, 4 -> 11, 9 -> 10, 8 -> 9, 10 -> 8,
-      6 -> 7, 7 -> 6, 3 -> 5, 2 -> 4, 1 -> 3, 5 -> 2)
-    (funct3 << 13) | 1 | fields.map { case (from, to) => ((offset >>> from) & 1) << to }.sum
-  }
-  def lwsp(rd: Int, offset: Int): Int =
-    0x4002 | (rd << 7) | ((offset & 32) << 7) | ((offset & 28) << 2) | ((offset & 192) >> 4)
-}
-
 private[core] case class RvcRetirement(pc: BigInt, write: Option[(Int, BigInt)] = None)
 private[core] case class RvcTrap(pc: BigInt, cause: BigInt, value: BigInt)
 
@@ -66,7 +44,7 @@ private[core] class RvcProgram {
     address
   }
   def finish(): Unit = {
-    donePc = word(RvcTestEncoding.addi(31, 0, 1), Some(31 -> BigInt(1)))
+    donePc = word(RiscvTestEncoding.addi(31, 0, 1), Some(31 -> BigInt(1)))
     half(0xa001, retires = false)
   }
   def words: Seq[BigInt] = {
@@ -79,7 +57,7 @@ private[core] class RvcProgram {
 }
 
 private[core] object CompressedFlowProgram extends RvcProgram {
-  import RvcTestEncoding._
+  import RiscvTestEncoding._
   def write(rd: Int, data: Int): Option[(Int, BigInt)] = Some(rd -> BigInt(data))
 
   half(0x0001) // C.NOP makes the following full-width instruction straddle words.
@@ -135,7 +113,7 @@ private[core] object CompressedFlowProgram extends RvcProgram {
 }
 
 private[core] object CompressedTrapProgram extends RvcProgram {
-  import RvcTestEncoding._
+  import RiscvTestEncoding._
   def write(rd: Int, data: Int): Option[(Int, BigInt)] = Some(rd -> BigInt(data))
   word(addi(5, 0, 0x380), write(5, 0x380))
   word(csr(0x305, 5))

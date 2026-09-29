@@ -46,7 +46,7 @@ private[core] class CoreFetchFaultWrapper extends Module {
 
 private[core] class CoreFetchFaultTester(c: CoreFetchFaultWrapper, scenario: FetchPageCase)
     extends CoreTester(c) {
-  import RvcTestEncoding._
+  import RiscvTestEncoding._
   val memory = scala.collection.mutable.Map.empty[BigInt, BigInt]
   val root = BigInt(0x10000)
   val leaf = BigInt(0x11000)
