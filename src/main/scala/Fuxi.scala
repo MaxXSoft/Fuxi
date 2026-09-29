@@ -4,7 +4,7 @@ import circt.stage.ChiselStage
 
 import io._
 import axi.AxiMaster
-import consts.Parameters.{ADDR_WIDTH, DATA_WIDTH}
+import consts.Parameters.{ADDR_WIDTH, DATA_WIDTH, FETCH_QUEUE_DEPTH}
 
 import core.Core
 import bus.CoreBus
@@ -21,7 +21,7 @@ class Fuxi extends Module {
     val uncached  = new AxiMaster(ADDR_WIDTH, DATA_WIDTH)
   })
 
-  val core    = Module(new Core)
+  val core    = Module(new Core(FETCH_QUEUE_DEPTH))
   val coreBus = Module(new CoreBus)
 
   core.io.irq   <> io.irq

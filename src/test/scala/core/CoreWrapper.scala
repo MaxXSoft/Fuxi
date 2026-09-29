@@ -1,6 +1,7 @@
 package core
 
 import chisel3._
+import consts.Parameters.FETCH_QUEUE_DEPTH
 import io.DebugIO
 import sim.{RAM, ROM}
 
@@ -9,7 +10,7 @@ class CoreWrapper(init: ROM.Init, fenceFault: Boolean = false) extends Module {
   def this(words: Seq[BigInt]) = this(ROM.Words(words))
 
   val io    = IO(new DebugIO)
-  val core  = Module(new Core)
+  val core  = Module(new Core(FETCH_QUEUE_DEPTH))
   val rom   = Module(new ROM(init))
   val ram   = Module(new RAM)
 

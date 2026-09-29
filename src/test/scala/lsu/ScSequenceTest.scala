@@ -9,7 +9,7 @@ import utils.{PeekPokeTester, TestDriver}
 
 class ScSequenceHarness(gap: Int, interveningSc: Boolean) extends Module {
   val io = IO(new DebugIO)
-  val core = Module(new Core)
+  val core = Module(new Core(FETCH_QUEUE_DEPTH))
   val ram = Module(new sim.RAM)
   def addi(rd: Int, rs: Int, imm: Int): BigInt = BigInt(((imm & 4095) << 20) | (rs << 15) | (rd << 7) | 0x13)
   def sw(rs: Int, base: Int): BigInt = BigInt((rs << 20) | (base << 15) | (2 << 12) | 0x23)

@@ -10,7 +10,7 @@ import csr.CsrFile
 import lsu.ExclusiveMonitor
 import consts.Paging.PPN_WIDTH
 
-class Core(fetchQueueDepth: Int = 4) extends Module {
+class Core(val fetchQueueDepth: Int) extends Module {
   val io = IO(new Bundle {
     // interrupt request
     val irq   = new InterruptIO

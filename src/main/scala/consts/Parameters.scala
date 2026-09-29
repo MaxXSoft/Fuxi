@@ -45,4 +45,7 @@ object Parameters {
   // uncached address space
   val UNCACHED_ADDR_START = "h10000000".U(ADDR_WIDTH.W)
   val UNCACHED_ADDR_END   = "h20000000".U(ADDR_WIDTH.W)
+
+  // instruction fetch
+  val FETCH_QUEUE_DEPTH = 4
 }

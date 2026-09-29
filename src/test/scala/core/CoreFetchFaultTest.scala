@@ -23,7 +23,7 @@ private[core] class CoreFetchFaultWrapper extends Module {
     val trapCause = Output(UInt(32.W))
     val trapValue = Output(UInt(32.W))
   })
-  val core = Module(new Core)
+  val core = Module(new Core(FETCH_QUEUE_DEPTH))
   val bus = Module(new CoreBus)
   core.io.irq.timer := false.B
   core.io.irq.soft := false.B
