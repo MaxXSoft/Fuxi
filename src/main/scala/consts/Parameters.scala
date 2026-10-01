@@ -22,6 +22,7 @@ object Parameters {
   val BTB_PC_WIDTH      = ADDR_WIDTH - BTB_INDEX_WIDTH - INST_ALIGN_WIDTH
   val BTB_TARGET_WIDTH  = ADDR_WIDTH - INST_ALIGN_WIDTH
   val BTB_SIZE          = 1 << BTB_INDEX_WIDTH
+  val RAS_SIZE          = 16
 
   // exception
   val RESET_PC  = "h00000200".U(ADDR_WIDTH.W)

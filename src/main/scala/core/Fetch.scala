@@ -74,6 +74,10 @@ class Fetch extends Module {
                     Mux(pc(1), Cat(second.data(15, 0), parcel), first.data))
   val sequentialPc = pc + Mux(compressed, 2.U, 4.U)
   val emit = instructionValid && !io.stall
+  bpu.io.lookupInst := instruction
+  bpu.io.lookupValid := instructionValid && !instructionFault
+  bpu.io.advance := emit && !io.flush
+  bpu.io.flush := io.flush
   val predictedRedirect = emit && !instructionFault && bpu.io.predTaken &&
                           bpu.io.predTarget =/= sequentialPc
   val redirect = io.flush || predictedRedirect

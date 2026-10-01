@@ -57,7 +57,11 @@ jobs:
         sbt "Test / runMain utils.CoreWritebackLoopTest"
 
     - name: Test BPU
-      run: sbt "Test / runMain bpu.BranchPredictorTest" "Test / runMain bpu.DecoderTrainingTest"
+      run: >-
+        sbt "Test / runMain bpu.BranchPredictorTest"
+        "Test / runMain bpu.DecoderTrainingTest"
+        "Test / runMain bpu.ReturnAddressStackTest"
+        "Test / runMain bpu.RasPredictionTest"
 
     - name: Test CSR
       run: >-
@@ -87,6 +91,7 @@ jobs:
     - name: Test Core Stages
       run: |
         sbt "Test / runMain core.stages.FetchTest"
+        sbt "Test / runMain core.stages.FetchRasTest"
         sbt "Test / runMain core.stages.CompressedDecoderTest"
         sbt "Test / runMain core.stages.DecoderTest"
         sbt "Test / runMain core.stages.AluTest"
@@ -111,6 +116,7 @@ jobs:
         sbt "Test / runMain core.integration.CoreRetirementTest"
         sbt "Test / runMain core.integration.CoreInstretReadTest"
         sbt "Test / runMain core.integration.CoreCompressedTest"
+        sbt "Test / runMain core.integration.CoreRasTest"
         sbt "Test / runMain core.integration.CoreFetchFaultTest"
         sbt "Test / runMain core.integration.CoreTest -if src/test/resources/fib.txt -tf src/test/resources/fib_trace.txt"
         sbt "Test / runMain core.integration.CoreTest -if src/test/resources/mdu.txt -tf src/test/resources/mdu_trace.txt"

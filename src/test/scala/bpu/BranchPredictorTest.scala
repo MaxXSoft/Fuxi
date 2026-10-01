@@ -7,6 +7,10 @@ object InstType extends Enumeration {
 }
 
 class BpUnitTester(c: BranchPredictor) extends PeekPokeTester(c) {
+  poke(c.io.lookupInst, 0x13)
+  poke(c.io.lookupValid, false)
+  poke(c.io.advance, false)
+  poke(c.io.flush, false)
   val pcSeq = Array(
     //   pc        br   taken    target
     (0x00000200, false, false, 0x00000000),
