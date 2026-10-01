@@ -35,6 +35,10 @@ class DecoderTrainingHarness extends Module {
   // These PC index bits are zero, so predIndex exposes the GHR through the
   // actual predictor lookup without relying on internal register names.
   predictor.io.lookupPc := 0x200.U
+  predictor.io.lookupInst := 0.U
+  predictor.io.lookupValid := false.B
+  predictor.io.advance := false.B
+  predictor.io.flush := false.B
   io.branch := decoder.io.branch.branch
   io.jump := decoder.io.branch.jump
   io.taken := decoder.io.branch.taken

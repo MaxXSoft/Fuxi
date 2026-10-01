@@ -36,6 +36,14 @@ With default configuration (historical data, evaluated on Fuxi 0.0.1):
 
 The frontend fetches aligned 32-bit words, assembles mixed 16/32-bit instructions, and expands compressed instructions before the existing decoder. A four-entry instruction FIFO decouples fetch from decode; each entry retains its PC, prediction snapshot, raw instruction, and precise fetch-fault address. Both 16-bit and 32-bit instructions may start at a halfword boundary. Split-page instructions translate each page independently and report the faulting parcel in `mtval`/`stval` while keeping the instruction start in `mepc`/`sepc`.
 
+A 16-entry return-address stack (RAS) complements the gshare predictor and BTB.
+Fetch predecodes the RISC-V `x1`/`x5` call/return hints, including compressed
+forms, and updates the RAS once per accepted instruction. Returns use the old
+stack top even without a BTB hit; an empty RAS falls back to the BTB. Overflow
+discards the oldest entry. Backend flushes clear all RAS history, while normal
+predicted jumps preserve it. This simple recovery can lose valid outer return
+addresses after a misprediction or trap; Decode always checks the actual target.
+
 ## Getting Started
 
 Fuxi currently targets Chisel 7.13.0 and Scala 2.13.18. JDK 17 and sbt are recommended for building it; running the unit tests also requires Verilator.
