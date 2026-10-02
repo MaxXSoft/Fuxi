@@ -13,6 +13,7 @@ abstract class CsrRegressionTester(c: CsrFile) extends PeekPokeTester(c) {
     poke(c.io.write.addr, 0)
     poke(c.io.write.data, 0)
     poke(c.io.write.retired, false)
+    poke(c.io.perfEvents, 0)
     poke(c.io.irq.timer, false)
     poke(c.io.irq.soft, false)
     poke(c.io.irq.extern, false)

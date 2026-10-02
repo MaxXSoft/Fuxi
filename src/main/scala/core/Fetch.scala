@@ -26,6 +26,9 @@ class Fetch extends Module {
     val branch    = Input(new BranchInfoIO)
     // to next stage
     val fetch     = Output(new FetchIO)
+    val rasOverflow = Output(Bool())
+    val rasEmptyPop = Output(Bool())
+    val rasClearNonempty = Output(Bool())
   })
 
   val pc = RegInit(RESET_PC)
@@ -92,6 +95,11 @@ class Fetch extends Module {
   io.fetch.taken := bpu.io.predTaken
   io.fetch.target := bpu.io.predTarget
   io.fetch.predIndex := bpu.io.predIndex
+  io.fetch.rasCandidate := bpu.io.rasCandidate
+  io.fetch.rasUsed := bpu.io.rasUsed
+  io.rasOverflow := bpu.io.pmu.overflow
+  io.rasEmptyPop := bpu.io.pmu.emptyPop
+  io.rasClearNonempty := bpu.io.pmu.clearNonempty
   io.fetch.pageFault := pageFault
   io.fetch.accessFault := accessFault
   io.fetch.faultAddr := Mux(split, pc + 2.U, pc)

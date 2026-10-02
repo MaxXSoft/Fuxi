@@ -77,11 +77,11 @@ class HazardResolver extends Module {
       CSR_SSTATUS -> CSR_MSTATUS,
       CSR_SIE -> CSR_MIE,
       CSR_SIP -> CSR_MIP,
-      CSR_CYCLE -> CSR_MCYCLE,
-      CSR_CYCLEH -> CSR_MCYCLEH,
-      CSR_INSTRET -> CSR_MINSTRET,
-      CSR_INSTRETH -> CSR_MINSTRETH,
     )
+    def isCounter(addr: UInt): Bool =
+      (addr(11, 8) === 0xb.U || addr(11, 8) === 0xc.U) &&
+        addr(6, 5) === 0.U && addr(4, 0) =/= 1.U
+    val readsCounter = isCounter(read.addr)
     def dependsOn(write: CsrCommitIO): Bool = {
       val alias = aliases.map { case (a, b) =>
         (read.addr === a && write.addr === b) ||
@@ -90,16 +90,25 @@ class HazardResolver extends Module {
       // Delegation changes the readable SIE/SIP view without changing MIE/MIP.
       val delegatedView = write.addr === CSR_MIDELEG &&
         (read.addr === CSR_SIE || read.addr === CSR_SIP)
+      // The two halves and machine/user views name one 64-bit counter. A
+      // half write suppresses that cycle's increment of the entire counter.
+      val counterAlias = readsCounter && isCounter(write.addr) &&
+        read.addr(4, 0) === write.addr(4, 0)
+      val counterConfig = readsCounter && (write.addr === CSR_MCOUNTINHIBIT ||
+        (write.addr >= CSR_MHPMEVENT(3) && write.addr <= CSR_MHPMEVENT(31) &&
+          read.addr(4, 0) === write.addr(4, 0)))
+      val counterAccess = read.addr(11, 8) === 0xc.U &&
+        (write.addr === CSR_MCOUNTEREN || write.addr === CSR_SCOUNTEREN)
       write.op =/= CSR_NOP && write.op =/= CSR_R &&
-        (read.addr === write.addr || alias || delegatedView)
+        (read.addr === write.addr || alias || delegatedView || counterAlias ||
+          counterConfig || counterAccess)
     }
     val isRead = read.op =/= CSR_NOP && read.op =/= CSR_W
-    // Every preceding instruction implicitly writes minstret when it retires.
-    // Drain MEM/WB before taking a software snapshot, including high-half
-    // reads that can observe a carry. The current EX instruction is excluded.
-    val readsInstret = Seq(CSR_INSTRET, CSR_INSTRETH, CSR_MINSTRET, CSR_MINSTRETH)
-      .map(read.addr === _).reduce(_ || _)
-    val retirementHazard = readsInstret && (io.memCsr.retired || io.wbCsr.retired)
+    // Retired instructions implicitly write instret and may produce HPM
+    // events. Drain MEM/WB for either snapshot, including high-half carries.
+    val readsRetirementCounter = readsCounter && read.addr(4, 0) >= 2.U
+    val retirementHazard = readsRetirementCounter &&
+      (io.memCsr.retired || io.wbCsr.retired)
     isRead && (dependsOn(io.memCsr) || dependsOn(io.wbCsr) || retirementHazard)
   }
 

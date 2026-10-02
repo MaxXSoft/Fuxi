@@ -53,6 +53,7 @@ class CoreBus extends Module {
     val data      = new AxiMaster(ADDR_WIDTH, DATA_WIDTH)
     // uncached AXI interface
     val uncached  = new AxiMaster(ADDR_WIDTH, DATA_WIDTH)
+    val pmu       = Output(new BusPerformanceIO)
   })
 
   // Assert instruction width is equal to data width.
@@ -131,4 +132,20 @@ class CoreBus extends Module {
   io.ram.valid       := dmmu.io.accessFault || ddemux.io.in2.valid
   io.ram.fault       := dmmu.io.fault
   io.ram.accessFault := dmmu.io.accessFault || ddemux.io.in2.accessFault
+
+  io.pmu.icacheAccess := icache.io.pmu.access
+  io.pmu.icacheMiss := icache.io.pmu.miss
+  io.pmu.icacheBusy := icache.io.pmu.busy
+  io.pmu.icacheWalkAccess := icache.io.pmu.access && !idemux.io.sel2
+  io.pmu.icacheWalkMiss := icache.io.pmu.miss && !idemux.io.sel2
+  io.pmu.dcacheAccess := dcache.io.pmu.access
+  io.pmu.dcacheMiss := dcache.io.pmu.miss
+  io.pmu.dcacheBusy := dcache.io.pmu.busy
+  io.pmu.dcacheWriteback := dcache.io.pmu.writeback
+  io.pmu.dcacheWalkAccess := dcache.io.pmu.access && !ddemux.io.sel2
+  io.pmu.dcacheWalkMiss := dcache.io.pmu.miss && !ddemux.io.sel2
+  io.pmu.itlbMiss := immu.io.pmu.miss
+  io.pmu.itlbWalkCycle := immu.io.pmu.walkCycle
+  io.pmu.dtlbMiss := dmmu.io.pmu.miss
+  io.pmu.dtlbWalkCycle := dmmu.io.pmu.walkCycle
 }

@@ -52,6 +52,14 @@ The frontend fetches aligned 32-bit words, assembles mixed 16/32-bit instruction
 
 A 16-entry return-address stack (RAS) complements the gshare predictor and BTB. Fetch predecodes the RISC-V `x1`/`x5` call/return hints, including compressed forms, and updates the RAS once per accepted instruction. Returns use the old stack top even without a BTB hit; an empty RAS falls back to the BTB. Overflow discards the oldest entry. Backend flushes clear all RAS history, while normal predicted jumps preserve it. This simple recovery can lose valid outer return addresses after a misprediction or trap; Decode always checks the actual target.
 
+### Performance Counters
+
+The core provides eight programmable 64-bit performance counters by default,
+alongside cycle/instret, with 44 selectable events covering retired branches,
+RAS predictions, pipeline stalls, caches, and page walks. See the
+[PMU event and CSR guide](docs/performance-counters.md) for event definitions,
+measurement boundaries, and the configurable counter count.
+
 ## Running Tests
 
 See [the test layout and support guide](src/test/README.md) for directory organization and shared helpers.

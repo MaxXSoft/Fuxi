@@ -19,6 +19,7 @@ class DataCache extends Module {
     val flushAccessFault = Output(Bool())
     // AXI interface
     val axi   = new AxiMaster(ADDR_WIDTH, DATA_WIDTH)
+    val pmu   = Output(new CachePerformanceIO)
   })
 
   // some constants
@@ -248,6 +249,12 @@ class DataCache extends Module {
   io.sram.fault       := false.B
   io.sram.accessFault := state === sAccessFault
   io.sram.rdata       := lines.io.rdata
+
+  io.pmu.access := io.sram.en && io.sram.valid
+  io.pmu.miss := state === sIdle && !(io.flush && isDirty) &&
+                 io.sram.en && !cacheHit
+  io.pmu.busy := state =/= sIdle
+  io.pmu.writeback := io.axi.writeAddr.valid && io.axi.writeAddr.ready
 
   // Cache-maintenance completion is independent of the demand SRAM path, so
   // MMU and cached/uncached routing cannot hide it.  Fault is intentionally

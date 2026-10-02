@@ -17,6 +17,22 @@ class StageIO extends Bundle {
   def default() = 0.U.asTypeOf(this)
 }
 
+// Prediction metadata belongs to the instruction that was fetched. Keep it
+// through stalls and discard it with the instruction on a pipeline flush.
+class RetirePerformanceIO extends Bundle {
+  val branch = Bool()
+  val jal = Bool()
+  val jalr = Bool()
+  val miss = Bool()
+  val directionMiss = Bool()
+  val targetMiss = Bool()
+  val rasCandidate = Bool()
+  val rasUsed = Bool()
+  val compressed = Bool()
+  val load = Bool()
+  val store = Bool()
+}
+
 // IF stage
 class FetchIO extends StageIO {
   // instruction info
@@ -27,6 +43,8 @@ class FetchIO extends StageIO {
   val taken     = Bool()
   val target    = UInt(ADDR_WIDTH.W)
   val predIndex = UInt(GHR_WIDTH.W)
+  val rasCandidate = Bool()
+  val rasUsed = Bool()
   // instruction fetch page fault
   val pageFault = Bool()
   // instruction fetch physical access fault
@@ -36,6 +54,7 @@ class FetchIO extends StageIO {
 
 // ID stage
 class DecoderIO extends StageIO {
+  val perf = new RetirePerformanceIO
   // to ALU/MDU
   val aluOp     = UInt(ALU_OP_WIDTH.W)
   val opr1      = UInt(DATA_WIDTH.W)
@@ -62,6 +81,7 @@ class DecoderIO extends StageIO {
 
 // EX stage
 class AluIO extends StageIO {
+  val perf = new RetirePerformanceIO
   // to Mem (LSU)
   val lsuOp     = UInt(LSU_OP_WIDTH.W)
   val lsuData   = UInt(DATA_WIDTH.W)
@@ -80,6 +100,7 @@ class AluIO extends StageIO {
 
 // MEM stage
 class MemIO extends StageIO {
+  val perf = new RetirePerformanceIO
   // to write back
   val reg       = new RegCommitIO
   val memSigned = Bool()

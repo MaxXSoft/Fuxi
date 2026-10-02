@@ -9,8 +9,9 @@ import utils._
 import csr.CsrFile
 import lsu.ExclusiveMonitor
 import consts.Paging.PPN_WIDTH
+import consts.PerfEvent._
 
-class Core(val fetchQueueDepth: Int) extends Module {
+class Core(val fetchQueueDepth: Int, val hpmCount: Int = 8) extends Module {
   val io = IO(new Bundle {
     // interrupt request
     val irq   = new InterruptIO
@@ -23,6 +24,7 @@ class Core(val fetchQueueDepth: Int) extends Module {
     val ram   = new SramIO(ADDR_WIDTH, DATA_WIDTH)
     // for trace generating
     val debug = new DebugIO
+    val busPerf = Input(new BusPerformanceIO)
   })
 
   // all stages
@@ -41,7 +43,7 @@ class Core(val fetchQueueDepth: Int) extends Module {
   val regfile = Module(new RegFile)
 
   // CSR file
-  var csrfile = Module(new CsrFile)
+  val csrfile = Module(new CsrFile(hpmCount))
 
   // exclusive monitor
   val excMon  = Module(new ExclusiveMonitor)
@@ -122,6 +124,57 @@ class Core(val fetchQueueDepth: Int) extends Module {
   csrfile.io.write.retired  := wb.io.csr.retired
   csrfile.io.irq            <> io.irq
   csrfile.io.except         <> mem.io.except
+
+  // Passive event collection. Retirement gates architectural events; the
+  // other sources deliberately include speculative work and overlapping waits.
+  val events = WireInit(VecInit(Seq.fill(64)(false.B)))
+  val retired = wb.io.csr.retired
+  val p = memwb.io.next.perf
+  events(BRANCH) := retired && p.branch
+  events(BRANCH_MISS) := retired && p.branch && p.miss
+  events(BRANCH_DIRECTION_MISS) := retired && p.branch && p.directionMiss
+  events(BRANCH_TARGET_MISS) := retired && p.branch && p.targetMiss
+  events(JAL) := retired && p.jal
+  events(JAL_MISS) := retired && p.jal && p.miss
+  events(JALR) := retired && p.jalr
+  events(JALR_MISS) := retired && p.jalr && p.miss
+  events(RAS_CANDIDATE) := retired && p.jalr && p.rasCandidate
+  events(RAS_USED) := retired && p.jalr && p.rasUsed
+  events(RAS_MISS) := retired && p.jalr && p.rasUsed && p.miss
+  events(RAS_FALLBACK_MISS) := retired && p.jalr && p.rasCandidate && !p.rasUsed && p.miss
+  events(OTHER_JALR) := retired && p.jalr && !p.rasCandidate
+  events(OTHER_JALR_MISS) := retired && p.jalr && !p.rasCandidate && p.miss
+  events(COMPRESSED) := retired && p.compressed
+  events(LOAD) := retired && p.load
+  events(STORE) := retired && p.store
+  events(FRONTEND_EMPTY) := !control.io.flushIf && !control.io.stallId && !ifid.io.deq.valid
+  events(LOAD_USE_STALL) := !control.io.flush && resolve.io.loadFlag
+  events(MDU_STALL) := !control.io.flush && alu.io.stallReq
+  events(MEM_STALL) := !control.io.flush && mem.io.stallReq
+  events(CSR_STALL) := !control.io.flush && resolve.io.csrFlag
+  events(FETCH_QUEUE_FULL) := !control.io.flushIf && fetch.io.fetch.valid && !ifid.io.enq.ready
+  events(DECODE_REDIRECT) := !control.io.flush && decoder.io.flushIf
+  events(CONTEXT_FLUSH) := control.io.flush
+  events(RAS_OVERFLOW) := fetch.io.rasOverflow
+  events(RAS_EMPTY_POP) := fetch.io.rasEmptyPop
+  events(RAS_CLEAR_MISPREDICT) := fetch.io.rasClearNonempty && !control.io.flush
+  events(RAS_CLEAR_CONTEXT) := fetch.io.rasClearNonempty && control.io.flush
+  events(ICACHE_ACCESS) := io.busPerf.icacheAccess
+  events(ICACHE_MISS) := io.busPerf.icacheMiss
+  events(ICACHE_BUSY) := io.busPerf.icacheBusy
+  events(ICACHE_WALK_ACCESS) := io.busPerf.icacheWalkAccess
+  events(ICACHE_WALK_MISS) := io.busPerf.icacheWalkMiss
+  events(DCACHE_ACCESS) := io.busPerf.dcacheAccess
+  events(DCACHE_MISS) := io.busPerf.dcacheMiss
+  events(DCACHE_BUSY) := io.busPerf.dcacheBusy
+  events(DCACHE_WRITEBACK) := io.busPerf.dcacheWriteback
+  events(DCACHE_WALK_ACCESS) := io.busPerf.dcacheWalkAccess
+  events(DCACHE_WALK_MISS) := io.busPerf.dcacheWalkMiss
+  events(ITLB_MISS) := io.busPerf.itlbMiss
+  events(ITLB_WALK_CYCLE) := io.busPerf.itlbWalkCycle
+  events(DTLB_MISS) := io.busPerf.dtlbMiss
+  events(DTLB_WALK_CYCLE) := io.busPerf.dtlbWalkCycle
+  csrfile.io.perfEvents := events.asUInt
 
   // exclusive monitor
   excMon.io.flush         := control.io.flush

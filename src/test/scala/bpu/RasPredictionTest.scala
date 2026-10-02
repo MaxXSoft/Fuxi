@@ -33,6 +33,9 @@ class RasPredictionTester(c: BranchPredictor) extends PeekPokeTester(c) {
     lookup(jalr(0, 1, 0))
     expect(c.io.predTaken, address.nonEmpty)
     expect(c.io.predTarget, address.getOrElse(0L))
+    expect(c.io.rasCandidate, true)
+    expect(c.io.rasUsed, address.nonEmpty)
+    expect(c.io.pmu.emptyPop, false) // lookup alone is not an accepted pop
   }
 
   case class Hint(inst: Long, push: Boolean, pop: Boolean, bytes: Int)
@@ -72,6 +75,8 @@ class RasPredictionTester(c: BranchPredictor) extends PeekPokeTester(c) {
     execute(c_jal(12), 0xb02)
     lookup(hint.inst, advance = true)
     expect(c.io.predTaken, hint.pop)
+    expect(c.io.rasCandidate, hint.pop)
+    expect(c.io.rasUsed, hint.pop)
     if (hint.pop) expect(c.io.predTarget, 0xb04)
     step(1)
     var expected = Vector(0xa04L, 0xb04L)
@@ -92,6 +97,8 @@ class RasPredictionTester(c: BranchPredictor) extends PeekPokeTester(c) {
   execute(c_jr(1), 0x202, valid = false)
   lookup(c_jr(1), valid = false)
   expect(c.io.predTaken, false)
+  expect(c.io.rasCandidate, false)
+  expect(c.io.rasUsed, false)
   checkTop(Some(0))
   for (inst <- Seq(jal(1, 16), c_jr(1).toLong)) {
     lookup(inst)
@@ -103,6 +110,9 @@ class RasPredictionTester(c: BranchPredictor) extends PeekPokeTester(c) {
     execute(jal(1, 16), 0x200)
     lookup(inst, advance = true)
     poke(c.io.flush, true)
+    expect(c.io.pmu.overflow, false)
+    expect(c.io.pmu.emptyPop, false)
+    expect(c.io.pmu.clearNonempty, true)
     step(1)
     poke(c.io.flush, false)
     checkTop(None)
@@ -120,6 +130,12 @@ class RasPredictionTester(c: BranchPredictor) extends PeekPokeTester(c) {
   lookup(c_jr(1))
   expect(c.io.predTaken, true)
   expect(c.io.predTarget, 0xc00)
+  expect(c.io.rasCandidate, true)
+  expect(c.io.rasUsed, false) // BTB fallback does not claim RAS coverage
+  expect(c.io.pmu.emptyPop, false)
+  lookup(c_jr(1), advance = true)
+  expect(c.io.pmu.emptyPop, true)
+  lookup(c_jr(1))
   execute(c_jal(12), 0x200)
   lookup(c_jr(1))
   expect(c.io.predTarget, 0x202)

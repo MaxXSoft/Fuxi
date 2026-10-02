@@ -19,6 +19,7 @@ class CoreMemoryHarness(init: ROM.Init, depth: Int = FETCH_QUEUE_DEPTH,
     val queueCount = Output(UInt(32.W))
   })
   val core = Module(new Core(depth))
+  core.io.busPerf := 0.U.asTypeOf(core.io.busPerf)
   val rom = Module(new ROM(init))
   val ram = Module(new RAM)
   core.io.irq.timer := false.B

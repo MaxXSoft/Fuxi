@@ -9,7 +9,7 @@ import consts.Parameters.{ADDR_WIDTH, DATA_WIDTH, FETCH_QUEUE_DEPTH}
 import core.Core
 import bus.CoreBus
 
-class Fuxi extends Module {
+class Fuxi(hpmCount: Int = 8) extends Module {
   val io = IO(new Bundle {
     // interrupt request
     val irq       = new InterruptIO
@@ -21,7 +21,7 @@ class Fuxi extends Module {
     val uncached  = new AxiMaster(ADDR_WIDTH, DATA_WIDTH)
   })
 
-  val core    = Module(new Core(FETCH_QUEUE_DEPTH))
+  val core    = Module(new Core(FETCH_QUEUE_DEPTH, hpmCount))
   val coreBus = Module(new CoreBus)
 
   core.io.irq   <> io.irq
@@ -30,6 +30,7 @@ class Fuxi extends Module {
   core.io.rom   <> coreBus.io.rom
   core.io.ram   <> coreBus.io.ram
   core.io.debug <> io.debug
+  core.io.busPerf := coreBus.io.pmu
 
   coreBus.io.inst     <> io.inst
   coreBus.io.data     <> io.data
@@ -37,6 +38,12 @@ class Fuxi extends Module {
 }
 
 object Fuxi extends App {
+  // Keep the default build small; zero is useful for synthesis comparisons.
+  private val hpmOption = args.indexOf("--hpm-counters")
+  require(hpmOption < 0 || hpmOption + 1 < args.length,
+          "--hpm-counters requires a count from 0 to 29")
+  private val hpmCount = if (hpmOption < 0) 8 else args(hpmOption + 1).toInt
+  private val stageArgs = if (hpmOption < 0) args else args.patch(hpmOption, Nil, 2)
   private val firtoolOptions = Array(
     "--firtool-option", "-disable-all-randomization",
     "--firtool-option", "-strip-debug-info",
@@ -47,7 +54,7 @@ object Fuxi extends App {
   )
 
   (new ChiselStage).execute(
-    Array("--target", "verilog") ++ firtoolOptions ++ args,
-    Seq(ChiselGeneratorAnnotation(() => new Fuxi))
+    Array("--target", "verilog") ++ firtoolOptions ++ stageArgs,
+    Seq(ChiselGeneratorAnnotation(() => new Fuxi(hpmCount)))
   )
 }

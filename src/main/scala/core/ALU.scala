@@ -7,7 +7,7 @@ import io._
 import consts.AluOp._
 import consts.MduOp.MDU_NOP
 import consts.LsuOp.LSU_NOP
-import consts.CsrOp.CSR_NOP
+import consts.CsrOp.{CSR_NOP, CSR_W, CSR_RS, CSR_RC}
 import consts.ExceptType.EXC_ILLEG
 import mdu.MDU
 
@@ -56,6 +56,16 @@ class ALU extends Module {
   val retired = io.decoder.valid
   val excType = Mux(csrEn && !io.csrRead.valid,
                     EXC_ILLEG, io.decoder.excType)
+  // Counter set/clear writes use the exact snapshot returned to rd. Raw
+  // events may change a counter between EX and WB; recomputing the bit-op
+  // against its live WB value would disagree with the instruction's read.
+  // The explicit replacement still commits at WB, like a normal CSR write.
+  val counterAddr = io.decoder.csrAddr(11, 8) === 0xb.U &&
+    io.decoder.csrAddr(6, 5) === 0.U && io.decoder.csrAddr(4, 0) =/= 1.U
+  val counterRmw = counterAddr &&
+    (io.decoder.csrOp === CSR_RS || io.decoder.csrOp === CSR_RC)
+  val counterData = Mux(io.decoder.csrOp === CSR_RS,
+    io.csrRead.data | io.decoder.csrData, io.csrRead.data & ~io.decoder.csrData)
 
   // commit to write back
   val result  = Mux(csrEn, io.csrRead.data,
@@ -70,15 +80,16 @@ class ALU extends Module {
   io.csrRead.addr := io.decoder.csrAddr
 
   // signals to next stage
+  io.alu.perf         := io.decoder.perf
   io.alu.lsuOp        := io.decoder.lsuOp
   io.alu.lsuData      := io.decoder.lsuData
   io.alu.reg.en       := io.decoder.regWen
   io.alu.reg.addr     := io.decoder.regWaddr
   io.alu.reg.data     := result
   io.alu.reg.load     := load
-  io.alu.csr.op       := io.decoder.csrOp
+  io.alu.csr.op       := Mux(counterRmw, CSR_W, io.decoder.csrOp)
   io.alu.csr.addr     := io.decoder.csrAddr
-  io.alu.csr.data     := io.decoder.csrData
+  io.alu.csr.data     := Mux(counterRmw, counterData, io.decoder.csrData)
   io.alu.csr.retired  := retired
   io.alu.excType      := excType
   io.alu.excValue     := io.decoder.excValue
