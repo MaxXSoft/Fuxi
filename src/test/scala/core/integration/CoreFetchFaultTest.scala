@@ -19,6 +19,7 @@ private[core] class CoreFetchFaultWrapper extends Module {
     val uncached = new AxiMaster(ADDR_WIDTH, DATA_WIDTH)
   })
   val core = Module(new Core(FETCH_QUEUE_DEPTH))
+  core.io.busPerf := 0.U.asTypeOf(core.io.busPerf)
   val bus = Module(new CoreBus)
   core.io.irq.timer := false.B
   core.io.irq.soft := false.B

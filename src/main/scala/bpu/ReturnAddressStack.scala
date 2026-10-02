@@ -4,6 +4,7 @@ import chisel3._
 import chisel3.util._
 
 import consts.Parameters.ADDR_WIDTH
+import io.RasPerformanceIO
 
 // A bounded speculative stack. Overflow discards the oldest return address;
 // underflow supplies no prediction. Backend flushes discard all history.
@@ -17,6 +18,7 @@ class ReturnAddressStack(depth: Int) extends Module {
     val pushAddr = Input(UInt(ADDR_WIDTH.W))
     val valid = Output(Bool())
     val top = Output(UInt(ADDR_WIDTH.W))
+    val pmu = Output(new RasPerformanceIO)
   })
 
   val entries = Reg(Vec(depth, UInt(ADDR_WIDTH.W)))
@@ -28,6 +30,9 @@ class ReturnAddressStack(depth: Int) extends Module {
 
   io.valid := nonEmpty
   io.top := Mux(nonEmpty, entry(previous), 0.U)
+  io.pmu.overflow := !io.flush && io.push && !io.pop && count === depth.U
+  io.pmu.emptyPop := !io.flush && io.pop && !nonEmpty
+  io.pmu.clearNonempty := io.flush && nonEmpty
 
   when (io.flush) {
     next := 0.U

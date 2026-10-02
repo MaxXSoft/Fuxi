@@ -16,6 +16,7 @@ class InstCache extends Module {
     val flush = Input(Bool())
     // AXI interface
     val axi   = new AxiMaster(ADDR_WIDTH, INST_WIDTH)
+    val pmu   = Output(new CachePerformanceIO)
   })
 
   // some constants
@@ -122,6 +123,11 @@ class InstCache extends Module {
   io.sram.fault       := false.B
   io.sram.accessFault := accessFault
   io.sram.rdata       := lines.read(lineDataSel)
+
+  io.pmu.access := io.sram.en && io.sram.valid
+  io.pmu.miss := state === sIdle && !io.flush && io.sram.en && !cacheHit
+  io.pmu.busy := state =/= sIdle
+  io.pmu.writeback := false.B
 
   // AXI signals
   io.axi.init()

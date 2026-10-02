@@ -55,6 +55,7 @@ jobs:
         sbt "Test / runMain utils.CoreTestSupportTest"
         sbt "Test / runMain utils.AxiTestSupportTest"
         sbt "Test / runMain utils.CoreWritebackLoopTest"
+        sbt "Test / runMain utils.HazardResolverTest"
 
     - name: Test BPU
       run: >-
@@ -70,6 +71,7 @@ jobs:
         "Test / runMain csr.CsrPendingTest"
         "Test / runMain csr.CsrDelegationTest"
         "Test / runMain csr.CsrCounterAccessTest"
+        "Test / runMain csr.CsrPerformanceTest"
 
     - name: Test LSU
       run: |
@@ -105,6 +107,7 @@ jobs:
         sbt "Test / runMain bus.UncachedTest"
         sbt "Test / runMain bus.CoreBusTest"
         sbt "Test / runMain bus.InstCacheTest"
+        sbt "Test / runMain bus.PerformanceEventsTest"
 
     - name: Test peripheral AXI handshakes
       run: soc/tests/run.sh
@@ -117,6 +120,8 @@ jobs:
         sbt "Test / runMain core.integration.CoreInstretReadTest"
         sbt "Test / runMain core.integration.CoreCompressedTest"
         sbt "Test / runMain core.integration.CoreRasTest"
+        sbt "Test / runMain core.integration.CorePerformanceTest"
+        sbt "Test / runMain core.integration.CoreHpmReadTest"
         sbt "Test / runMain core.integration.CoreFetchFaultTest"
         sbt "Test / runMain core.integration.CoreTest -if src/test/resources/fib.txt -tf src/test/resources/fib_trace.txt"
         sbt "Test / runMain core.integration.CoreTest -if src/test/resources/mdu.txt -tf src/test/resources/mdu_trace.txt"

@@ -12,6 +12,9 @@ All notable changes to the Fuxi will be documented in this file.
 - Added split-page fetch handling with precise fault addresses.
 - Added reusable test infrastructure and its regressions.
 - Added a speculative fetch return-address stack with flush-based recovery.
+- Added configurable 64-bit HPM counters with 44 branch/RAS, pipeline,
+  cache, and translation events, plus counter access and inhibit controls.
+- Added CSR, pipeline retirement, and local PMU event regressions.
 
 ### Changed
 

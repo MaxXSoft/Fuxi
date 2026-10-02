@@ -18,6 +18,14 @@ object CSR {
   val CSR_CYCLEH      = 0xc80.U(CSR_ADDR_WIDTH.W)
   val CSR_TIMEH       = 0xc81.U(CSR_ADDR_WIDTH.W)
   val CSR_INSTRETH    = 0xc82.U(CSR_ADDR_WIDTH.W)
+  def CSR_HPMCOUNTER(n: Int): UInt = {
+    require(n >= 3 && n <= 31)
+    (0xc00 + n).U(CSR_ADDR_WIDTH.W)
+  }
+  def CSR_HPMCOUNTERH(n: Int): UInt = {
+    require(n >= 3 && n <= 31)
+    (0xc80 + n).U(CSR_ADDR_WIDTH.W)
+  }
   // supervisor trap setup
   val CSR_SSTATUS     = 0x100.U(CSR_ADDR_WIDTH.W)
   val CSR_SIE         = 0x104.U(CSR_ADDR_WIDTH.W)
@@ -76,6 +84,18 @@ object CSR {
   val CSR_MINSTRET    = 0xb02.U(CSR_ADDR_WIDTH.W)
   val CSR_MCYCLEH     = 0xb80.U(CSR_ADDR_WIDTH.W)
   val CSR_MINSTRETH   = 0xb82.U(CSR_ADDR_WIDTH.W)
+  def CSR_MHPMCOUNTER(n: Int): UInt = {
+    require(n >= 3 && n <= 31)
+    (0xb00 + n).U(CSR_ADDR_WIDTH.W)
+  }
+  def CSR_MHPMCOUNTERH(n: Int): UInt = {
+    require(n >= 3 && n <= 31)
+    (0xb80 + n).U(CSR_ADDR_WIDTH.W)
+  }
   // machine counter setup
   val CSR_MCOUNTINHIBIT = 0x320.U(CSR_ADDR_WIDTH.W)
+  def CSR_MHPMEVENT(n: Int): UInt = {
+    require(n >= 3 && n <= 31)
+    (0x320 + n).U(CSR_ADDR_WIDTH.W)
+  }
 }
