@@ -32,6 +32,12 @@ With default configuration (historical data, evaluated on Fuxi 0.0.1):
 * **Dhrystone 2.1**: 0.60 DMIPS/MHz.
 * **CoreMark**: 2.15 CoreMark/MHz.
 
+The core provides eight programmable 64-bit performance counters by default,
+alongside cycle/instret, with 44 selectable events covering retired branches,
+RAS predictions, pipeline stalls, caches, and page walks. See the
+[PMU event and CSR guide](docs/performance-counters.md) for event definitions,
+measurement boundaries, and the configurable counter count.
+
 ## Instruction Frontend
 
 The frontend fetches aligned 32-bit words, assembles mixed 16/32-bit instructions, and expands compressed instructions before the existing decoder. A four-entry instruction FIFO decouples fetch from decode; each entry retains its PC, prediction snapshot, raw instruction, and precise fetch-fault address. Both 16-bit and 32-bit instructions may start at a halfword boundary. Split-page instructions translate each page independently and report the faulting parcel in `mtval`/`stval` while keeping the instruction start in `mepc`/`sepc`.

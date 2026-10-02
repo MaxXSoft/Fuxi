@@ -15,6 +15,9 @@ class ReturnAddressStackTester(c: ReturnAddressStack, depth: Int) extends PeekPo
     poke(c.io.pop, pop)
     poke(c.io.pushAddr, address)
     check() // simultaneous pop/push must still expose the old top
+    expect(c.io.pmu.overflow, !flush && push && !pop && expected.size == depth)
+    expect(c.io.pmu.emptyPop, !flush && pop && expected.isEmpty)
+    expect(c.io.pmu.clearNonempty, flush && expected.nonEmpty)
     if (flush) expected = Vector.empty
     else {
       if (pop && expected.nonEmpty) expected = expected.init
