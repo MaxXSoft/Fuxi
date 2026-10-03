@@ -139,6 +139,7 @@ class Fetch extends Module {
   io.rom.en := requestActive || steerRequest || (room && !faultBlocked)
   io.rom.addr := Mux(steerRequest, alignedTarget, requestAddr)
   io.rom.wen := 0.U
+  io.rom.size := log2Ceil(INST_WIDTH / 8).U
   io.rom.wdata := 0.U
 
   val accepted = io.rom.en && io.rom.valid

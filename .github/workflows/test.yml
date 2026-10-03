@@ -127,6 +127,7 @@ jobs:
         sbt "Test / runMain core.integration.CoreFetchFaultTest"
         sbt "Test / runMain core.integration.CorePrivilegeTest"
         sbt "Test / runMain core.integration.CoreSatpTest"
+        sbt "Test / runMain core.integration.CoreMmioWidthTest"
         sbt "Test / runMain core.integration.CoreTest -if src/test/resources/fib.txt -tf src/test/resources/fib_trace.txt"
         sbt "Test / runMain core.integration.CoreTest -if src/test/resources/mdu.txt -tf src/test/resources/mdu_trace.txt"
         sbt "Test / runMain core.integration.CoreTest -if src/test/resources/mecall.txt -tf src/test/resources/mecall_trace.txt"

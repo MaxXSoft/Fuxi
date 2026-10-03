@@ -36,6 +36,7 @@ class AtomicPermissionHarness extends Module {
   bus.io.rom.en := false.B
   bus.io.rom.wen := 0.U
   bus.io.rom.addr := 0.U
+  bus.io.rom.size := 2.U
   bus.io.rom.wdata := 0.U
   bus.io.tlb.en := true.B
   bus.io.tlb.dataEn := true.B

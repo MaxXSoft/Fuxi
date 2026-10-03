@@ -47,6 +47,10 @@ the writable `mip.STIP` and `mip.SSIP` bits. Counter access from S/U mode is
 controlled by `mcounteren`/`scounteren`; `mcountinhibit` does not stop the
 platform clock.
 
+Uncached AXI accesses preserve the load/store byte address and transfer size,
+so reading a byte-sized MMIO register does not read neighbouring registers.
+Cache refills and page-table reads remain word-sized.
+
 ## Performance
 
 With default configuration (historical data, evaluated on Fuxi 0.0.1):
