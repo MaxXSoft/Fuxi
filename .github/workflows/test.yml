@@ -126,6 +126,7 @@ jobs:
         "Test / runMain core.integration.CoreHpmReadTest"
         "Test / runMain core.integration.CoreFetchFaultTest"
         "Test / runMain core.integration.CorePrivilegeTest"
+        "Test / runMain core.integration.CoreSatpTest"
         "Test / runMain core.integration.CoreTest -if src/test/resources/fib.txt -tf src/test/resources/fib_trace.txt"
         "Test / runMain core.integration.CoreTest -if src/test/resources/mdu.txt -tf src/test/resources/mdu_trace.txt"
         "Test / runMain core.integration.CoreTest -if src/test/resources/mecall.txt -tf src/test/resources/mecall_trace.txt"
