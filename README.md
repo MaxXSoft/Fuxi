@@ -33,9 +33,31 @@ $ make
 
 Fuxi processor is designed for running [GeeOS](https://github.com/MaxXSoft/GeeOS), or other simple operating systems or bare-metal software. Considering the complexity, the following functions has not yet been implemented:
 
-* Memory privilege in `mstatus` register: `MPRV` bit and `MXR` bit are hardwired to 0.
 * Virtualization support in `mstatus` register: `TVM` bit, `TW` bit and `TSR` bit are hardwired to 0.
 * Physical Memory Protection: all PMP registers are hardwired to 0.
+
+## Platform Integration
+
+The core supports Sv32 with software-managed accessed/dirty bits. `MPRV`
+selects the privilege used for data accesses, while `SUM` and `MXR` control
+supervisor access to user pages and loads from executable pages. Instruction
+fetch always uses the current privilege. `mstatush` is a writable WARL-zero
+CSR: the hart is little-endian and has no hypervisor or double-trap state.
+
+`FuxiWrapper` expects the platform to supply these inputs:
+
+| Input | Meaning |
+| - | - |
+| `rtc_time[63:0]` | Platform real-time counter, shared with the timer peripheral and exposed through `time`/`timeh`. |
+| `irq_extern` | Machine external interrupt pending (`MEIP`). |
+| `irq_sextern` | Supervisor external interrupt pending (`SEIP`). |
+| `irq_timer` | Machine timer interrupt pending (`MTIP`). |
+| `irq_soft` | Machine software interrupt pending (`MSIP`). |
+
+Machine firmware forwards timer/software events to supervisor mode through
+the writable `mip.STIP` and `mip.SSIP` bits. Counter access from S/U mode is
+controlled by `mcounteren`/`scounteren`; `mcountinhibit` does not stop the
+platform clock.
 
 ## Performance
 
