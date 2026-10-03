@@ -72,6 +72,7 @@ jobs:
         "Test / runMain csr.CsrDelegationTest"
         "Test / runMain csr.CsrCounterAccessTest"
         "Test / runMain csr.CsrTimeTest"
+        "Test / runMain csr.CsrPrivilegeTest"
         "Test / runMain csr.CsrPerformanceTest"
 
     - name: Test LSU
@@ -124,6 +125,7 @@ jobs:
         sbt "Test / runMain core.integration.CorePerformanceTest"
         sbt "Test / runMain core.integration.CoreHpmReadTest"
         sbt "Test / runMain core.integration.CoreFetchFaultTest"
+        sbt "Test / runMain core.integration.CorePrivilegeTest"
         sbt "Test / runMain core.integration.CoreTest -if src/test/resources/fib.txt -tf src/test/resources/fib_trace.txt"
         sbt "Test / runMain core.integration.CoreTest -if src/test/resources/mdu.txt -tf src/test/resources/mdu_trace.txt"
         sbt "Test / runMain core.integration.CoreTest -if src/test/resources/mecall.txt -tf src/test/resources/mecall_trace.txt"

@@ -23,6 +23,10 @@ class SramIO(val addrWidth: Int, val dataWidth: Int) extends Bundle {
 class TlbControlIO(val ppnWidth: Int) extends Bundle {
   // enable address translation
   val en        = Output(Bool())
+  // Data accesses can use MPP through MPRV while instruction fetch stays in M.
+  val dataEn    = Output(Bool())
+  val dataSmode = Output(Bool())
+  val mxr       = Output(Bool())
   // Architectural store intent, independent of the current byte strobes.
   val dataWrite = Output(Bool())
   // flush signals

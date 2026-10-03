@@ -7,6 +7,7 @@ class MmuUnitTester(c: MMU) extends PeekPokeTester(c) {
   poke(c.io.flush, false)
   poke(c.io.basePpn, 0x100)
   poke(c.io.sum, false)
+  poke(c.io.mxr, false)
   poke(c.io.smode, false)
   poke(c.io.lookup, true)
   poke(c.io.write, false)
@@ -50,6 +51,7 @@ class MmuRedirectTester(c: MMU) extends PeekPokeTester(c) {
   poke(c.io.flush, false)
   poke(c.io.basePpn, rootPpn)
   poke(c.io.sum, false)
+  poke(c.io.mxr, false)
   poke(c.io.smode, true)
   poke(c.io.lookup, false)
   poke(c.io.write, false)
@@ -175,6 +177,7 @@ class MmuPrivilegeTester(c: MMU) extends PeekPokeTester(c) {
   poke(c.io.flush, false)
   poke(c.io.basePpn, 0x100)
   poke(c.io.sum, false)
+  poke(c.io.mxr, false)
   poke(c.io.smode, true)
   poke(c.io.lookup, false)
   poke(c.io.write, false)
@@ -184,7 +187,8 @@ class MmuPrivilegeTester(c: MMU) extends PeekPokeTester(c) {
   poke(c.io.data.accessFault, false)
   poke(c.io.data.rdata, 0)
 
-  for (userPage <- Seq(false, true)) {
+  for (userPage <- Seq(false, true);
+       (readable, executable) <- Seq((true, true), (true, false), (false, true))) {
     poke(c.io.flush, true)
     step(1)
     poke(c.io.flush, false)
@@ -192,8 +196,9 @@ class MmuPrivilegeTester(c: MMU) extends PeekPokeTester(c) {
     poke(c.io.lookup, true)
     step(1)
     expect(c.io.data.en, true)
-    // Aligned 4 MiB RWX leaf with A/D set; vary only the U permission.
-    poke(c.io.data.rdata, (BigInt(0x80000) << 10) | 0xcf |
+    // Aligned 4 MiB leaf; exercise both readable and execute-only pages.
+    poke(c.io.data.rdata, (BigInt(0x80000) << 10) | 0xc1 |
+      (if (readable) 6 else 0) | (if (executable) 8 else 0) |
       (if (userPage) 0x10 else 0))
     poke(c.io.data.valid, true)
     step(1)
@@ -202,13 +207,17 @@ class MmuPrivilegeTester(c: MMU) extends PeekPokeTester(c) {
     poke(c.io.lookup, false)
 
     // A privilege/SUM change must take effect even for an existing TLB hit.
-    for (supervisor <- Seq(false, true); sum <- Seq(false, true);
+    for (supervisor <- Seq(false, true); sum <- Seq(false, true); mxr <- Seq(false, true);
          write <- (if (c.isInst) Seq(false) else Seq(false, true))) {
       poke(c.io.smode, supervisor)
       poke(c.io.sum, sum)
+      poke(c.io.mxr, mxr)
       poke(c.io.write, write)
       expect(c.io.valid, true)
-      expect(c.io.fault, if (supervisor) userPage && (c.isInst || !sum) else !userPage)
+      val privilegeFault = if (supervisor) userPage && (c.isInst || !sum) else !userPage
+      val permissionFault = if (c.isInst) !executable else
+        if (write) !readable else !(readable || (mxr && executable))
+      expect(c.io.fault, privilegeFault || permissionFault)
       expect(c.io.accessFault, false)
     }
     // Bare mode must not apply permissions from a cached translation.
@@ -229,6 +238,7 @@ class MmuFlushTester(c: MMU) extends PeekPokeTester(c) {
   poke(c.io.flush, false)
   poke(c.io.basePpn, 0x100)
   poke(c.io.sum, false)
+  poke(c.io.mxr, false)
   poke(c.io.smode, true)
   poke(c.io.lookup, false)
   poke(c.io.write, false)
@@ -308,6 +318,7 @@ class MmuFaultOwnershipTester(c: MMU) extends PeekPokeTester(c) {
   poke(c.io.flush, false)
   poke(c.io.basePpn, rootPpn)
   poke(c.io.sum, false)
+  poke(c.io.mxr, false)
   poke(c.io.smode, true)
   poke(c.io.lookup, true)
   poke(c.io.write, false)
