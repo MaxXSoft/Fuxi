@@ -24,11 +24,13 @@ class SramMux2(val addrWidth: Int, val dataWidth: Int) extends Module {
   io.out1.en    := io.in.en && !io.sel2
   io.out1.wen   := io.in.wen
   io.out1.addr  := io.in.addr
+  io.out1.size  := io.in.size
   io.out1.wdata := io.in.wdata
 
   io.out2.en    := io.in.en && io.sel2
   io.out2.wen   := io.in.wen
   io.out2.addr  := io.in.addr
+  io.out2.size  := io.in.size
   io.out2.wdata := io.in.wdata
 }
 
@@ -53,5 +55,6 @@ class SramDemux2(val addrWidth: Int, val dataWidth: Int) extends Module {
   io.out.en     := Mux(io.sel2, io.in2.en, io.in1.en)
   io.out.wen    := Mux(io.sel2, io.in2.wen, io.in1.wen)
   io.out.addr   := Mux(io.sel2, io.in2.addr, io.in1.addr)
+  io.out.size   := Mux(io.sel2, io.in2.size, io.in1.size)
   io.out.wdata  := Mux(io.sel2, io.in2.wdata, io.in1.wdata)
 }

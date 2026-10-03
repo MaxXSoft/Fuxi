@@ -186,7 +186,8 @@ class Mem extends Module {
   // with the old translation/permissions while waiting for that write.
   io.ram.en     := !io.csrBusy && !hasTrap && en && !(amoOp =/= AMO_OP_NOP && amo.io.ready)
   io.ram.wen    := ramWen
-  io.ram.addr   := addr
+  io.ram.addr   := io.alu.reg.data
+  io.ram.size   := width.asUInt
   io.ram.wdata  := wdata
   // A failed SC still needs write permission; an AMO must check write
   // permission before issuing its initial read. Neither has strobes yet.
