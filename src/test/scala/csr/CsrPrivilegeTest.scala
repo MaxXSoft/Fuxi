@@ -7,6 +7,29 @@ import consts.CsrOp._
 import utils.{CsrRegressionTester, TestDriver}
 
 class CsrPrivilegeTester(c: CsrFile) extends CsrRegressionTester(c) {
+  resetCsr()
+  // OpenSBI clears MDT through MSTATUSH before feature probing and on trap
+  // entry. Unsupported high-half features read zero but the CSR must exist.
+  val mstatush = CSR_MSTATUSH
+  read(mstatush, 0)
+  for (op <- Seq(CSR_W, CSR_RW, CSR_RS, CSR_RC)) {
+    poke(c.io.read.op, op)
+    expect(c.io.read.valid, true)
+    write(mstatush, 0xffffffffL, op)
+    poke(c.io.read.op, CSR_R)
+    read(mstatush, 0)
+  }
+
+  for (mode <- Seq(CSR_MODE_S, CSR_MODE_U)) {
+    resetCsr()
+    enterMode(mode)
+    poke(c.io.read.addr, mstatush)
+    for (op <- Seq(CSR_R, CSR_W, CSR_RW, CSR_RS, CSR_RC)) {
+      poke(c.io.read.op, op)
+      expect(c.io.read.valid, false)
+    }
+  }
+
   val mprv = BigInt(1) << 17
   val sum = BigInt(1) << 18
   val mxr = BigInt(1) << 19
