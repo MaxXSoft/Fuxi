@@ -185,7 +185,7 @@ class CsrPerformanceConfigurationTester(c: CsrFile) extends CsrRegressionTester(
   val mask = ((BigInt(1) << (c.hpmCount + 3)) - 1) & ~BigInt(2)
   for (addr <- Seq(CSR_MCOUNTEREN, CSR_SCOUNTEREN, CSR_MCOUNTINHIBIT)) {
     write(addr, 0xffffffffL)
-    read(addr, mask)
+    read(addr, if (addr.litValue == CSR_MCOUNTINHIBIT.litValue) mask else mask | 2)
   }
   val last = if (c.hpmCount == 0) 3 else c.hpmCount + 2
   write(mhpmCounterAddr(last), 0xffffffffL)

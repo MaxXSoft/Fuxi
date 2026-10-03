@@ -401,14 +401,16 @@ class MhpmeventCsr extends CsrBundle {
 
 object MhpmeventCsr extends CsrObject(new MhpmeventCsr)
 
-// TIME is not implemented. Absent counter enable/inhibit bits are WARL zero.
-abstract class CounterMaskCsr(hpmCount: Int) extends CsrBundle {
+// TIME access can be enabled, but the hart cannot inhibit the platform clock.
+// Absent HPM counter bits are WARL zero in all three control registers.
+abstract class CounterMaskCsr(hpmCount: Int, includeTime: Boolean) extends CsrBundle {
   require(hpmCount >= 0 && hpmCount <= 29)
   val data = UInt(32.W)
 
   override def <=(d: UInt) = {
     requireWidth(d)
-    val mask = ((BigInt(1) << (hpmCount + 3)) - 1) & ~BigInt(2)
+    val counterMask = (BigInt(1) << (hpmCount + 3)) - 1
+    val mask = if (includeTime) counterMask else counterMask & ~BigInt(2)
     data := d & mask.U(32.W)
   }
 }
@@ -420,16 +422,16 @@ abstract class CounterMaskCsrObject[T <: CounterMaskCsr](mk: Int => T) {
 }
 
 // machine counter enable register
-class McounterenCsr(hpmCount: Int) extends CounterMaskCsr(hpmCount)
+class McounterenCsr(hpmCount: Int) extends CounterMaskCsr(hpmCount, includeTime = true)
 
 object McounterenCsr extends CounterMaskCsrObject(new McounterenCsr(_))
 
 // supervisor counter enable register
-class ScounterenCsr(hpmCount: Int) extends CounterMaskCsr(hpmCount)
+class ScounterenCsr(hpmCount: Int) extends CounterMaskCsr(hpmCount, includeTime = true)
 
 object ScounterenCsr extends CounterMaskCsrObject(new ScounterenCsr(_))
 
 // machine counter inhibit register
-class McountinhibitCsr(hpmCount: Int) extends CounterMaskCsr(hpmCount)
+class McountinhibitCsr(hpmCount: Int) extends CounterMaskCsr(hpmCount, includeTime = false)
 
 object McountinhibitCsr extends CounterMaskCsrObject(new McountinhibitCsr(_))

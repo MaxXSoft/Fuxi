@@ -91,7 +91,9 @@ class HazardResolver extends Module {
       // half write suppresses that cycle's increment of the entire counter.
       val counterAlias = readsCounter && isCounter(write.addr) &&
         counterIndex(read.addr) === counterIndex(write.addr)
-      val counterConfig = readsCounter && (write.addr === CSR_MCOUNTINHIBIT ||
+      // TIME comes from the platform and is unaffected by mcountinhibit.
+      val counterConfig = readsCounter &&
+        ((write.addr === CSR_MCOUNTINHIBIT && counterIndex(read.addr) =/= 1.U) ||
         (isHpmEvent(write.addr) && counterIndex(read.addr) === counterIndex(write.addr)))
       val counterAccess = isUserCounter(read.addr) && isCounterEnable(write.addr)
       write.op =/= CSR_NOP && write.op =/= CSR_R &&

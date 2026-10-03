@@ -38,7 +38,11 @@ class CsrDelegationTester(c: CsrFile) extends CsrRegressionTester(c) {
   poke(c.io.irq.timer, true)
   poke(c.io.irq.soft, true)
   read(CSR_SIP, 0)
+  read(CSR_MIP, 0x888)
   write(CSR_MIDELEG, 0x222)
+  read(CSR_SIP, 0) // Machine sources are not mirrored into supervisor pending.
+  poke(c.io.irq.supervisorExtern, true)
+  write(CSR_MIP, 0x22) // Firmware injects supervisor timer/software interrupts.
   read(CSR_SIP, 0x222)
   write(CSR_MIDELEG, 0)
   read(CSR_SIP, 0)

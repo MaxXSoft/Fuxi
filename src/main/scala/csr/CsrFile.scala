@@ -23,6 +23,7 @@ class CsrFile(val hpmCount: Int) extends Module {
     val write   = Flipped(new CsrWriteIO)
     // interrupt request
     val irq     = new InterruptIO
+    val rtcTime = Input(UInt(64.W))
     // exception information
     val except  = Input(new ExceptInfoIO)
     // Each local event indexes a pulse or an active wait-cycle level.
@@ -83,8 +84,10 @@ class CsrFile(val hpmCount: Int) extends Module {
                                  List(0.U,                  N, N)
   var csrTable = Array(
     BitPat(CSR_CYCLE)         -> List(cycle(31, 0),         Y, N),
+    BitPat(CSR_TIME)          -> List(io.rtcTime(31, 0),    Y, N),
     BitPat(CSR_INSTRET)       -> List(instret(31, 0),       Y, N),
     BitPat(CSR_CYCLEH)        -> List(cycle(63, 32),        Y, N),
+    BitPat(CSR_TIMEH)         -> List(io.rtcTime(63, 32),   Y, N),
     BitPat(CSR_INSTRETH)      -> List(instret(63, 32),      Y, N),
     BitPat(CSR_SSTATUS)       -> List(sstatus.asUInt,       Y, Y),
     BitPat(CSR_SIE)           -> List(sie.asUInt,           Y, Y),
@@ -208,11 +211,11 @@ class CsrFile(val hpmCount: Int) extends Module {
 
   // interrupt info
   mip.meip := mipReal.meip | io.irq.extern
-  mip.seip := mipReal.seip | io.irq.extern
+  mip.seip := mipReal.seip | io.irq.supervisorExtern
   mip.mtip := mipReal.mtip | io.irq.timer
-  mip.stip := mipReal.stip | io.irq.timer
+  mip.stip := mipReal.stip
   mip.msip := mipReal.msip | io.irq.soft
-  mip.ssip := mipReal.ssip | io.irq.soft
+  mip.ssip := mipReal.ssip
   sip.seip := mip.seip && mideleg.data(9)
   sip.stip := mip.stip && mideleg.data(5)
   sip.ssip := mip.ssip && mideleg.data(1)

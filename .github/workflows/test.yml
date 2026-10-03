@@ -71,6 +71,7 @@ jobs:
         "Test / runMain csr.CsrPendingTest"
         "Test / runMain csr.CsrDelegationTest"
         "Test / runMain csr.CsrCounterAccessTest"
+        "Test / runMain csr.CsrTimeTest"
         "Test / runMain csr.CsrPerformanceTest"
 
     - name: Test LSU
