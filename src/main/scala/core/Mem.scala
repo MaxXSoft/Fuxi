@@ -63,7 +63,7 @@ class Mem extends Module {
   amo.io.flush    := io.flush
   amo.io.hold     := io.csrBusy
   amo.io.regOpr   := io.alu.lsuData
-  amo.io.ramValid := io.ram.valid
+  amo.io.ramValid := io.ram.valid && !io.csrBusy
   amo.io.ramRdata := io.ram.rdata
 
   // write enable
@@ -181,7 +181,10 @@ class Mem extends Module {
   io.flushPc  := io.alu.currentPc + 4.U
 
   // RAM control signals
-  io.ram.en     := !hasTrap && en && !(amoOp =/= AMO_OP_NOP && amo.io.ready)
+  // An older CSR write can change MPRV, SUM, MXR or SATP on this edge.
+  // Stalling retirement alone is insufficient: do not launch a memory access
+  // with the old translation/permissions while waiting for that write.
+  io.ram.en     := !io.csrBusy && !hasTrap && en && !(amoOp =/= AMO_OP_NOP && amo.io.ready)
   io.ram.wen    := ramWen
   io.ram.addr   := addr
   io.ram.wdata  := wdata
@@ -193,7 +196,7 @@ class Mem extends Module {
   // Fences do not perform a load/store lookup. Depending on the data MMU's
   // fault here would feed its flush-sensitive result back into its flush
   // input, creating a combinational loop in the complete core.
-  val maintenanceTrap = nonMemTrap || (io.csrHasInt && !memoryInProgress)
+  val maintenanceTrap = io.csrBusy || nonMemTrap || (io.csrHasInt && !memoryInProgress)
   io.flushIc  := !maintenanceTrap && flushIc
   io.flushDc  := !maintenanceTrap && flushDc
   io.flushIt  := !maintenanceTrap && flushIt

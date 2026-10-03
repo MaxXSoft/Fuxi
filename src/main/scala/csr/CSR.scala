@@ -54,6 +54,7 @@ class SstatusCsr extends CsrBundle {
 
   override def <=(data: UInt) = {
     requireWidth(data)
+    mxr   := data(19)
     sum   := data(18)
     spp   := data(8)
     spie  := data(5)
@@ -200,8 +201,10 @@ class MstatusCsr extends CsrBundle {
 
   override def <=(data: UInt) = {
     requireWidth(data)
+    mxr   := data(19)
     sum   := data(18)
-    mpp   := data(12, 11)
+    mprv  := data(17)
+    mpp   := Mux(data(12, 11) === 2.U, 0.U, data(12, 11))
     spp   := data(8)
     mpie  := data(7)
     spie  := data(5)

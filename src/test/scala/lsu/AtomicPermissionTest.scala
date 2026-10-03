@@ -39,12 +39,15 @@ class AtomicPermissionHarness extends Module {
   bus.io.rom.addr := 0.U
   bus.io.rom.wdata := 0.U
   bus.io.tlb.en := true.B
+  bus.io.tlb.dataEn := true.B
+  bus.io.tlb.mxr := false.B
   bus.io.tlb.dataWrite := mem.io.writeIntent
   bus.io.tlb.flushInst := false.B
   bus.io.tlb.flushData := false.B
   bus.io.tlb.basePpn := 0x80000.U
   bus.io.tlb.sum := false.B
   bus.io.tlb.smode := true.B
+  bus.io.tlb.dataSmode := true.B
   bus.io.cache.flushInst := mem.io.flushIc
   bus.io.cache.flushData := mem.io.flushDc
   mem.io.flushDcDone := bus.io.cache.flushDataDone

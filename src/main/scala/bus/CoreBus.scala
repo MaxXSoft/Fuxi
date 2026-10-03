@@ -68,6 +68,7 @@ class CoreBus extends Module {
   immu.io.flush   := io.tlb.flushInst
   immu.io.basePpn := io.tlb.basePpn
   immu.io.sum     := io.tlb.sum
+  immu.io.mxr     := false.B
   immu.io.smode   := io.tlb.smode
   immu.io.lookup  := io.rom.en
   immu.io.write   := io.rom.wen =/= 0.U
@@ -94,11 +95,12 @@ class CoreBus extends Module {
 
   // data MMU
   val dmmu = Module(new MMU(DTLB_SIZE, false))
-  dmmu.io.en      := io.tlb.en
+  dmmu.io.en      := io.tlb.dataEn
   dmmu.io.flush   := io.tlb.flushData
   dmmu.io.basePpn := io.tlb.basePpn
   dmmu.io.sum     := io.tlb.sum
-  dmmu.io.smode   := io.tlb.smode
+  dmmu.io.mxr     := io.tlb.mxr
+  dmmu.io.smode   := io.tlb.dataSmode
   dmmu.io.lookup  := io.ram.en
   dmmu.io.write   := io.tlb.dataWrite || io.ram.wen =/= 0.U
   dmmu.io.vaddr   := io.ram.addr
