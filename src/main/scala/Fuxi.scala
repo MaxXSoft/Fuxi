@@ -1,4 +1,4 @@
-import chisel3.{Bundle, Module}
+import chisel3._
 import chisel3.stage.ChiselGeneratorAnnotation
 import circt.stage.ChiselStage
 
@@ -13,6 +13,8 @@ class Fuxi(hpmCount: Int = 8) extends Module {
   val io = IO(new Bundle {
     // interrupt request
     val irq       = new InterruptIO
+    // The platform timebase, shared with the memory-mapped timer.
+    val rtcTime   = Input(UInt(64.W))
     // for trace generating
     val debug     = new DebugIO
     // AXI interfaces
@@ -25,6 +27,7 @@ class Fuxi(hpmCount: Int = 8) extends Module {
   val coreBus = Module(new CoreBus)
 
   core.io.irq   <> io.irq
+  core.io.rtcTime := io.rtcTime
   core.io.tlb   <> coreBus.io.tlb
   core.io.cache <> coreBus.io.cache
   core.io.rom   <> coreBus.io.rom

@@ -6,12 +6,12 @@ import consts.CsrOp._
 import utils.{CsrRegressionTester, TestDriver}
 
 class CsrCounterAccessTester(c: CsrFile) extends CsrRegressionTester(c) {
-  val counters = Seq(CSR_CYCLE, CSR_CYCLEH, CSR_INSTRET, CSR_INSTRETH,
+  val counters = Seq(CSR_CYCLE, CSR_CYCLEH, CSR_TIME, CSR_TIMEH, CSR_INSTRET, CSR_INSTRETH,
     CSR_HPMCOUNTER(3), CSR_HPMCOUNTERH(3), CSR_HPMCOUNTER(10), CSR_HPMCOUNTERH(10))
-  val supportedMask = BigInt("7fd", 16)
+  val supportedMask = BigInt("7ff", 16)
   for (mode <- Seq(CSR_MODE_M, CSR_MODE_S, CSR_MODE_U);
-       machineEnable <- Seq(BigInt(0), BigInt(9), supportedMask);
-       supervisorEnable <- Seq(BigInt(0), BigInt(12), supportedMask)) {
+       machineEnable <- Seq(BigInt(0), BigInt(2), BigInt(9), supportedMask);
+       supervisorEnable <- Seq(BigInt(0), BigInt(2), BigInt(12), supportedMask)) {
     resetCsr()
     write(CSR_MCOUNTEREN, machineEnable)
     write(CSR_SCOUNTEREN, supervisorEnable)
@@ -36,10 +36,6 @@ class CsrCounterAccessTester(c: CsrFile) extends CsrRegressionTester(c) {
                         CSR_MHPMCOUNTER(3), CSR_MHPMCOUNTERH(3), CSR_MHPMEVENT(3))) {
       poke(c.io.read.addr, counter)
       expect(c.io.read.valid, mode.litValue == CSR_MODE_M.litValue)
-    }
-    for (counter <- Seq(CSR_TIME, CSR_TIMEH)) {
-      poke(c.io.read.addr, counter)
-      expect(c.io.read.valid, false)
     }
   }
   resetCsr()

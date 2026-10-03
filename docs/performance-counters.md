@@ -13,13 +13,14 @@ sbt 'runMain Fuxi --hpm-counters 4 --target-dir build/hpm4'
 
 Counts from 0 to 29 are supported. This changes the number of physical counters,
 not the event IDs. There is no overflow interrupt, privilege filtering, or SBI
-PMU firmware mapping. TIME/TIMEH remain unimplemented. Hardware performance
+PMU firmware mapping. TIME/TIMEH read the external platform timebase. Hardware performance
 statistics here do not establish FPGA/ASIC area, timing, frequency, or power.
 
 ## CSR interface
 
 | CSR | Address | Behavior |
 | --- | --- | --- |
+| `time`, `timeh` | `0xc01`, `0xc81` | Read-only halves of the platform RTC input |
 | `mcycle`, `mcycleh` | `0xb00`, `0xb80` | Writable cycle counter halves |
 | `minstret`, `minstreth` | `0xb02`, `0xb82` | Writable retirement counter halves |
 | `mhpmcounterN`, `mhpmcounterNh` | `0xb00+N`, `0xb80+N` | Writable HPM halves, N=3..31 |
@@ -31,8 +32,9 @@ statistics here do not establish FPGA/ASIC area, timing, frequency, or power.
 
 All state resets to zero. Counter enable controls access, independently of
 counting. M-mode can read the user aliases regardless of enable bits. Bit 1
-(TIME) and bits for absent HPM counters are hardwired zero in all three control
-registers. All absent machine counters/selectors are readable and writable as
+(TIME) is writable in both enable registers, but hardwired zero in
+`mcountinhibit`: the hart cannot stop the platform timebase. Bits for absent
+HPM counters are hardwired zero in all three control registers. All absent machine counters/selectors are readable and writable as
 zero; absent user views read zero in M-mode and trap in S/U because their enable
 bits cannot be set. User aliases reject writes even in M-mode. Event high-half
 CSRs are absent because Sscofpmf is not implemented.

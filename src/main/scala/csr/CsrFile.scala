@@ -23,6 +23,7 @@ class CsrFile(val hpmCount: Int = 8) extends Module {
     val write   = Flipped(new CsrWriteIO)
     // interrupt request
     val irq     = new InterruptIO
+    val rtcTime = Input(UInt(64.W))
     // exception information
     val except  = Input(new ExceptInfoIO)
     // Event ID indexes a one-cycle pulse or an active wait-cycle level.
@@ -60,8 +61,9 @@ class CsrFile(val hpmCount: Int = 8) extends Module {
   val minstret  = RegInit(MinstretCsr.default())
   val mhpmcounter = Seq.fill(hpmCount)(RegInit(0.U(64.W)))
   val mhpmevent = Seq.fill(hpmCount)(RegInit(0.U(6.W)))
-  // TIME is not implemented. Absent counter enable/inhibit bits are WARL zero.
-  val counterMask = (((BigInt(1) << (hpmCount + 3)) - 1) & ~BigInt(2)).U(32.W)
+  // TIME is supplied by the platform and cannot be inhibited by the hart.
+  val counterMask = ((BigInt(1) << (hpmCount + 3)) - 1).U(32.W)
+  val inhibitMask = (((BigInt(1) << (hpmCount + 3)) - 1) & ~BigInt(2)).U(32.W)
   val mcounteren = RegInit(0.U(32.W))
   val scounteren = RegInit(0.U(32.W))
   val mcountinhibit = RegInit(0.U(32.W))
@@ -85,8 +87,10 @@ class CsrFile(val hpmCount: Int = 8) extends Module {
                                   List(0.U,             N, N)
   var csrTable = Array(
     BitPat(CSR_CYCLE)         ->  List(cycle(31, 0),    Y, N),
+    BitPat(CSR_TIME)          ->  List(io.rtcTime(31, 0), Y, N),
     BitPat(CSR_INSTRET)       ->  List(instret(31, 0),  Y, N),
     BitPat(CSR_CYCLEH)        ->  List(cycle(63, 32),   Y, N),
+    BitPat(CSR_TIMEH)         ->  List(io.rtcTime(63, 32), Y, N),
     BitPat(CSR_INSTRETH)      ->  List(instret(63, 32), Y, N),
     BitPat(CSR_SSTATUS)       ->  List(sstatus.asUInt,  Y, Y),
     BitPat(CSR_SIE)           ->  List(sie.asUInt,      Y, Y),
@@ -223,11 +227,11 @@ class CsrFile(val hpmCount: Int = 8) extends Module {
 
   // interrupt info
   mip.meip := mipReal.meip | io.irq.extern
-  mip.seip := mipReal.seip | io.irq.extern
+  mip.seip := mipReal.seip | io.irq.supervisorExtern
   mip.mtip := mipReal.mtip | io.irq.timer
-  mip.stip := mipReal.stip | io.irq.timer
+  mip.stip := mipReal.stip
   mip.msip := mipReal.msip | io.irq.soft
-  mip.ssip := mipReal.ssip | io.irq.soft
+  mip.ssip := mipReal.ssip
   sip.seip := mip.seip && mideleg.data(9)
   sip.stip := mip.stip && mideleg.data(5)
   sip.ssip := mip.ssip && mideleg.data(1)
@@ -300,7 +304,7 @@ class CsrFile(val hpmCount: Int = 8) extends Module {
     }
     when (io.write.addr === CSR_MCOUNTEREN) { mcounteren := writeData & counterMask }
     when (io.write.addr === CSR_SCOUNTEREN) { scounteren := writeData & counterMask }
-    when (io.write.addr === CSR_MCOUNTINHIBIT) { mcountinhibit := writeData & counterMask }
+    when (io.write.addr === CSR_MCOUNTINHIBIT) { mcountinhibit := writeData & inhibitMask }
     when (io.write.addr === CSR_STVEC)    { stvec <= writeData }
     when (io.write.addr === CSR_SSCRATCH) { sscratch <= writeData }
     when (io.write.addr === CSR_SEPC)     { sepc <= writeData }
