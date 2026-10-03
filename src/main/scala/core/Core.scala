@@ -16,6 +16,7 @@ class Core(val fetchQueueDepth: Int, val hpmCount: Int) extends Module {
   val io = IO(new Bundle {
     // interrupt request
     val irq   = new InterruptIO
+    val rtcTime = Input(UInt(64.W))
     // TLB/cache control
     val tlb   = new TlbControlIO(PPN_WIDTH)
     val cache = new CacheControlIO
@@ -125,6 +126,7 @@ class Core(val fetchQueueDepth: Int, val hpmCount: Int) extends Module {
   csrfile.io.write.data     := wb.io.csr.data
   csrfile.io.write.retired  := wb.io.csr.retired
   csrfile.io.irq            <> io.irq
+  csrfile.io.rtcTime        := io.rtcTime
   csrfile.io.except         <> mem.io.except
 
   // Passive event collection. Retirement gates architectural events; the

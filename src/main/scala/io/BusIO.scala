@@ -48,4 +48,5 @@ class InterruptIO extends Bundle {
   val timer   = Input(Bool())
   val soft    = Input(Bool())
   val extern  = Input(Bool())
+  val supervisorExtern = Input(Bool())
 }

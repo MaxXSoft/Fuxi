@@ -24,6 +24,8 @@ private[core] class CoreFetchFaultWrapper extends Module {
   core.io.irq.timer := false.B
   core.io.irq.soft := false.B
   core.io.irq.extern := false.B
+  core.io.irq.supervisorExtern := false.B
+  core.io.rtcTime := 0.U
   core.io.tlb <> bus.io.tlb
   core.io.cache <> bus.io.cache
   core.io.rom <> bus.io.rom

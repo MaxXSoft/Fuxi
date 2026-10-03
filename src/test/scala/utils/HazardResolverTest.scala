@@ -51,13 +51,14 @@ class HazardResolverTester(c: HazardResolver) extends PeekPokeTester(c) {
     }
     for (control <- Seq(CSR_MCOUNTEREN, CSR_SCOUNTEREN)) {
       poke(port.addr, control)
-      for (alias <- Seq(CSR_CYCLE, CSR_INSTRETH, hpmCounterAddr(3), hpmCounterHighAddr(31))) {
+      for (alias <- Seq(CSR_CYCLE, CSR_TIME, CSR_TIMEH, CSR_INSTRETH,
+                        hpmCounterAddr(3), hpmCounterHighAddr(31))) {
         read(alias, true)
       }
       read(CSR_MCYCLE, false)
       read(mhpmCounterAddr(3), false)
-      // Unimplemented TIME and nearby CSR ranges are not counter aliases.
-      for (address <- Seq(0xc01, 0xc81, 0xc20, 0xca0, 0xcff))
+      // Nearby CSR ranges are not counter aliases.
+      for (address <- Seq(0xc20, 0xca0, 0xcff))
         read(address.U(12.W), false)
     }
     poke(port.addr, CSR_MCOUNTINHIBIT)
@@ -66,6 +67,14 @@ class HazardResolverTester(c: HazardResolver) extends PeekPokeTester(c) {
       read(snapshot, true)
     }
     read(CSR_MSTATUS, false)
+    read(CSR_TIME, false)
+    read(CSR_TIMEH, false)
+    // There is no writable machine TIME alias at counter slot 1.
+    for (address <- Seq(0xb01, 0xb81)) {
+      poke(port.addr, address)
+      read(CSR_TIME, false)
+      read(CSR_TIMEH, false)
+    }
     for (index <- Seq(3, 10, 31)) {
       poke(port.addr, mhpmEventAddr(index))
       read(mhpmCounterAddr(index), true)
@@ -90,6 +99,8 @@ class HazardResolverTester(c: HazardResolver) extends PeekPokeTester(c) {
       read(snapshot, true)
     }
     read(CSR_CYCLE, false)
+    read(CSR_TIME, false)
+    read(CSR_TIMEH, false)
     read(mhpmEventAddr(3), false)
     poke(port.retired, false)
     read(hpmCounterAddr(3), false)

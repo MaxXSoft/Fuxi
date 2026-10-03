@@ -25,6 +25,8 @@ class CoreMemoryHarness(init: ROM.Init, depth: Int = FETCH_QUEUE_DEPTH,
   core.io.irq.timer := false.B
   core.io.irq.soft := false.B
   core.io.irq.extern := false.B
+  core.io.irq.supervisorExtern := false.B
+  core.io.rtcTime := 0.U
   core.io.rom <> rom.io
   core.io.ram <> ram.io
   ram.io.en := core.io.ram.en && !io.memoryStall

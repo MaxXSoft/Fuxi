@@ -6,6 +6,8 @@ module FuxiWrapper(
   input         irq_timer,
   input         irq_soft,
   input         irq_extern,
+  input         irq_sextern,
+  input  [63:0] rtc_time,
   // debug signals
   output        debug_wen,
   output [4:0]  debug_waddr,
@@ -131,6 +133,8 @@ module FuxiWrapper(
     .io_irq_timer                     (irq_timer),
     .io_irq_soft                      (irq_soft),
     .io_irq_extern                    (irq_extern),
+    .io_irq_supervisorExtern          (irq_sextern),
+    .io_rtcTime                       (rtc_time),
     // debug signals
     .io_debug_regWen                  (debug_wen),
     .io_debug_regWaddr                (debug_waddr),

@@ -97,14 +97,14 @@ object CSR {
   def requiredPrivilege(addr: UInt): UInt = addr(9, 8)
 
   // Architectural counter number N, shared by low/high halves and aliases.
-  // This is not the HPM storage index N - 3. TIME (N = 1) is unimplemented.
+  // This is not the HPM storage index N - 3. TIME (N = 1) has only user aliases.
   def counterIndex(addr: UInt): UInt = addr(4, 0)
 
   private def hasCounterOffset(addr: UInt): Bool =
-    addr(6, 5) === 0.U && counterIndex(addr) =/= 1.U
+    addr(6, 5) === 0.U
 
   def isMachineCounter(addr: UInt): Bool =
-    addr(11, 8) === 0xb.U && hasCounterOffset(addr)
+    addr(11, 8) === 0xb.U && hasCounterOffset(addr) && counterIndex(addr) =/= 1.U
 
   def isUserCounter(addr: UInt): Bool =
     addr(11, 8) === 0xc.U && hasCounterOffset(addr)
