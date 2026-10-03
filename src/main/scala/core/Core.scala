@@ -10,6 +10,8 @@ import csr.CsrFile
 import lsu.ExclusiveMonitor
 import consts.Paging.PPN_WIDTH
 import consts.PerfEvent._
+import consts.CSR.CSR_SATP
+import consts.CsrOp.{CSR_NOP, CSR_R}
 
 class Core(val fetchQueueDepth: Int, val hpmCount: Int = 8) extends Module {
   val io = IO(new Bundle {
@@ -52,6 +54,13 @@ class Core(val fetchQueueDepth: Int, val hpmCount: Int = 8) extends Module {
   // hazard resolve & pipeline control
   val resolve = Module(new HazardResolver)
   val control = Module(new PipelineController)
+
+  // SATP takes effect at writeback. Discard instructions fetched under the
+  // old address space before any of them can retire (for example Linux's
+  // Bare-to-Sv32 trampoline). Mem already holds younger accesses/traps while
+  // this CSR write commits. TLB invalidation remains the job of SFENCE.VMA.
+  val satpWrite = wb.io.csr.retired && wb.io.csr.addr === CSR_SATP &&
+    wb.io.csr.op =/= CSR_NOP && wb.io.csr.op =/= CSR_R
 
   // fetch stage
   fetch.io.flush    := control.io.flushIf
@@ -199,8 +208,8 @@ class Core(val fetchQueueDepth: Int, val hpmCount: Int = 8) extends Module {
   control.io.mem        := mem.io.stallReq
   control.io.decFlush   := decoder.io.flushIf
   control.io.decTarget  := decoder.io.flushPc
-  control.io.memFlush   := mem.io.flushReq
-  control.io.memTarget  := mem.io.flushPc
+  control.io.memFlush   := mem.io.flushReq || satpWrite
+  control.io.memTarget  := Mux(satpWrite, memwb.io.next.currentPc + 4.U, mem.io.flushPc)
   control.io.load       := resolve.io.loadFlag
   control.io.csr        := resolve.io.csrFlag
   control.io.except     <> mem.io.except
