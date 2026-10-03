@@ -215,6 +215,9 @@ class Core(val fetchQueueDepth: Int, val hpmCount: Int) extends Module {
 
   // TLB/cache control
   io.tlb.en           := csrfile.io.pageEn
+  io.tlb.dataEn       := csrfile.io.dataPageEn
+  io.tlb.dataSmode    := csrfile.io.dataMode === consts.CSR.CSR_MODE_S
+  io.tlb.mxr          := csrfile.io.mxr
   io.tlb.dataWrite    := mem.io.writeIntent
   io.tlb.flushInst    := mem.io.flushIt
   io.tlb.flushData    := mem.io.flushDt

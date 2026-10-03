@@ -37,6 +37,9 @@ class CsrFile(val hpmCount: Int) extends Module {
     val trapVec = Output(UInt(ADDR_WIDTH.W))
     // paging signals
     val pageEn  = Output(Bool())
+    val dataPageEn = Output(Bool())
+    val dataMode = Output(UInt(CSR_MODE_WIDTH.W))
+    val mxr     = Output(Bool())
     val basePpn = Output(UInt(PPN_WIDTH.W))
     val sum     = Output(Bool())
   })
@@ -319,11 +322,13 @@ class CsrFile(val hpmCount: Int) extends Module {
       mstatus.sie   := mstatus.spie
       mstatus.spie  := true.B
       mstatus.spp   := false.B
+      mstatus.mprv  := false.B
     } .elsewhen (io.except.isMret) {
       // return from M-mode
       mstatus.mie   := mstatus.mpie
       mstatus.mpie  := true.B
       mstatus.mpp   := CSR_MODE_U
+      when (mstatus.mpp =/= CSR_MODE_M) { mstatus.mprv := false.B }
     } .elsewhen (handIntS || handExcS) {
       // enter S-mode
       sepc          <= io.except.excPc
@@ -357,7 +362,11 @@ class CsrFile(val hpmCount: Int) extends Module {
   io.trapVec  := trapVec
 
   // paging signals
+  val dataMode = Mux(mstatus.mprv, mstatus.mpp, mode)
   io.pageEn   := !mode(1) && satp.mode
+  io.dataPageEn := !dataMode(1) && satp.mode
+  io.dataMode := dataMode
+  io.mxr      := mstatus.mxr
   io.basePpn  := satp.ppn
   io.sum      := mstatus.sum
 }

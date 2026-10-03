@@ -39,6 +39,7 @@ class MMU(val size: Int, val isInst: Boolean) extends Module {
     val flush   = Input(Bool())
     val basePpn = Input(UInt(PPN_WIDTH.W))
     val sum     = Input(Bool())
+    val mxr     = Input(Bool())
     val smode   = Input(Bool())
     // address lookup channel
     val lookup  = Input(Bool())
@@ -86,7 +87,8 @@ class MMU(val size: Int, val isInst: Boolean) extends Module {
 
   // fault flag
   val daFault = !tlb.io.rent.a || (io.write && !tlb.io.rent.d)
-  val rFault  = if (!isInst) !io.write && !tlb.io.rent.r else false.B
+  val rFault  = if (!isInst) !io.write &&
+    !(tlb.io.rent.r || (io.mxr && tlb.io.rent.x)) else false.B
   val wFault  = io.write && !tlb.io.rent.w
   val xFault  = if (isInst) !tlb.io.rent.x else false.B
   // SUM permits supervisor data accesses to user pages, never instruction
