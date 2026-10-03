@@ -39,6 +39,7 @@ object CSR {
   // machine trap setup
   val CSR_MSTATUS     = 0x300.U(CSR_ADDR_WIDTH.W)
   val CSR_MISA        = 0x301.U(CSR_ADDR_WIDTH.W)
+  val CSR_MSTATUSH    = 0x310.U(CSR_ADDR_WIDTH.W)
   val CSR_MEDELEG     = 0x302.U(CSR_ADDR_WIDTH.W)
   val CSR_MIDELEG     = 0x303.U(CSR_ADDR_WIDTH.W)
   val CSR_MIE         = 0x304.U(CSR_ADDR_WIDTH.W)
