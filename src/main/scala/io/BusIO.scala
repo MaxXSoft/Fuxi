@@ -15,6 +15,9 @@ class SramIO(val addrWidth: Int, val dataWidth: Int) extends Bundle {
   // other signals
   val wen   = Output(UInt((dataWidth / 8).W))
   val addr  = Output(UInt(addrWidth.W))
+  // Log2 of the transfer size in bytes; addr retains the byte lane offset.
+  // Read data and write strobes use lanes of the aligned data-width word.
+  val size  = Output(UInt(3.W))
   val rdata = Input(UInt(dataWidth.W))
   val wdata = Output(UInt(dataWidth.W))
 }

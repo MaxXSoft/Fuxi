@@ -16,9 +16,6 @@ class Uncached extends Module {
     val axi   = new AxiMaster(ADDR_WIDTH, DATA_WIDTH)
   })
 
-  // some constants
-  val dataSize = log2Ceil(DATA_WIDTH / 8)
-
   // states of finite state machine
   object State extends ChiselEnum {
     val sIdle, sReadAddr, sReadData, sWriteAddr, sWriteData, sWriteResp,
@@ -90,12 +87,12 @@ class Uncached extends Module {
   io.axi.init()
   io.axi.readAddr.valid       := arvalid
   io.axi.readAddr.bits.addr   := io.sram.addr
-  io.axi.readAddr.bits.size   := dataSize.U
+  io.axi.readAddr.bits.size   := io.sram.size
   io.axi.readAddr.bits.burst  := 1.U          // incrementing-address
   io.axi.readData.ready       := state === sReadData
   io.axi.writeAddr.valid      := awvalid
   io.axi.writeAddr.bits.addr  := io.sram.addr
-  io.axi.writeAddr.bits.size  := dataSize.U
+  io.axi.writeAddr.bits.size  := io.sram.size
   io.axi.writeData.valid      := wvalid
   io.axi.writeData.bits.data  := io.sram.wdata
   io.axi.writeData.bits.last  := wvalid

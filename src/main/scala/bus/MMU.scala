@@ -189,6 +189,7 @@ class MMU(val size: Int, val isInst: Boolean) extends Module {
   io.data.en    := state === sAddr
   io.data.wen   := 0.U
   io.data.addr  := addr
+  io.data.size  := log2Ceil(DATA_WIDTH / 8).U
   io.data.wdata := 0.U
 
   // output signals
