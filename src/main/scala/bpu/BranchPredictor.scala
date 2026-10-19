@@ -3,6 +3,7 @@ package bpu
 import chisel3._
 
 import io.BranchInfoIO
+import consts.Instructions.{JAL, JALR}
 import consts.Parameters._
 
 class BranchPredictor extends Module {
@@ -51,12 +52,12 @@ class BranchPredictor extends Module {
   val inst = io.lookupInst
   val compressed = inst(1, 0) =/= 3.U
   val cJal = inst(1, 0) === 1.U && inst(15, 13) === 1.U
-  val cJr = inst(1, 0) === 2.U && inst(15, 13) === 4.U &&
-            inst(6, 2) === 0.U && inst(11, 7) =/= 0.U
-  val jal = Mux(compressed, cJal, inst(6, 0) === 0x6f.U)
-  val jalr = Mux(compressed, cJr,
-                 inst(6, 0) === 0x67.U && inst(14, 12) === 0.U)
-  val rd = Mux(compressed, Mux(cJal || inst(12), 1.U, 0.U), inst(11, 7))
+  val cJrOrJalr = inst(1, 0) === 2.U && inst(15, 13) === 4.U &&
+                  inst(6, 2) === 0.U && inst(11, 7) =/= 0.U
+  val cJalr = cJrOrJalr && inst(12)
+  val jal = Mux(compressed, cJal, JAL === inst)
+  val jalr = Mux(compressed, cJrOrJalr, JALR === inst)
+  val rd = Mux(compressed, Mux(cJal || cJalr, 1.U, 0.U), inst(11, 7))
   val rs1 = Mux(compressed, inst(11, 7), inst(19, 15))
   val rdLink = rd === 1.U || rd === 5.U
   val rs1Link = rs1 === 1.U || rs1 === 5.U
