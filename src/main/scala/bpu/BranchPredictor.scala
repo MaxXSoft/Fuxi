@@ -24,7 +24,7 @@ class BranchPredictor extends Module {
   val ghr = Module(new GHR)
   val pht = Module(new PHT)
   val btb = Module(new BTB)
-  val ras = Module(new ReturnAddressStack)
+  val ras = Module(new ReturnAddressStack(RAS_SIZE))
 
   // wire GHR
   ghr.io.branch := io.branchInfo.branch
