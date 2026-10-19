@@ -71,8 +71,8 @@ class BranchPredictor extends Module {
   val predictReturn = io.lookupValid && pop && ras.io.valid
 
   // wire output signals
-  io.predTaken  := predictReturn || (btb.io.lookupBranch &&
-                   (pht.io.taken || btb.io.lookupJump))
+  io.predTaken  := predictReturn ||
+                   (btb.io.lookupBranch && (pht.io.taken || btb.io.lookupJump))
   io.predTarget := Mux(predictReturn, ras.io.top, btb.io.lookupTarget)
   io.predIndex  := index
 }
