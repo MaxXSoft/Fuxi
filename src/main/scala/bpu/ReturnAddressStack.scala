@@ -3,11 +3,11 @@ package bpu
 import chisel3._
 import chisel3.util._
 
-import consts.Parameters.{ADDR_WIDTH, RAS_SIZE}
+import consts.Parameters.ADDR_WIDTH
 
 // A bounded speculative stack. Overflow discards the oldest return address;
 // underflow supplies no prediction. Backend flushes discard all history.
-class ReturnAddressStack(depth: Int = RAS_SIZE) extends Module {
+class ReturnAddressStack(depth: Int) extends Module {
   require(depth > 0)
 
   val io = IO(new Bundle {
