@@ -32,6 +32,7 @@ class Decoder extends Module {
 
   val expand = Module(new CompressedDecoder)
   expand.io.inst := io.fetch.inst
+
   val inst = Mux(io.fetch.valid, expand.io.expanded, NOP)
   val instBytes = Mux(expand.io.isCompressed, 2.U, 4.U)
   val rawInst = Mux(expand.io.isCompressed,
