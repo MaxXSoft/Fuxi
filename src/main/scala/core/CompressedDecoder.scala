@@ -3,10 +3,13 @@ package core
 import chisel3._
 import chisel3.util._
 
+import consts.Instructions.{EBREAK, NOP}
+import consts.Parameters.INST_WIDTH
+
 class CompressedDecoder extends Module {
   val io = IO(new Bundle {
-    val inst         = Input(UInt(32.W))
-    val expanded     = Output(UInt(32.W))
+    val inst         = Input(UInt(INST_WIDTH.W))
+    val expanded     = Output(UInt(INST_WIDTH.W))
     val isCompressed = Output(Bool())
     val illegal      = Output(Bool())
   })
@@ -51,7 +54,7 @@ class CompressedDecoder extends Module {
   val swspImm = Cat(0.U(4.W), inst(8, 7), inst(12, 9), 0.U(2.W))
   val shamt = Cat(0.U(7.W), inst(6, 2))
 
-  val expanded = WireDefault(0.U(32.W))
+  val expanded = WireDefault(0.U(INST_WIDTH.W))
   val legal = WireDefault(false.B)
   val hint = WireDefault(false.B)
 
@@ -160,7 +163,7 @@ class CompressedDecoder extends Module {
             legal := true.B
             when (rs2 === 0.U) {
               when (rd === 0.U) { // C.EBREAK
-                expanded := 0x00100073.U(32.W)
+                expanded := EBREAK.value.U(INST_WIDTH.W)
               } .otherwise { // C.JALR
                 expanded := iType(0.U(12.W), rd, 0, 1.U(5.W), 0x67)
               }
@@ -181,5 +184,5 @@ class CompressedDecoder extends Module {
   io.isCompressed := inst(1, 0) =/= 3.U
   io.illegal := io.isCompressed && !legal
   io.expanded := Mux(!io.isCompressed, io.inst,
-                 Mux(!legal, 0.U, Mux(hint, 0x00000013.U, expanded)))
+                 Mux(!legal, 0.U, Mux(hint, NOP, expanded)))
 }
