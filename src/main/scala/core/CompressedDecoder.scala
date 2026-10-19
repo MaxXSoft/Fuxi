@@ -20,7 +20,7 @@ class CompressedDecoder extends Module {
   val sp = 2.U(5.W)
 
   def iType(imm: UInt, rs1: UInt, funct3: Int, dest: UInt,
-            opcode: Int = 0x13): UInt =
+            opcode: Int): UInt =
     Cat(imm(11, 0), rs1, funct3.U(3.W), dest, opcode.U(7.W))
 
   def rType(funct7: Int, source2: UInt, source1: UInt,
@@ -59,7 +59,7 @@ class CompressedDecoder extends Module {
     is (0.U) {
       switch (inst(15, 13)) {
         is (0.U) { // C.ADDI4SPN
-          expanded := iType(addi4spnImm, sp, 0, compactRd)
+          expanded := iType(addi4spnImm, sp, 0, compactRd, 0x13)
           legal := addi4spnImm =/= 0.U
         }
         is (2.U) { // C.LW
@@ -75,7 +75,7 @@ class CompressedDecoder extends Module {
     is (1.U) {
       switch (inst(15, 13)) {
         is (0.U) { // C.ADDI / C.NOP
-          expanded := iType(ciImm, rd, 0, rd)
+          expanded := iType(ciImm, rd, 0, rd, 0x13)
           legal := true.B
           hint := rd === 0.U || ciImm === 0.U
         }
@@ -84,13 +84,13 @@ class CompressedDecoder extends Module {
           legal := true.B
         }
         is (2.U) { // C.LI
-          expanded := iType(ciImm, zero, 0, rd)
+          expanded := iType(ciImm, zero, 0, rd, 0x13)
           legal := true.B
           hint := rd === 0.U
         }
         is (3.U) { // C.ADDI16SP / C.LUI
           when(rd === 2.U) {
-            expanded := iType(addi16spImm, sp, 0, sp)
+            expanded := iType(addi16spImm, sp, 0, sp, 0x13)
             legal := addi16spImm =/= 0.U
           }.otherwise {
             expanded := Cat(Fill(15, inst(12)), inst(6, 2), rd, 0x37.U(7.W))
@@ -101,17 +101,17 @@ class CompressedDecoder extends Module {
         is (4.U) {
           switch (inst(11, 10)) {
             is (0.U) { // C.SRLI
-              expanded := iType(shamt, compactRs1, 5, compactRs1)
+              expanded := iType(shamt, compactRs1, 5, compactRs1, 0x13)
               legal := !inst(12)
               hint := shamt === 0.U
             }
             is (1.U) { // C.SRAI
-              expanded := iType(shamt | 0x400.U(12.W), compactRs1, 5, compactRs1)
+              expanded := iType(shamt | 0x400.U(12.W), compactRs1, 5, compactRs1, 0x13)
               legal := !inst(12)
               hint := shamt === 0.U
             }
             is (2.U) { // C.ANDI
-              expanded := iType(ciImm, compactRs1, 7, compactRs1)
+              expanded := iType(ciImm, compactRs1, 7, compactRs1, 0x13)
               legal := true.B
             }
             is (3.U) {
@@ -138,7 +138,7 @@ class CompressedDecoder extends Module {
     is (2.U) {
       switch (inst(15, 13)) {
         is (0.U) { // C.SLLI
-          expanded := iType(shamt, rd, 1, rd)
+          expanded := iType(shamt, rd, 1, rd, 0x13)
           legal := !inst(12)
           hint := rd === 0.U || shamt === 0.U
         }
