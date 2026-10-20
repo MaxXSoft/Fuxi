@@ -98,4 +98,7 @@ object Instructions {
 
   // pseudo instruction
   val NOP       = "b00000000000000000000000000010011".U(32.W)
+
+  // other instruction constants
+  val EBREAK_INST = "b00000000000100000000000001110011".U(32.W)
 }

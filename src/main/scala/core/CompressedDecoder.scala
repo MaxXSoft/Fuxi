@@ -3,7 +3,7 @@ package core
 import chisel3._
 import chisel3.util._
 
-import consts.Instructions.{EBREAK, NOP}
+import consts.Instructions.{EBREAK_INST, NOP}
 import consts.Parameters.INST_WIDTH
 
 class CompressedDecoder extends Module {
@@ -163,7 +163,7 @@ class CompressedDecoder extends Module {
             legal := true.B
             when (rs2 === 0.U) {
               when (rd === 0.U) { // C.EBREAK
-                expanded := EBREAK.value.U(INST_WIDTH.W)
+                expanded := EBREAK_INST
               } .otherwise { // C.JALR
                 expanded := iType(0.U(12.W), rd, 0, 1.U(5.W), 0x67)
               }
