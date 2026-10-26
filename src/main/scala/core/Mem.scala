@@ -210,7 +210,6 @@ class Mem extends Module {
   io.except.excValue  := excValue
 
   // output signals
-  io.mem.perf         := io.alu.perf
   io.mem.reg.en       := io.alu.reg.en
   io.mem.reg.addr     := io.alu.reg.addr
   io.mem.reg.data     := data
@@ -224,4 +223,5 @@ class Mem extends Module {
   io.mem.excMon.clear := clearEm
   io.mem.excMon.clearAll := checkExcMon
   io.mem.currentPc    := io.alu.currentPc
+  io.mem.perf         := io.alu.perf
 }

@@ -89,21 +89,6 @@ class Fetch extends Module {
   val stopOnFault = emit && instructionFault
   val cancel = redirect || stopOnFault
 
-  io.fetch.valid := instructionValid
-  io.fetch.pc := pc
-  io.fetch.inst := instruction
-  io.fetch.taken := bpu.io.predTaken
-  io.fetch.target := bpu.io.predTarget
-  io.fetch.predIndex := bpu.io.predIndex
-  io.fetch.rasCandidate := bpu.io.rasCandidate
-  io.fetch.rasUsed := bpu.io.rasUsed
-  io.rasOverflow := bpu.io.pmu.overflow
-  io.rasEmptyPop := bpu.io.pmu.emptyPop
-  io.rasClearNonempty := bpu.io.pmu.clearNonempty
-  io.fetch.pageFault := pageFault
-  io.fetch.accessFault := accessFault
-  io.fetch.faultAddr := Mux(split, pc + 2.U, pc)
-
   when (io.flush) {
     pc := io.flushPc
     faultBlocked := false.B
@@ -130,17 +115,9 @@ class Fetch extends Module {
     }
   }
 
-  // Reserve room before issuing. Drain old requests with their old VA so
-  // neither their data nor their faults can join the redirected stream.
-  val room = count +& responseValid.asUInt < depth.U
   // A global flush may also change privilege or translation state at the edge.
   // Predictions and decode branch recovery retain the current MMU context.
   val steerRequest = redirect && !io.contextFlush && !requestActive
-  io.rom.en := requestActive || steerRequest || (room && !faultBlocked)
-  io.rom.addr := Mux(steerRequest, alignedTarget, requestAddr)
-  io.rom.wen := 0.U
-  io.rom.wdata := 0.U
-
   val accepted = io.rom.en && io.rom.valid
   pending := accepted
   when (accepted) {
@@ -173,4 +150,28 @@ class Fetch extends Module {
   } .elsewhen (io.rom.en) {
     requestActive := true.B
   }
+
+  // Reserve room before issuing. Drain old requests with their old VA so
+  // neither their data nor their faults can join the redirected stream.
+  val room = count +& responseValid.asUInt < depth.U
+  io.rom.en := requestActive || steerRequest || (room && !faultBlocked)
+  io.rom.addr := Mux(steerRequest, alignedTarget, requestAddr)
+  io.rom.wen := 0.U
+  io.rom.wdata := 0.U
+
+  io.fetch.valid := instructionValid
+  io.fetch.pc := pc
+  io.fetch.inst := instruction
+  io.fetch.taken := bpu.io.predTaken
+  io.fetch.target := bpu.io.predTarget
+  io.fetch.predIndex := bpu.io.predIndex
+  io.fetch.rasCandidate := bpu.io.rasCandidate
+  io.fetch.rasUsed := bpu.io.rasUsed
+  io.fetch.pageFault := pageFault
+  io.fetch.accessFault := accessFault
+  io.fetch.faultAddr := Mux(split, pc + 2.U, pc)
+
+  io.rasOverflow := bpu.io.pmu.overflow
+  io.rasEmptyPop := bpu.io.pmu.emptyPop
+  io.rasClearNonempty := bpu.io.pmu.clearNonempty
 }

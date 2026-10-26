@@ -24,6 +24,7 @@ class Core(val fetchQueueDepth: Int, val hpmCount: Int) extends Module {
     val ram   = new SramIO(ADDR_WIDTH, DATA_WIDTH)
     // for trace generating
     val debug = new DebugIO
+    // performance monitoring
     val busPerf = Input(new BusPerformanceIO)
   })
 

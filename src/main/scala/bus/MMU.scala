@@ -50,6 +50,7 @@ class MMU(val size: Int, val isInst: Boolean) extends Module {
     val paddr   = Output(UInt(ADDR_WIDTH.W))
     // data transfer channel
     val data    = new SramIO(ADDR_WIDTH, DATA_WIDTH)
+    // performance monitoring
     val pmu     = Output(new MmuPerformanceIO)
   })
 
@@ -197,6 +198,8 @@ class MMU(val size: Int, val isInst: Boolean) extends Module {
   val faultLookup = if (isInst) io.lookup else true.B
   io.accessFault := state === sAccessFault && !walkCanceled && faultOwner && faultLookup
   io.paddr  := paddr
+
+  // performance monitoring
   io.pmu.miss := state === sIdle && !io.flush && io.en &&
                  io.lookup && !tlb.io.valid
   // Count the occupied walk even if a redirect/fence eventually cancels it.

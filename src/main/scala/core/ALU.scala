@@ -65,7 +65,8 @@ class ALU extends Module {
   val counterRmw = counterAddr &&
     (io.decoder.csrOp === CSR_RS || io.decoder.csrOp === CSR_RC)
   val counterData = Mux(io.decoder.csrOp === CSR_RS,
-    io.csrRead.data | io.decoder.csrData, io.csrRead.data & ~io.decoder.csrData)
+                        io.csrRead.data | io.decoder.csrData,
+                        io.csrRead.data & ~io.decoder.csrData)
 
   // commit to write back
   val result  = Mux(csrEn, io.csrRead.data,
@@ -80,7 +81,6 @@ class ALU extends Module {
   io.csrRead.addr := io.decoder.csrAddr
 
   // signals to next stage
-  io.alu.perf         := io.decoder.perf
   io.alu.lsuOp        := io.decoder.lsuOp
   io.alu.lsuData      := io.decoder.lsuData
   io.alu.reg.en       := io.decoder.regWen
@@ -96,4 +96,5 @@ class ALU extends Module {
   io.alu.valid        := io.decoder.valid
   io.alu.inst         := io.decoder.inst
   io.alu.currentPc    := io.decoder.currentPc
+  io.alu.perf         := io.decoder.perf
 }

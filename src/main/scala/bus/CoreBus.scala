@@ -53,6 +53,7 @@ class CoreBus extends Module {
     val data      = new AxiMaster(ADDR_WIDTH, DATA_WIDTH)
     // uncached AXI interface
     val uncached  = new AxiMaster(ADDR_WIDTH, DATA_WIDTH)
+    // performance monitoring
     val pmu       = Output(new BusPerformanceIO)
   })
 
@@ -133,6 +134,7 @@ class CoreBus extends Module {
   io.ram.fault       := dmmu.io.fault
   io.ram.accessFault := dmmu.io.accessFault || ddemux.io.in2.accessFault
 
+  // performance monitoring
   io.pmu.icacheAccess := icache.io.pmu.access
   io.pmu.icacheMiss := icache.io.pmu.miss
   io.pmu.icacheBusy := icache.io.pmu.busy

@@ -96,7 +96,7 @@ class HazardResolver extends Module {
         read.addr(4, 0) === write.addr(4, 0)
       val counterConfig = readsCounter && (write.addr === CSR_MCOUNTINHIBIT ||
         (write.addr >= CSR_MHPMEVENT(3) && write.addr <= CSR_MHPMEVENT(31) &&
-          read.addr(4, 0) === write.addr(4, 0)))
+         read.addr(4, 0) === write.addr(4, 0)))
       val counterAccess = read.addr(11, 8) === 0xc.U &&
         (write.addr === CSR_MCOUNTEREN || write.addr === CSR_SCOUNTEREN)
       write.op =/= CSR_NOP && write.op =/= CSR_R &&

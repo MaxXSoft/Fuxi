@@ -142,18 +142,6 @@ class Decoder extends Module {
   io.branch.target  := branchTarget
 
   // signals to next stage
-  io.decoder.perf.branch := isBranch && !isJump
-  io.decoder.perf.jal := isJump && !regEn1
-  io.decoder.perf.jalr := isJump && regEn1
-  io.decoder.perf.miss := branchMiss
-  io.decoder.perf.directionMiss := io.fetch.taken =/= branchTaken
-  io.decoder.perf.targetMiss := io.fetch.taken && branchTaken &&
-                                io.fetch.target =/= branchTarget
-  io.decoder.perf.rasCandidate := io.fetch.rasCandidate
-  io.decoder.perf.rasUsed := io.fetch.rasUsed
-  io.decoder.perf.compressed := expand.io.isCompressed
-  io.decoder.perf.load := inst(6, 0) === "b0000011".U
-  io.decoder.perf.store := inst(6, 0) === "b0100011".U
   io.decoder.aluOp      := aluOp
   io.decoder.opr1       := generateOpr(aluSrc1).asUInt
   io.decoder.opr2       := generateOpr(aluSrc2).asUInt
@@ -170,4 +158,18 @@ class Decoder extends Module {
   io.decoder.valid      := io.fetch.valid
   io.decoder.inst       := rawInst
   io.decoder.currentPc  := io.fetch.pc
+
+  // performance monitoring
+  io.decoder.perf.branch := isBranch && !isJump
+  io.decoder.perf.jal := isJump && !regEn1
+  io.decoder.perf.jalr := isJump && regEn1
+  io.decoder.perf.miss := branchMiss
+  io.decoder.perf.directionMiss := io.fetch.taken =/= branchTaken
+  io.decoder.perf.targetMiss := io.fetch.taken && branchTaken &&
+                                io.fetch.target =/= branchTarget
+  io.decoder.perf.rasCandidate := io.fetch.rasCandidate
+  io.decoder.perf.rasUsed := io.fetch.rasUsed
+  io.decoder.perf.compressed := expand.io.isCompressed
+  io.decoder.perf.load := inst(6, 0) === "b0000011".U
+  io.decoder.perf.store := inst(6, 0) === "b0100011".U
 }
