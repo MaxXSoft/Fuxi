@@ -49,4 +49,7 @@ object Parameters {
 
   // instruction fetch
   val FETCH_QUEUE_DEPTH = 4
+
+  // performance counters
+  val HPM_COUNT = 8
 }

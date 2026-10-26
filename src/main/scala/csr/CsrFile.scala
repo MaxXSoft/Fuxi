@@ -13,7 +13,7 @@ import consts.Control.{Y, N}
 import consts.Paging.PPN_WIDTH
 import consts.PerfEvent.EVENT_COUNT
 
-class CsrFile(val hpmCount: Int = 8) extends Module {
+class CsrFile(val hpmCount: Int) extends Module {
   require(hpmCount >= 0 && hpmCount <= 29)
   require(EVENT_COUNT > 1 && EVENT_COUNT <= 64)
   val io = IO(new Bundle {

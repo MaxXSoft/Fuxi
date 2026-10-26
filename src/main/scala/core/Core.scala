@@ -11,7 +11,7 @@ import lsu.ExclusiveMonitor
 import consts.Paging.PPN_WIDTH
 import consts.PerfEvent._
 
-class Core(val fetchQueueDepth: Int, val hpmCount: Int = 8) extends Module {
+class Core(val fetchQueueDepth: Int, val hpmCount: Int) extends Module {
   val io = IO(new Bundle {
     // interrupt request
     val irq   = new InterruptIO

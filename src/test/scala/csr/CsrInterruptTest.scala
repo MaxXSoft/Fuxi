@@ -1,6 +1,7 @@
 package csr
 
 import chisel3._
+import consts.Parameters.HPM_COUNT
 import consts.CSR._
 import utils.{CsrRegressionTester, TestDriver}
 
@@ -62,5 +63,5 @@ class CsrInterruptTester(c: CsrFile) extends CsrRegressionTester(c) {
 }
 
 object CsrInterruptTest extends App {
-  if (!TestDriver.execute(args, () => new CsrFile)(c => new CsrInterruptTester(c))) sys.exit(1)
+  if (!TestDriver.execute(args, () => new CsrFile(HPM_COUNT))(c => new CsrInterruptTester(c))) sys.exit(1)
 }

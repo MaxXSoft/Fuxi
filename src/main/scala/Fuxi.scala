@@ -4,12 +4,12 @@ import circt.stage.ChiselStage
 
 import io._
 import axi.AxiMaster
-import consts.Parameters.{ADDR_WIDTH, DATA_WIDTH, FETCH_QUEUE_DEPTH}
+import consts.Parameters._
 
 import core.Core
 import bus.CoreBus
 
-class Fuxi(hpmCount: Int = 8) extends Module {
+class Fuxi(hpmCount: Int) extends Module {
   val io = IO(new Bundle {
     // interrupt request
     val irq       = new InterruptIO
@@ -42,7 +42,7 @@ object Fuxi extends App {
   private val hpmOption = args.indexOf("--hpm-counters")
   require(hpmOption < 0 || hpmOption + 1 < args.length,
           "--hpm-counters requires a count from 0 to 29")
-  private val hpmCount = if (hpmOption < 0) 8 else args(hpmOption + 1).toInt
+  private val hpmCount = if (hpmOption < 0) HPM_COUNT else args(hpmOption + 1).toInt
   private val stageArgs = if (hpmOption < 0) args else args.patch(hpmOption, Nil, 2)
   private val firtoolOptions = Array(
     "--firtool-option", "-disable-all-randomization",
