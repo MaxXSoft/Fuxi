@@ -29,23 +29,43 @@ class RasPerformanceIO extends Bundle {
   val clearNonempty = Bool() // backend flush discards nonempty stack
 }
 
+// These attributes travel with the fetched instruction until retirement.
+class PredictionPerformanceIO extends Bundle {
+  val rasCandidate = Bool()
+  val rasUsed = Bool()
+}
+
+class BpuPerformanceIO extends Bundle {
+  val ras = new RasPerformanceIO
+  val prediction = new PredictionPerformanceIO
+}
+
+// Prediction metadata belongs to the instruction that was fetched. Keep it
+// through stalls and discard it with the instruction on a pipeline flush.
+class RetirePerformanceIO extends Bundle {
+  val branch = Bool()
+  val jal = Bool()
+  val jalr = Bool()
+  val miss = Bool()
+  val directionMiss = Bool()
+  val targetMiss = Bool()
+  val rasCandidate = Bool()
+  val rasUsed = Bool()
+  val compressed = Bool()
+  val load = Bool()
+  val store = Bool()
+}
+
 class BusPerformanceIO extends Bundle {
   // Cache totals include translated program requests and page-table traffic.
   // Walk subsets identify the SRAM owner at completion (access) or launch
   // (miss); subtract them from totals to obtain program-side activity.
-  val icacheAccess = Bool()
-  val icacheMiss = Bool()
-  val icacheBusy = Bool()
+  val icache = new CachePerformanceIO
   val icacheWalkAccess = Bool()
   val icacheWalkMiss = Bool()
-  val dcacheAccess = Bool()
-  val dcacheMiss = Bool()
-  val dcacheBusy = Bool()
-  val dcacheWriteback = Bool()
+  val dcache = new CachePerformanceIO
   val dcacheWalkAccess = Bool()
   val dcacheWalkMiss = Bool()
-  val itlbMiss = Bool()
-  val itlbWalkCycle = Bool()
-  val dtlbMiss = Bool()
-  val dtlbWalkCycle = Bool()
+  val itlb = new MmuPerformanceIO
+  val dtlb = new MmuPerformanceIO
 }

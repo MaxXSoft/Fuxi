@@ -160,16 +160,16 @@ class Decoder extends Module {
   io.decoder.currentPc  := io.fetch.pc
 
   // performance monitoring
-  io.decoder.perf.branch := isBranch && !isJump
-  io.decoder.perf.jal := isJump && !regEn1
-  io.decoder.perf.jalr := isJump && regEn1
-  io.decoder.perf.miss := branchMiss
-  io.decoder.perf.directionMiss := io.fetch.taken =/= branchTaken
-  io.decoder.perf.targetMiss := io.fetch.taken && branchTaken &&
+  io.decoder.pmu.branch := isBranch && !isJump
+  io.decoder.pmu.jal := isJump && !regEn1
+  io.decoder.pmu.jalr := isJump && regEn1
+  io.decoder.pmu.miss := branchMiss
+  io.decoder.pmu.directionMiss := io.fetch.taken =/= branchTaken
+  io.decoder.pmu.targetMiss := io.fetch.taken && branchTaken &&
                                 io.fetch.target =/= branchTarget
-  io.decoder.perf.rasCandidate := io.fetch.rasCandidate
-  io.decoder.perf.rasUsed := io.fetch.rasUsed
-  io.decoder.perf.compressed := expand.io.isCompressed
-  io.decoder.perf.load := inst(6, 0) === "b0000011".U
-  io.decoder.perf.store := inst(6, 0) === "b0100011".U
+  io.decoder.pmu.rasCandidate := io.fetch.pmu.rasCandidate
+  io.decoder.pmu.rasUsed := io.fetch.pmu.rasUsed
+  io.decoder.pmu.compressed := expand.io.isCompressed
+  io.decoder.pmu.load := inst(6, 0) === "b0000011".U
+  io.decoder.pmu.store := inst(6, 0) === "b0100011".U
 }
