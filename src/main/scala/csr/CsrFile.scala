@@ -114,40 +114,24 @@ class CsrFile(val hpmCount: Int) extends Module {
     BitPat(CSR_MCAUSE)        ->  List(mcause.asUInt,   Y, Y),
     BitPat(CSR_MTVAL)         ->  List(mtval.asUInt,    Y, Y),
     BitPat(CSR_MIP)           ->  List(mip.asUInt,      Y, Y),
-    BitPat(CSR_PMPCFG0)       ->  List(0.U,             Y, Y),
-    BitPat(CSR_PMPCFG1)       ->  List(0.U,             Y, Y),
-    BitPat(CSR_PMPCFG2)       ->  List(0.U,             Y, Y),
-    BitPat(CSR_PMPCFG3)       ->  List(0.U,             Y, Y),
-    BitPat(CSR_PMPADDR0)      ->  List(0.U,             Y, Y),
-    BitPat(CSR_PMPADDR1)      ->  List(0.U,             Y, Y),
-    BitPat(CSR_PMPADDR2)      ->  List(0.U,             Y, Y),
-    BitPat(CSR_PMPADDR3)      ->  List(0.U,             Y, Y),
-    BitPat(CSR_PMPADDR4)      ->  List(0.U,             Y, Y),
-    BitPat(CSR_PMPADDR5)      ->  List(0.U,             Y, Y),
-    BitPat(CSR_PMPADDR6)      ->  List(0.U,             Y, Y),
-    BitPat(CSR_PMPADDR7)      ->  List(0.U,             Y, Y),
-    BitPat(CSR_PMPADDR8)      ->  List(0.U,             Y, Y),
-    BitPat(CSR_PMPADDR9)      ->  List(0.U,             Y, Y),
-    BitPat(CSR_PMPADDR10)     ->  List(0.U,             Y, Y),
-    BitPat(CSR_PMPADDR11)     ->  List(0.U,             Y, Y),
-    BitPat(CSR_PMPADDR12)     ->  List(0.U,             Y, Y),
-    BitPat(CSR_PMPADDR13)     ->  List(0.U,             Y, Y),
-    BitPat(CSR_PMPADDR14)     ->  List(0.U,             Y, Y),
-    BitPat(CSR_PMPADDR15)     ->  List(0.U,             Y, Y),
     BitPat(CSR_MCYCLE)        ->  List(cycle(31, 0),    Y, Y),
     BitPat(CSR_MINSTRET)      ->  List(instret(31, 0),  Y, Y),
     BitPat(CSR_MCYCLEH)       ->  List(cycle(63, 32),   Y, Y),
     BitPat(CSR_MINSTRETH)     ->  List(instret(63, 32), Y, Y),
     BitPat(CSR_MCOUNTINHIBIT) ->  List(mcountinhibit,   Y, Y),
-  ) ++ (3 to 31).flatMap { n =>
+  ) ++ (0 until 4).map { n =>
+    BitPat(pmpCfgAddr(n)) -> List(0.U, Y, Y)
+  } ++ (0 until 16).map { n =>
+    BitPat(pmpAddr(n)) -> List(0.U, Y, Y)
+  } ++ (3 to 31).flatMap { n =>
     val counter = if (n < hpmCount + 3) mhpmcounter(n - 3) else 0.U(64.W)
     val event = if (n < hpmCount + 3) mhpmevent(n - 3) else 0.U(log2Ceil(PerfEvent.values.size).W)
     Seq(
-      BitPat(CSR_HPMCOUNTER(n)) -> List(counter(31, 0), Y, N),
-      BitPat(CSR_HPMCOUNTERH(n)) -> List(counter(63, 32), Y, N),
-      BitPat(CSR_MHPMCOUNTER(n)) -> List(counter(31, 0), Y, Y),
-      BitPat(CSR_MHPMCOUNTERH(n)) -> List(counter(63, 32), Y, Y),
-      BitPat(CSR_MHPMEVENT(n)) -> List(event.pad(32), Y, Y),
+      BitPat(hpmCounterAddr(n)) -> List(counter(31, 0), Y, N),
+      BitPat(hpmCounterHighAddr(n)) -> List(counter(63, 32), Y, N),
+      BitPat(mhpmCounterAddr(n)) -> List(counter(31, 0), Y, Y),
+      BitPat(mhpmCounterHighAddr(n)) -> List(counter(63, 32), Y, Y),
+      BitPat(mhpmEventAddr(n)) -> List(event.pad(32), Y, Y),
     )
   }
 
@@ -161,11 +145,11 @@ class CsrFile(val hpmCount: Int) extends Module {
     CSR_RS  -> (readable && writable),
     CSR_RC  -> (readable && writable),
   ))
-  val modeValid = io.read.addr(9, 8) <= mode
+  val modeValid = requiredPrivilege(io.read.addr) <= mode
   // Low/high counter aliases share their enable bit; M-mode bypasses both.
-  val counterIndex = io.read.addr(4, 0)
-  val counterValid = mode === CSR_MODE_M || io.read.addr(11, 8) =/= 0xc.U ||
-    (mcounteren(counterIndex) && (mode =/= CSR_MODE_U || scounteren(counterIndex)))
+  val readCounterIndex = counterIndex(io.read.addr)
+  val counterValid = mode === CSR_MODE_M || !isUserCounter(io.read.addr) ||
+    (mcounteren(readCounterIndex) && (mode =/= CSR_MODE_U || scounteren(readCounterIndex)))
   val valid     = readValid && modeValid && counterValid
 
   // CSR write related signals
@@ -288,13 +272,13 @@ class CsrFile(val hpmCount: Int) extends Module {
       minstret.data := Cat(writeData, minstret.data(31, 0))
     }
     for (i <- 0 until hpmCount) {
-      when (io.write.addr === CSR_MHPMCOUNTER(i + 3)) {
+      when (io.write.addr === mhpmCounterAddr(i + 3)) {
         mhpmcounter(i) := Cat(mhpmcounter(i)(63, 32), writeData)
       }
-      when (io.write.addr === CSR_MHPMCOUNTERH(i + 3)) {
+      when (io.write.addr === mhpmCounterHighAddr(i + 3)) {
         mhpmcounter(i) := Cat(writeData, mhpmcounter(i)(31, 0))
       }
-      when (io.write.addr === CSR_MHPMEVENT(i + 3)) {
+      when (io.write.addr === mhpmEventAddr(i + 3)) {
         mhpmevent(i) := Mux(writeData < PerfEvent.values.size.U, writeData(log2Ceil(PerfEvent.values.size) - 1, 0), 0.U)
       }
     }

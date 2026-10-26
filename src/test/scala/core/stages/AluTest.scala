@@ -69,7 +69,7 @@ class AluUnitTester(c: ALU) extends PeekPokeTester(c) {
   poke(c.io.csrRead.data, snapshot)
   poke(c.io.decoder.csrData, operand)
   val machineCounters = Seq(CSR_MCYCLE, CSR_MCYCLEH, CSR_MINSTRET, CSR_MINSTRETH,
-    CSR_MHPMCOUNTER(3), CSR_MHPMCOUNTERH(3), CSR_MHPMCOUNTER(31), CSR_MHPMCOUNTERH(31))
+    mhpmCounterAddr(3), mhpmCounterHighAddr(3), mhpmCounterAddr(31), mhpmCounterHighAddr(31))
   for (addr <- machineCounters; op <- Seq(CSR_RS, CSR_RC)) {
     poke(c.io.decoder.csrAddr, addr)
     poke(c.io.decoder.csrOp, op)
@@ -79,7 +79,7 @@ class AluUnitTester(c: ALU) extends PeekPokeTester(c) {
       if (op.litValue == CSR_RS.litValue) snapshot | operand else snapshot & ~operand)
     expect(c.io.csrRead.op, op)
   }
-  for (addr <- Seq(CSR_MIP, CSR_MSTATUS, CSR_SSTATUS, CSR_MHPMEVENT(3), CSR_MCOUNTINHIBIT);
+  for (addr <- Seq(CSR_MIP, CSR_MSTATUS, CSR_SSTATUS, mhpmEventAddr(3), CSR_MCOUNTINHIBIT);
        op <- Seq(CSR_RS, CSR_RC)) {
     poke(c.io.decoder.csrAddr, addr)
     poke(c.io.decoder.csrOp, op)

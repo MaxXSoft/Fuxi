@@ -5,6 +5,7 @@ import chisel3.util.MuxLookup
 
 import io._
 import consts.AluOp._
+import consts.CSR.isMachineCounter
 import consts.MduOp.MDU_NOP
 import consts.LsuOp.LSU_NOP
 import consts.CsrOp.{CSR_NOP, CSR_W, CSR_RS, CSR_RC}
@@ -60,8 +61,7 @@ class ALU extends Module {
   // events may change a counter between EX and WB; recomputing the bit-op
   // against its live WB value would disagree with the instruction's read.
   // The explicit replacement still commits at WB, like a normal CSR write.
-  val counterAddr = io.decoder.csrAddr(11, 8) === 0xb.U &&
-    io.decoder.csrAddr(6, 5) === 0.U && io.decoder.csrAddr(4, 0) =/= 1.U
+  val counterAddr = isMachineCounter(io.decoder.csrAddr)
   val counterRmw = counterAddr &&
     (io.decoder.csrOp === CSR_RS || io.decoder.csrOp === CSR_RC)
   val counterData = Mux(io.decoder.csrOp === CSR_RS,
