@@ -1,6 +1,7 @@
 package lsu
 
 import chisel3._
+import consts.LsuOp
 import io._
 import consts.CSR.CSR_MODE_S
 import consts.LsuOp._
@@ -9,7 +10,7 @@ import utils.{AxiTestSupport, PeekPokeTester, TestDriver}
 
 class AtomicPermissionHarness extends Module {
   val io = IO(new Bundle {
-    val op = Input(UInt(LSU_OP_WIDTH.W))
+    val op = Input(LsuOp())
     val flush = Input(Bool())
     val stall = Output(Bool())
     val trap = Output(Bool())

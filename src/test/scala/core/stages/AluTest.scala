@@ -12,7 +12,7 @@ import consts.CsrOp._
 class AluUnitTester(c: ALU) extends PeekPokeTester(c) {
   def unsignedCompare(i : Long, j : Long) = (i < j) ^ (i < 0) ^ (j < 0)
 
-  def testAlu(aluOp: UInt) = {
+  def testAlu(aluOp: consts.AluOp.Type) = {
     val opr1 = rnd.nextInt()
     val opr2 = rnd.nextInt()
     val result = aluOp match {

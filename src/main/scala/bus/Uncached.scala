@@ -20,8 +20,10 @@ class Uncached extends Module {
   val dataSize = log2Ceil(DATA_WIDTH / 8)
 
   // states of finite state machine
-  val (sIdle :: sReadAddr :: sReadData :: sWriteAddr :: sWriteData ::
-       sWriteResp :: sReadEnd :: sWriteEnd :: Nil) = Enum(8)
+  object State extends ChiselEnum {
+    val sIdle, sReadAddr, sReadData, sWriteAddr, sWriteData, sWriteResp, sReadEnd, sWriteEnd = Value
+  }
+  import State._
   val state = RegInit(sIdle)
 
   // AXI control

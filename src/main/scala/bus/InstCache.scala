@@ -28,7 +28,10 @@ class InstCache extends Module {
   require(log2Ceil(burstLen) <= io.axi.readAddr.bits.len.getWidth)
 
   // states of finite state machine
-  val sIdle :: sAddr :: sData :: sUpdate :: sAccessFault :: Nil = Enum(5)
+  object State extends ChiselEnum {
+    val sIdle, sAddr, sData, sUpdate, sAccessFault = Value
+  }
+  import State._
   val state = RegInit(sIdle)
 
   // all cache lines

@@ -33,7 +33,7 @@ class MemUnitTester(c: core.Mem) extends PeekPokeTester(c) {
     if (checkStall) expect(c.io.stallReq, false)
   }
 
-  def pokeLsu(op: UInt, addr: Int) = {
+  def pokeLsu(op: consts.LsuOp.Type, addr: Int) = {
     poke(c.io.alu.reg.data, addr)
     poke(c.io.alu.lsuOp, op)
     poke(c.io.alu.lsuData, wdata)
@@ -44,7 +44,7 @@ class MemUnitTester(c: core.Mem) extends PeekPokeTester(c) {
     poke(c.io.flushDcAccessFault, false)
   }
 
-  def pokeExc(excType: UInt, pc: Int,
+  def pokeExc(excType: consts.ExceptType.Type, pc: Int,
               hasInt: Boolean, userMode: Boolean) = {
     poke(c.io.alu.excType, excType)
     poke(c.io.alu.valid, true)

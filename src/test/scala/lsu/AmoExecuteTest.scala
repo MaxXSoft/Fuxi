@@ -2,7 +2,7 @@ package lsu
 
 import utils.{PeekPokeTester, TestDriver}
 
-import LsuDecode._
+import AmoOp._
 
 class AmoExecuteUnitTester(c: AmoExecute) extends PeekPokeTester(c) {
   def testAmo() = {

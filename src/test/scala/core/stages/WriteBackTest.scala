@@ -5,7 +5,7 @@ import chisel3.UInt
 import utils.{PeekPokeTester, TestDriver}
 
 import consts.LsuOp._
-import lsu.LsuDecode._
+import lsu.LsuWidth._
 
 class WriteBackUnitTester(c: WriteBack) extends PeekPokeTester(c) {
   val rdata = BigInt("a2345678", 16)
@@ -26,7 +26,7 @@ class WriteBackUnitTester(c: WriteBack) extends PeekPokeTester(c) {
     (data >> (sel * 8)) & m
   }
 
-  def pokeLoad(op: UInt, sel: Int) = {
+  def pokeLoad(op: consts.LsuOp.Type, sel: Int) = {
     poke(c.io.mem.reg.en, true)
     poke(c.io.mem.reg.load, true)
     poke(c.io.ramData, rdata)
@@ -61,7 +61,7 @@ class WriteBackUnitTester(c: WriteBack) extends PeekPokeTester(c) {
     expect(c.io.reg.data, data)
   }
 
-  def expectLoad(op: UInt, sel: Int): Unit = {
+  def expectLoad(op: consts.LsuOp.Type, sel: Int): Unit = {
     op match {
       case LSU_LB => expectReg(signExt(rdata, 8, sel))
       case LSU_LH => expectReg(signExt(rdata, 16, sel))
