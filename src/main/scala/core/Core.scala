@@ -9,6 +9,7 @@ import utils._
 import csr.CsrFile
 import lsu.ExclusiveMonitor
 import consts.Paging.PPN_WIDTH
+import consts.PerfEvent
 import consts.PerfEvent._
 
 class Core(val fetchQueueDepth: Int, val hpmCount: Int) extends Module {
@@ -128,7 +129,7 @@ class Core(val fetchQueueDepth: Int, val hpmCount: Int) extends Module {
 
   // Passive event collection. Retirement gates architectural events; the
   // other sources deliberately include speculative work and overlapping waits.
-  val events = WireInit(VecInit(Seq.fill(values.size)(false.B)))
+  val events = WireInit(VecInit(Seq.fill(PerfEvent.values.size)(false.B)))
   val retired = wb.io.csr.retired
   val p = memwb.io.next.pmu
   events(BRANCH.id) := retired && p.branch
