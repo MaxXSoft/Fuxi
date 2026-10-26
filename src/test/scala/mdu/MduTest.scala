@@ -9,7 +9,7 @@ class MduUnitTester(c: MDU) extends PeekPokeTester(c) {
   val mask  = BigInt("ffffffff", 16)
   val min   = BigInt("80000000", 16)
 
-  def generateOprAns(op: UInt) = {
+  def generateOprAns(op: consts.MduOp.Type) = {
     val num1  = rnd.nextInt()
     val num2  = rnd.nextInt()
     val opr1s = BigInt(num1)
@@ -42,7 +42,7 @@ class MduUnitTester(c: MDU) extends PeekPokeTester(c) {
     (opr1, opr2, ans)
   }
 
-  def checkMdu(op: UInt, opr1: BigInt, opr2: BigInt, ans: BigInt): Unit = {
+  def checkMdu(op: consts.MduOp.Type, opr1: BigInt, opr2: BigInt, ans: BigInt): Unit = {
     poke(c.io.flush, false)
     poke(c.io.op, op)
     poke(c.io.opr1, opr1)
@@ -58,7 +58,7 @@ class MduUnitTester(c: MDU) extends PeekPokeTester(c) {
     step(1)
   }
 
-  def testMdu(op: UInt): Unit = {
+  def testMdu(op: consts.MduOp.Type): Unit = {
     val (opr1, opr2, ans) = generateOprAns(op)
     checkMdu(op, opr1, opr2, ans)
   }

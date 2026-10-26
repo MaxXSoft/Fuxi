@@ -23,7 +23,10 @@ class Divider(val oprWidth: Int) extends Module {
   val cycleCount  = (oprWidth / 2f).ceil.toInt
 
   // state of finite state machine
-  val sIdle :: sRunning :: sEnd :: Nil = Enum(3)
+  object State extends ChiselEnum {
+    val sIdle, sRunning, sEnd = Value
+  }
+  import State._
   val state = RegInit(sIdle)
 
   // some data registers

@@ -4,7 +4,7 @@ import chisel3._
 import chisel3.util.MuxLookup
 
 import io._
-import lsu.LsuDecode._
+import lsu.LsuWidth._
 import consts.Parameters.{ADDR_WIDTH, DATA_WIDTH}
 
 class WriteBack extends Module {

@@ -10,14 +10,14 @@ import consts.ExceptCause._
 
 class CsrFileUnitTester(c: CsrFile) extends PeekPokeTester(c) {
   poke(c.io.perfEvents, 0)
-  def testRead(op: UInt, addr: UInt, valid: Boolean, data: BigInt) = {
+  def testRead(op: consts.CsrOp.Type, addr: UInt, valid: Boolean, data: BigInt) = {
     poke(c.io.read.op, op)
     poke(c.io.read.addr, addr)
     expect(c.io.read.valid, valid)
     if (valid) expect(c.io.read.data, data)
   }
 
-  def pokeWrite(op: UInt, addr: UInt, data: Int) = {
+  def pokeWrite(op: consts.CsrOp.Type, addr: UInt, data: Int) = {
     poke(c.io.write.op, op)
     poke(c.io.write.addr, addr)
     poke(c.io.write.data, data)

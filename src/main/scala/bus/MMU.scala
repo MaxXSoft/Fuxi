@@ -55,8 +55,10 @@ class MMU(val size: Int, val isInst: Boolean) extends Module {
   })
 
   // states of finite state machine
-  val (sIdle :: sAddr :: sRead :: sUpdate :: sAccessFault ::
-       sFlush :: Nil) = Enum(6)
+  object State extends ChiselEnum {
+    val sIdle, sAddr, sRead, sUpdate, sAccessFault, sFlush = Value
+  }
+  import State._
   val state = RegInit(sIdle)
 
   // some other registers

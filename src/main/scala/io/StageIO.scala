@@ -3,13 +3,13 @@ package io
 import chisel3._
 
 import consts.Parameters._
-import consts.AluOp.ALU_OP_WIDTH
-import consts.MduOp.MDU_OP_WIDTH
-import consts.LsuOp.LSU_OP_WIDTH
-import consts.CsrOp.CSR_OP_WIDTH
+import consts.AluOp
+import consts.MduOp
+import consts.LsuOp
+import consts.CsrOp
 import consts.CSR.CSR_ADDR_WIDTH
-import consts.ExceptType.EXC_TYPE_WIDTH
-import lsu.LsuDecode.LS_DATA_WIDTH
+import consts.ExceptType
+import lsu.LsuWidth
 
 // interface of stage's IO
 class StageIO extends Bundle {
@@ -39,22 +39,22 @@ class FetchIO extends StageIO {
 // ID stage
 class DecoderIO extends StageIO {
   // to ALU/MDU
-  val aluOp     = UInt(ALU_OP_WIDTH.W)
+  val aluOp     = AluOp()
   val opr1      = UInt(DATA_WIDTH.W)
   val opr2      = UInt(DATA_WIDTH.W)
-  val mduOp     = UInt(MDU_OP_WIDTH.W)
+  val mduOp     = MduOp()
   // to Mem (LSU)
-  val lsuOp     = UInt(LSU_OP_WIDTH.W)
+  val lsuOp     = LsuOp()
   val lsuData   = UInt(DATA_WIDTH.W)
   // to write back
   val regWen    = Bool()
   val regWaddr  = UInt(REG_ADDR_WIDTH.W)
   // to CSR
-  val csrOp     = UInt(CSR_OP_WIDTH.W)
+  val csrOp     = CsrOp()
   val csrAddr   = UInt(CSR_ADDR_WIDTH.W)
   val csrData   = UInt(DATA_WIDTH.W)
   // exception information
-  val excType   = UInt(EXC_TYPE_WIDTH.W)
+  val excType   = ExceptType()
   val excValue  = UInt(DATA_WIDTH.W)
   // instruction info
   val valid     = Bool()
@@ -67,14 +67,14 @@ class DecoderIO extends StageIO {
 // EX stage
 class AluIO extends StageIO {
   // to Mem (LSU)
-  val lsuOp     = UInt(LSU_OP_WIDTH.W)
+  val lsuOp     = LsuOp()
   val lsuData   = UInt(DATA_WIDTH.W)
   // to write back
   val reg       = new RegCommitIO
   // to CSR
   val csr       = new CsrCommitIO
   // exception information
-  val excType   = UInt(EXC_TYPE_WIDTH.W)
+  val excType   = ExceptType()
   val excValue  = UInt(DATA_WIDTH.W)
   // instruction info
   val valid     = Bool()
@@ -90,7 +90,7 @@ class MemIO extends StageIO {
   val reg       = new RegCommitIO
   val memSigned = Bool()
   val memSel    = UInt(ADDR_ALIGN_WIDTH.W)
-  val memWidth  = UInt(LS_DATA_WIDTH.W)
+  val memWidth  = LsuWidth()
   // to CSR
   val csr       = new CsrCommitIO
   // to exclusive monitor

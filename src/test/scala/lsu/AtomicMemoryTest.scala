@@ -12,7 +12,7 @@ import utils.{PeekPokeTester, TestDriver}
 // buses. The AXI model delays every channel independently.
 class AtomicMemoryHarness(cached: Boolean) extends Module {
   val io = IO(new Bundle {
-    val op = Input(UInt(consts.LsuOp.LSU_OP_WIDTH.W))
+    val op = Input(consts.LsuOp())
     val address = Input(UInt(32.W))
     val operand = Input(UInt(32.W))
     val busy = Input(Bool())

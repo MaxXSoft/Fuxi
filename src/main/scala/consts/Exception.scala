@@ -1,24 +1,21 @@
 package consts
 
 import chisel3._
-import chisel3.util.log2Ceil
 
 // exception type
-object ExceptType {
-  val EXC_TYPE_WIDTH = log2Ceil(12)
-
-  val EXC_NONE  = 0.U(EXC_TYPE_WIDTH.W)
-  val EXC_ECALL = 1.U(EXC_TYPE_WIDTH.W)
-  val EXC_EBRK  = 2.U(EXC_TYPE_WIDTH.W)
-  val EXC_SRET  = 3.U(EXC_TYPE_WIDTH.W)
-  val EXC_MRET  = 4.U(EXC_TYPE_WIDTH.W)
-  val EXC_ILLEG = 5.U(EXC_TYPE_WIDTH.W)   // illegal instruction
-  val EXC_IPAGE = 6.U(EXC_TYPE_WIDTH.W)   // instruction page fault
-  val EXC_IADDR = 7.U(EXC_TYPE_WIDTH.W)   // instruction address misaligned
-  val EXC_LOAD  = 8.U(EXC_TYPE_WIDTH.W)
-  val EXC_STAMO = 9.U(EXC_TYPE_WIDTH.W)
-  val EXC_SPRIV = 10.U(EXC_TYPE_WIDTH.W)  // S-mode instruction
-  val EXC_IACCESS = 11.U(EXC_TYPE_WIDTH.W) // instruction access fault
+object ExceptType extends ChiselEnum {
+  val EXC_NONE  = Value
+  val EXC_ECALL = Value
+  val EXC_EBRK  = Value
+  val EXC_SRET  = Value
+  val EXC_MRET  = Value
+  val EXC_ILLEG = Value   // illegal instruction
+  val EXC_IPAGE = Value   // instruction page fault
+  val EXC_IADDR = Value   // instruction address misaligned
+  val EXC_LOAD  = Value
+  val EXC_STAMO = Value
+  val EXC_SPRIV = Value  // S-mode instruction
+  val EXC_IACCESS = Value // instruction access fault
 }
 
 // exception cause

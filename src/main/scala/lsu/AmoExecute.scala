@@ -3,13 +3,13 @@ package lsu
 import chisel3._
 import chisel3.util._
 
-import LsuDecode._
+import AmoOp._
 import consts.Parameters._
 
 class AmoExecute extends Module {
   val io = IO(new Bundle {
     // control signals
-    val op        = Input(UInt(AMO_OP_WIDTH.W))
+    val op        = Input(AmoOp())
     val flush     = Input(Bool())
     val hold      = Input(Bool())
     val ready     = Output(Bool())
@@ -24,7 +24,10 @@ class AmoExecute extends Module {
   })
   
   // state of finite state machine
-  val sIdle :: sStore :: sEnd :: Nil = Enum(3)
+  object State extends ChiselEnum {
+    val sIdle, sStore, sEnd = Value
+  }
+  import State._
   val state = RegInit(sIdle)
 
   // An AMO returns the value that preceded its memory update.  Capture that

@@ -4,13 +4,13 @@ import chisel3._
 import chisel3.util._
 
 import consts.Parameters._
-import consts.MduOp.MDU_OP_WIDTH
+import consts.MduOp
 
 class MDU extends Module {
   val io = IO(new Bundle {
     // control signals
     val flush   = Input(Bool())
-    val op      = Input(UInt(MDU_OP_WIDTH.W))
+    val op      = Input(MduOp())
     val valid   = Output(Bool())
     // data
     val opr1    = Input(UInt(DATA_WIDTH.W))
@@ -20,7 +20,7 @@ class MDU extends Module {
 
   // decode operation to divider & multiplier control signals
   val mulEn :: divEn :: hiRem :: lhsSigned :: rhsSigned :: Nil =
-      ListLookup(io.op, MduDecode.DEFAULT, MduDecode.TABLE)
+      ListLookup(io.op.asUInt, MduDecode.DEFAULT, MduDecode.TABLE)
 
   // operands
   val isOpr1Neg = lhsSigned && io.opr1(DATA_WIDTH - 1)

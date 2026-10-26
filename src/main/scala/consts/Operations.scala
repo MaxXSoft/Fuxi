@@ -1,76 +1,67 @@
 package consts
 
 import chisel3._
-import chisel3.util.log2Ceil
 
 // all operations that supported by ALU
-object AluOp {
-  val ALU_OP_WIDTH = log2Ceil(10)
-
-  val ALU_ADD   = 0.U(ALU_OP_WIDTH.W)
-  val ALU_SUB   = 1.U(ALU_OP_WIDTH.W)
-  val ALU_XOR   = 2.U(ALU_OP_WIDTH.W)
-  val ALU_OR    = 3.U(ALU_OP_WIDTH.W)
-  val ALU_AND   = 4.U(ALU_OP_WIDTH.W)
-  val ALU_SLT   = 5.U(ALU_OP_WIDTH.W)
-  val ALU_SLTU  = 6.U(ALU_OP_WIDTH.W)
-  val ALU_SLL   = 7.U(ALU_OP_WIDTH.W)
-  val ALU_SRL   = 8.U(ALU_OP_WIDTH.W)
-  val ALU_SRA   = 9.U(ALU_OP_WIDTH.W)
+object AluOp extends ChiselEnum {
+  val ALU_ADD   = Value
+  val ALU_SUB   = Value
+  val ALU_XOR   = Value
+  val ALU_OR    = Value
+  val ALU_AND   = Value
+  val ALU_SLT   = Value
+  val ALU_SLTU  = Value
+  val ALU_SLL   = Value
+  val ALU_SRL   = Value
+  val ALU_SRA   = Value
 }
 
 // all operations that supported by MDU
-object MduOp {
-  val MDU_OP_WIDTH = log2Ceil(9)
-
-  val MDU_NOP     = 0.U(MDU_OP_WIDTH.W)
-  val MDU_MUL     = 1.U(MDU_OP_WIDTH.W)
-  val MDU_MULH    = 2.U(MDU_OP_WIDTH.W)
-  val MDU_MULHSU  = 3.U(MDU_OP_WIDTH.W)
-  val MDU_MULHU   = 4.U(MDU_OP_WIDTH.W)
-  val MDU_DIV     = 5.U(MDU_OP_WIDTH.W)
-  val MDU_DIVU    = 6.U(MDU_OP_WIDTH.W)
-  val MDU_REM     = 7.U(MDU_OP_WIDTH.W)
-  val MDU_REMU    = 8.U(MDU_OP_WIDTH.W)
+object MduOp extends ChiselEnum {
+  val MDU_NOP     = Value
+  val MDU_MUL     = Value
+  val MDU_MULH    = Value
+  val MDU_MULHSU  = Value
+  val MDU_MULHU   = Value
+  val MDU_DIV     = Value
+  val MDU_DIVU    = Value
+  val MDU_REM     = Value
+  val MDU_REMU    = Value
 }
 
 // all operations that supported by LSU
-object LsuOp {
-  val LSU_OP_WIDTH = log2Ceil(23)
-
-  val LSU_NOP   = 0.U(LSU_OP_WIDTH.W)
-  val LSU_LB    = 1.U(LSU_OP_WIDTH.W)
-  val LSU_LH    = 2.U(LSU_OP_WIDTH.W)
-  val LSU_LW    = 3.U(LSU_OP_WIDTH.W)
-  val LSU_LBU   = 4.U(LSU_OP_WIDTH.W)
-  val LSU_LHU   = 5.U(LSU_OP_WIDTH.W)
-  val LSU_SB    = 6.U(LSU_OP_WIDTH.W)
-  val LSU_SH    = 7.U(LSU_OP_WIDTH.W)
-  val LSU_SW    = 8.U(LSU_OP_WIDTH.W)
-  val LSU_LR    = 9.U(LSU_OP_WIDTH.W)
-  val LSU_SC    = 10.U(LSU_OP_WIDTH.W)
-  val LSU_SWAP  = 11.U(LSU_OP_WIDTH.W)
-  val LSU_ADD   = 12.U(LSU_OP_WIDTH.W)
-  val LSU_XOR   = 13.U(LSU_OP_WIDTH.W)
-  val LSU_AND   = 14.U(LSU_OP_WIDTH.W)
-  val LSU_OR    = 15.U(LSU_OP_WIDTH.W)
-  val LSU_MIN   = 16.U(LSU_OP_WIDTH.W)
-  val LSU_MAX   = 17.U(LSU_OP_WIDTH.W)
-  val LSU_MINU  = 18.U(LSU_OP_WIDTH.W)
-  val LSU_MAXU  = 19.U(LSU_OP_WIDTH.W)
-  val LSU_FENC  = 20.U(LSU_OP_WIDTH.W)
-  val LSU_FENI  = 21.U(LSU_OP_WIDTH.W)
-  val LSU_FENV  = 22.U(LSU_OP_WIDTH.W)
+object LsuOp extends ChiselEnum {
+  val LSU_NOP   = Value
+  val LSU_LB    = Value
+  val LSU_LH    = Value
+  val LSU_LW    = Value
+  val LSU_LBU   = Value
+  val LSU_LHU   = Value
+  val LSU_SB    = Value
+  val LSU_SH    = Value
+  val LSU_SW    = Value
+  val LSU_LR    = Value
+  val LSU_SC    = Value
+  val LSU_SWAP  = Value
+  val LSU_ADD   = Value
+  val LSU_XOR   = Value
+  val LSU_AND   = Value
+  val LSU_OR    = Value
+  val LSU_MIN   = Value
+  val LSU_MAX   = Value
+  val LSU_MINU  = Value
+  val LSU_MAXU  = Value
+  val LSU_FENC  = Value
+  val LSU_FENI  = Value
+  val LSU_FENV  = Value
 }
 
 // all operations that supported by CSR
-object CsrOp {
-  val CSR_OP_WIDTH = log2Ceil(6)
-
-  val CSR_NOP = 0.U(CSR_OP_WIDTH.W)
-  val CSR_R   = 1.U(CSR_OP_WIDTH.W)
-  val CSR_W   = 2.U(CSR_OP_WIDTH.W)
-  val CSR_RW  = 3.U(CSR_OP_WIDTH.W)
-  val CSR_RS  = 4.U(CSR_OP_WIDTH.W)
-  val CSR_RC  = 5.U(CSR_OP_WIDTH.W)
+object CsrOp extends ChiselEnum {
+  val CSR_NOP = Value
+  val CSR_R   = Value
+  val CSR_W   = Value
+  val CSR_RW  = Value
+  val CSR_RS  = Value
+  val CSR_RC  = Value
 }

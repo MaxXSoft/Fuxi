@@ -5,6 +5,9 @@ import chisel3.util._
 
 import io._
 import consts.Control._
+import consts.{OperandSel, BranchOp, AluOp, LsuOp, MduOp, CsrOp, ExceptType}
+import consts.OperandSel._
+import consts.BranchOp._
 import consts.ExceptType._
 import consts.CsrOp._
 import consts.Instructions.NOP
@@ -51,7 +54,7 @@ class Decoder extends Module {
   val immJ  = Cat(inst(31), inst(19, 12), inst(20), inst(30, 21), 0.U(1.W))
 
   // operand generator
-  def generateOpr(oprSel: UInt) =
+  def generateOpr(oprSel: OperandSel.Type) =
       MuxLookup(oprSel, 0.S)(Seq(
         OPR_REG1  -> io.read1.data.asSInt,
         OPR_REG2  -> io.read2.data.asSInt,
@@ -65,8 +68,10 @@ class Decoder extends Module {
 
   // control signals
   val ((regEn1: Bool) :: (regEn2: Bool) :: (regWen: Bool) ::
-       aluSrc1 :: aluSrc2 :: aluOp :: branchFlag :: lsuOp :: csrOp ::
-       mduOp :: excType :: Nil) = ListLookup(inst, DEFAULT, TABLE)
+       (aluSrc1: OperandSel.Type) :: (aluSrc2: OperandSel.Type) ::
+       (aluOp: AluOp.Type) :: (branchFlag: BranchOp.Type) ::
+       (lsuOp: LsuOp.Type) :: (csrOp: CsrOp.Type) ::
+       (mduOp: MduOp.Type) :: (excType: ExceptType.Type) :: Nil) = ListLookup(inst, DEFAULT, TABLE)
   
   // branch taken/target
   val isBranch    = branchFlag =/= BR_N

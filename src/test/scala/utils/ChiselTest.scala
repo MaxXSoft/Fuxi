@@ -35,6 +35,7 @@ abstract class PeekPokeTester[T <: Module](val dut: T) extends PeekPokeAPI {
     case bool: Bool => toTestableBool(bool).poke(value != 0)
     case uint: UInt => toTestableUInt(uint).poke(normalizeUInt(uint, value))
     case sint: SInt => toTestableSInt(sint).poke(value)
+    case enum: EnumType => toTestableEnum(enum).poke(value)
     case other => throw new IllegalArgumentException(s"Unsupported poke target: ${other.getClass.getName}")
   }
 
@@ -51,6 +52,7 @@ abstract class PeekPokeTester[T <: Module](val dut: T) extends PeekPokeAPI {
     case bool: Bool => toTestableBool(bool).expect(expected != 0)
     case uint: UInt => toTestableUInt(uint).expect(normalizeUInt(uint, expected))
     case sint: SInt => toTestableSInt(sint).expect(expected)
+    case enum: EnumType => toTestableEnum(enum).expect(expected)
     case other => throw new IllegalArgumentException(s"Unsupported expect target: ${other.getClass.getName}")
   }
 

@@ -29,7 +29,7 @@ abstract class CsrRegressionTester(c: CsrFile) extends PeekPokeTester(c) {
     poke(c.reset, 0)
   }
 
-  def write(addr: UInt, data: BigInt, op: UInt = CSR_W): Unit = {
+  def write(addr: UInt, data: BigInt, op: consts.CsrOp.Type = CSR_W): Unit = {
     poke(c.io.write.op, op)
     poke(c.io.write.addr, addr)
     poke(c.io.write.data, data)

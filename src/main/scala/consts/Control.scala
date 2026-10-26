@@ -1,7 +1,6 @@
 package consts
 
 import chisel3._
-import chisel3.util.log2Ceil
 
 import Instructions._
 import AluOp._
@@ -10,33 +9,36 @@ import LsuOp._
 import CsrOp._
 import ExceptType._
 
+object OperandSel extends ChiselEnum {
+  val OPR_ZERO  = Value
+  val OPR_REG1  = Value
+  val OPR_REG2  = Value
+  val OPR_IMMI  = Value
+  val OPR_IMMS  = Value
+  val OPR_IMMU  = Value  // with zeroed low 12-bit
+  val OPR_IMMR  = Value
+  val OPR_PC    = Value
+  val OPR_SIZE  = Value
+}
+
+object BranchOp extends ChiselEnum {
+  val BR_N      = Value
+  val BR_AL     = Value
+  val BR_EQ     = Value
+  val BR_NE     = Value
+  val BR_LT     = Value
+  val BR_GE     = Value
+  val BR_LTU    = Value
+  val BR_GEU    = Value
+}
+
 object Control {
+  import OperandSel._
+  import BranchOp._
+
   // true/false
   val Y = true.B
   val N = false.B
-
-  // operand selector
-  val OPR_WIDTH = log2Ceil(9)
-  val OPR_ZERO  = 0.U(OPR_WIDTH.W)
-  val OPR_REG1  = 1.U(OPR_WIDTH.W)
-  val OPR_REG2  = 2.U(OPR_WIDTH.W)
-  val OPR_IMMI  = 3.U(OPR_WIDTH.W)
-  val OPR_IMMS  = 4.U(OPR_WIDTH.W)
-  val OPR_IMMU  = 5.U(OPR_WIDTH.W)  // with zeroed low 12-bit
-  val OPR_IMMR  = 6.U(OPR_WIDTH.W)
-  val OPR_PC    = 7.U(OPR_WIDTH.W)
-  val OPR_SIZE  = 8.U(OPR_WIDTH.W)
-
-  // branch operation
-  val BR_WIDTH  = log2Ceil(8)
-  val BR_N      = 0.U(BR_WIDTH.W)
-  val BR_AL     = 1.U(BR_WIDTH.W)
-  val BR_EQ     = 2.U(BR_WIDTH.W)
-  val BR_NE     = 3.U(BR_WIDTH.W)
-  val BR_LT     = 4.U(BR_WIDTH.W)
-  val BR_GE     = 5.U(BR_WIDTH.W)
-  val BR_LTU    = 6.U(BR_WIDTH.W)
-  val BR_GEU    = 7.U(BR_WIDTH.W)
 
   // table of control signals
   val DEFAULT =

@@ -51,14 +51,14 @@ class DecoderUnitTester(c: Decoder) extends PeekPokeTester(c) {
     single(r2, c.io.read2.en, c.io.read2.addr)
   }
 
-  def expectAlu(aluOp: UInt, mduOp: UInt, opr1: Int, opr2: Int) = {
+  def expectAlu(aluOp: consts.AluOp.Type, mduOp: consts.MduOp.Type, opr1: Int, opr2: Int) = {
     expect(c.io.decoder.aluOp, aluOp)
     expect(c.io.decoder.opr1, BigInt(opr1.toHexString, 16))
     expect(c.io.decoder.opr2, BigInt(opr2.toHexString, 16))
     expect(c.io.decoder.mduOp, mduOp)
   }
 
-  def expectLsu(lsuOp: UInt, data: BigInt) = {
+  def expectLsu(lsuOp: consts.LsuOp.Type, data: BigInt) = {
     expect(c.io.decoder.lsuOp, lsuOp)
     if (lsuOp.litValue != LSU_NOP.litValue && lsuOp.litValue != LSU_LB.litValue &&
         lsuOp.litValue != LSU_LH.litValue && lsuOp.litValue != LSU_LW.litValue &&
@@ -68,7 +68,7 @@ class DecoderUnitTester(c: Decoder) extends PeekPokeTester(c) {
     }
   }
 
-  def expectCsr(csrOp: UInt, addr: Int, data: BigInt) = {
+  def expectCsr(csrOp: consts.CsrOp.Type, addr: Int, data: BigInt) = {
     expect(c.io.decoder.csrOp, csrOp)
     if (csrOp.litValue != CSR_NOP.litValue) {
       expect(c.io.decoder.csrAddr, addr)
@@ -76,7 +76,7 @@ class DecoderUnitTester(c: Decoder) extends PeekPokeTester(c) {
     }
   }
 
-  def expectExc(excType: UInt) = expect(c.io.decoder.excType, excType)
+  def expectExc(excType: consts.ExceptType.Type) = expect(c.io.decoder.excType, excType)
 
   // add a1, a2, a1
   pokeDecoder(add(11, 12, 11))

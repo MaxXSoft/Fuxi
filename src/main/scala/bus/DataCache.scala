@@ -32,10 +32,12 @@ class DataCache extends Module {
   require(log2Ceil(burstLen) <= io.axi.readAddr.bits.len.getWidth)
 
   // states of finite state machine
-  val (sIdle :: sReadAddr :: sReadData :: sReadUpdate ::
-       sWriteAddr :: sWriteData :: sWriteResp ::
-       sFlushAddr :: sFlushData :: sFlushResp :: sFlushUpdate ::
-       sAccessFault :: sFlushAccessFault :: Nil) = Enum(13)
+  object State extends ChiselEnum {
+    val sIdle, sReadAddr, sReadData, sReadUpdate, sWriteAddr, sWriteData,
+        sWriteResp, sFlushAddr, sFlushData, sFlushResp, sFlushUpdate,
+        sAccessFault, sFlushAccessFault = Value
+  }
+  import State._
   val state = RegInit(sIdle)
 
   // all cache lines

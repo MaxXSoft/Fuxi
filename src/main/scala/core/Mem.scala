@@ -8,6 +8,8 @@ import lsu._
 import consts.Parameters._
 import consts.LsuOp._
 import lsu.LsuDecode._
+import lsu.LsuWidth._
+import lsu.AmoOp._
 import consts.ExceptType._
 import consts.ExceptCause._
 import consts.CSR._
@@ -45,10 +47,10 @@ class Mem extends Module {
   })
 
   // decode load store unit operation
-  val ((en: Bool) :: (wen: Bool) :: (load: Bool) :: width ::
+  val ((en: Bool) :: (wen: Bool) :: (load: Bool) :: (width: LsuWidth.Type) ::
        (signed: Bool) :: (setExcMon: Bool) :: (checkExcMon: Bool) ::
-       amoOp :: (flushIc: Bool) :: (flushDc: Bool) :: (flushIt: Bool) ::
-       (flushDt: Bool) :: Nil) = ListLookup(io.alu.lsuOp, DEFAULT, TABLE)
+       (amoOp: AmoOp.Type) :: (flushIc: Bool) :: (flushDc: Bool) :: (flushIt: Bool) ::
+       (flushDt: Bool) :: Nil) = ListLookup(io.alu.lsuOp.asUInt, DEFAULT, TABLE)
 
   // address of memory accessing
   val addr  = Cat(io.alu.reg.data(ADDR_WIDTH - 1, ADDR_ALIGN_WIDTH),
