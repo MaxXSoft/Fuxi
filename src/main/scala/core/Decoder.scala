@@ -71,8 +71,8 @@ class Decoder extends Module {
   val ((regEn1: Bool) :: (regEn2: Bool) :: (regWen: Bool) ::
        (aluSrc1: OperandSel.Type) :: (aluSrc2: OperandSel.Type) ::
        (aluOp: AluOp.Type) :: (branchFlag: BranchOp.Type) ::
-       (lsuOp: LsuOp.Type) :: (csrOp: CsrOp.Type) ::
-       (mduOp: MduOp.Type) :: (excType: ExceptType.Type) :: Nil) = ListLookup(inst, DEFAULT, TABLE)
+       (lsuOp: LsuOp.Type) :: (csrOp: CsrOp.Type) :: (mduOp: MduOp.Type) ::
+       (excType: ExceptType.Type) :: Nil) = ListLookup(inst, DEFAULT, TABLE)
   
   // branch taken/target
   val isBranch    = branchFlag =/= BR_N
@@ -172,7 +172,7 @@ class Decoder extends Module {
   io.decoder.pmu.miss := branchMiss
   io.decoder.pmu.directionMiss := io.fetch.taken =/= branchTaken
   io.decoder.pmu.targetMiss := io.fetch.taken && branchTaken &&
-                                io.fetch.target =/= branchTarget
+                               io.fetch.target =/= branchTarget
   io.decoder.pmu.rasCandidate := io.fetch.pmu.rasCandidate
   io.decoder.pmu.rasUsed := io.fetch.pmu.rasUsed
   io.decoder.pmu.compressed := expand.io.isCompressed

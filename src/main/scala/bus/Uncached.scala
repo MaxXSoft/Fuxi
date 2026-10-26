@@ -21,7 +21,8 @@ class Uncached extends Module {
 
   // states of finite state machine
   object State extends ChiselEnum {
-    val sIdle, sReadAddr, sReadData, sWriteAddr, sWriteData, sWriteResp, sReadEnd, sWriteEnd = Value
+    val sIdle, sReadAddr, sReadData, sWriteAddr, sWriteData, sWriteResp,
+        sReadEnd, sWriteEnd = Value
   }
   import State._
   val state = RegInit(sIdle)

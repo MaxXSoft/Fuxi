@@ -3,7 +3,7 @@ package consts
 import chisel3._
 import chisel3.util.BitPat
 
-// ISA-defined instruction opcodes; these encodings are not sequential IDs.
+// ISA-defined instruction opcodes.
 object Opcode {
   val LOAD   = 0x03.U(7.W)
   val OP_IMM = 0x13.U(7.W)

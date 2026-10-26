@@ -8,7 +8,8 @@ import utils.{CsrRegressionTester, TestDriver}
 
 class CsrCounterAccessTester(c: CsrFile) extends CsrRegressionTester(c) {
   val counters = Seq(CSR_CYCLE, CSR_CYCLEH, CSR_INSTRET, CSR_INSTRETH,
-    hpmCounterAddr(3), hpmCounterHighAddr(3), hpmCounterAddr(10), hpmCounterHighAddr(10))
+                     hpmCounterAddr(3), hpmCounterHighAddr(3), hpmCounterAddr(10),
+                     hpmCounterHighAddr(10))
   // PMP remains WARL zero across the complete currently exposed RV32 range.
   resetCsr()
   for (address <- (0x3a0 to 0x3a3) ++ (0x3b0 to 0x3bf)) {
