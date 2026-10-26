@@ -11,11 +11,10 @@ import consts.CSR._
 import consts.CsrOp._
 import consts.Control.{Y, N}
 import consts.Paging.PPN_WIDTH
-import consts.PerfEvent.EVENT_COUNT
+import consts.PerfEvent
 
 class CsrFile(val hpmCount: Int) extends Module {
   require(hpmCount >= 0 && hpmCount <= 29)
-  require(EVENT_COUNT > 1 && EVENT_COUNT <= 64)
 
   val io = IO(new Bundle {
     // read channel
@@ -27,7 +26,7 @@ class CsrFile(val hpmCount: Int) extends Module {
     // exception information
     val except  = Input(new ExceptInfoIO)
     // Event ID indexes a one-cycle pulse or an active wait-cycle level.
-    val perfEvents = Input(UInt(64.W))
+    val perfEvents = Input(UInt(PerfEvent.values.size.W))
     // CSR status
     val hasInt  = Output(Bool())
     val busy    = Output(Bool())
@@ -62,7 +61,7 @@ class CsrFile(val hpmCount: Int) extends Module {
   val minstret  = RegInit(MinstretCsr.default())
   val mhpmcounter = Seq.fill(hpmCount)(RegInit(0.U(64.W)))
   val mcountinhibit = RegInit(0.U(32.W))
-  val mhpmevent = Seq.fill(hpmCount)(RegInit(0.U(6.W)))
+  val mhpmevent = Seq.fill(hpmCount)(RegInit(0.U(log2Ceil(PerfEvent.values.size).W)))
   // TIME is not implemented. Absent counter enable/inhibit bits are WARL zero.
   val counterMask = (((BigInt(1) << (hpmCount + 3)) - 1) & ~BigInt(2)).U(32.W)
   val sstatus   = SstatusCsr(mstatus)
@@ -142,7 +141,7 @@ class CsrFile(val hpmCount: Int) extends Module {
     BitPat(CSR_MCOUNTINHIBIT) ->  List(mcountinhibit,   Y, Y),
   ) ++ (3 to 31).flatMap { n =>
     val counter = if (n < hpmCount + 3) mhpmcounter(n - 3) else 0.U(64.W)
-    val event = if (n < hpmCount + 3) mhpmevent(n - 3) else 0.U(6.W)
+    val event = if (n < hpmCount + 3) mhpmevent(n - 3) else 0.U(log2Ceil(PerfEvent.values.size).W)
     Seq(
       BitPat(CSR_HPMCOUNTER(n)) -> List(counter(31, 0), Y, N),
       BitPat(CSR_HPMCOUNTERH(n)) -> List(counter(63, 32), Y, N),
@@ -296,7 +295,7 @@ class CsrFile(val hpmCount: Int) extends Module {
         mhpmcounter(i) := Cat(writeData, mhpmcounter(i)(31, 0))
       }
       when (io.write.addr === CSR_MHPMEVENT(i + 3)) {
-        mhpmevent(i) := Mux(writeData < EVENT_COUNT.U, writeData(5, 0), 0.U)
+        mhpmevent(i) := Mux(writeData < PerfEvent.values.size.U, writeData(log2Ceil(PerfEvent.values.size) - 1, 0), 0.U)
       }
     }
     when (io.write.addr === CSR_MCOUNTEREN) { mcounteren := writeData & counterMask }

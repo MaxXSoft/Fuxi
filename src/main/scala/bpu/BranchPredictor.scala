@@ -2,7 +2,7 @@ package bpu
 
 import chisel3._
 
-import io.{BranchInfoIO, RasPerformanceIO}
+import io.{BranchInfoIO, BpuPerformanceIO}
 import consts.Instructions.{JAL, JALR}
 import consts.Parameters._
 
@@ -19,10 +19,8 @@ class BranchPredictor extends Module {
     val predTaken   = Output(Bool())
     val predTarget  = Output(UInt(ADDR_WIDTH.W))
     val predIndex   = Output(UInt(GHR_WIDTH.W))
-    val rasCandidate = Output(Bool())
-    val rasUsed = Output(Bool())
     // performance monitoring
-    val pmu = Output(new RasPerformanceIO)
+    val pmu = Output(new BpuPerformanceIO)
   })
 
   // instantiate necessary modules
@@ -82,8 +80,8 @@ class BranchPredictor extends Module {
   io.predIndex  := index
   // Capture these with the instruction: later speculative stack updates or
   // recovery clears must not change the classification at retirement.
-  io.rasCandidate := io.lookupValid && pop
-  io.rasUsed := predictReturn
+  io.pmu.prediction.rasCandidate := io.lookupValid && pop
+  io.pmu.prediction.rasUsed := predictReturn
 
-  io.pmu := ras.io.pmu
+  io.pmu.ras := ras.io.pmu
 }

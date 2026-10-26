@@ -4,7 +4,7 @@ import chisel3._
 import consts.Parameters.HPM_COUNT
 import consts.CSR._
 import consts.CsrOp._
-import consts.PerfEvent.EVENT_COUNT
+import consts.PerfEvent
 import utils.{CsrRegressionTester, TestDriver}
 
 class CsrPerformanceTester(c: CsrFile) extends CsrRegressionTester(c) {
@@ -21,7 +21,7 @@ class CsrPerformanceTester(c: CsrFile) extends CsrRegressionTester(c) {
   read(CSR_MCOUNTINHIBIT, mask)
   read(CSR_MCYCLE, 1) // The freezing write uses the old CY inhibit bit.
   poke(c.io.write.retired, true)
-  poke(c.io.perfEvents, BigInt("ffffffffffffffff", 16))
+  poke(c.io.perfEvents, ((BigInt(1) << PerfEvent.values.size) - 1))
   step(5)
   read(CSR_MCYCLE, 1)
   read(CSR_MINSTRET, 0)
@@ -67,14 +67,14 @@ class CsrPerformanceTester(c: CsrFile) extends CsrRegressionTester(c) {
   poke(c.io.perfEvents, 1) // Bit zero never counts, even when asserted.
   step(4)
   counter(3, BigInt("21234567c", 16))
-  for (invalid <- Seq(BigInt(EVENT_COUNT), BigInt(64), BigInt(0x10001), BigInt(0xffffffffL))) {
+  for (invalid <- Seq(BigInt(PerfEvent.values.size), BigInt(64), BigInt(0x10001), BigInt(0xffffffffL))) {
     write(CSR_MHPMEVENT(3), invalid)
     read(CSR_MHPMEVENT(3), 0)
   }
   // Highest supported ID is selectable; nearby unsupported IDs cannot alias
   // it by truncation to the selector's six stored bits.
-  write(CSR_MHPMEVENT(3), EVENT_COUNT - 1)
-  poke(c.io.perfEvents, BigInt(1) << (EVENT_COUNT - 1))
+  write(CSR_MHPMEVENT(3), PerfEvent.values.size - 1)
+  poke(c.io.perfEvents, BigInt(1) << (PerfEvent.values.size - 1))
   step(1)
   counter(3, BigInt("21234567d", 16))
   write(CSR_MCOUNTINHIBIT, 8, CSR_RS)

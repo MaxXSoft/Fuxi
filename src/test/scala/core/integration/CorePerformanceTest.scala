@@ -9,7 +9,7 @@ import utils.{CoreMemoryHarness, CoreTester, ExpectedRetirement, RetirementCheck
 private class PerformanceHarness(ras: Boolean, depth: Int, fenceFault: Boolean)
     extends CoreMemoryHarness(ROM.Words(if (ras) RasProgram.words else RetirementProgram.words),
                               depth, fenceFault) {
-  val pmu = IO(Output(UInt(64.W)))
+  val pmu = IO(Output(UInt(values.size.W)))
   pmu := BoringUtils.bore(core.csrfile.io.perfEvents)
 }
 
@@ -22,7 +22,7 @@ private class PerformanceTester(c: PerformanceHarness, ras: Boolean, fenceFault:
                  else RetirementProgram.pcs(fenceFault).map(ExpectedRetirement(_))
   val checker = new RetirementChecker(expected)
   val donePc = if (ras) RasProgram.donePc else RetirementProgram.donePc
-  val totals = Array.fill[Long](45)(0)
+  val totals = Array.fill[Long](values.size)(0)
   var memoryWait = 0
   var memoryArmed = true
   var fenceWait = 0
@@ -53,16 +53,16 @@ private class PerformanceTester(c: PerformanceHarness, ras: Boolean, fenceFault:
     for ((id, wanted) <- Seq(BRANCH -> branch, JAL -> jal, JALR -> jalr,
                              RAS_CANDIDATE -> jalr, COMPRESSED -> compressed,
                              LOAD -> load, STORE -> store))
-      assert(event(id) == wanted, s"Event $id at PC 0x${pc.toString(16)}, retired=$retired")
-    assert(!event(BRANCH_MISS) || branch)
-    assert(event(BRANCH_MISS) == (event(BRANCH_DIRECTION_MISS) || event(BRANCH_TARGET_MISS)))
-    assert(!(event(BRANCH_DIRECTION_MISS) && event(BRANCH_TARGET_MISS)))
-    assert(!event(RAS_USED) || jalr)
-    assert(!event(RAS_MISS) || event(RAS_USED))
-    assert(!event(RAS_FALLBACK_MISS) || (jalr && !event(RAS_USED)))
-    assert(event(JALR_MISS) == (event(RAS_MISS) || event(RAS_FALLBACK_MISS)))
-    assert(!event(OTHER_JALR) && !event(OTHER_JALR_MISS))
-    assert(!(event(RAS_CLEAR_MISPREDICT) && event(RAS_CLEAR_CONTEXT)))
+      assert(event(id.id) == wanted, s"Event $id at PC 0x${pc.toString(16)}, retired=$retired")
+    assert(!event(BRANCH_MISS.id) || branch)
+    assert(event(BRANCH_MISS.id) == (event(BRANCH_DIRECTION_MISS.id) || event(BRANCH_TARGET_MISS.id)))
+    assert(!(event(BRANCH_DIRECTION_MISS.id) && event(BRANCH_TARGET_MISS.id)))
+    assert(!event(RAS_USED.id) || jalr)
+    assert(!event(RAS_MISS.id) || event(RAS_USED.id))
+    assert(!event(RAS_FALLBACK_MISS.id) || (jalr && !event(RAS_USED.id)))
+    assert(event(JALR_MISS.id) == (event(RAS_MISS.id) || event(RAS_FALLBACK_MISS.id)))
+    assert(!event(OTHER_JALR.id) && !event(OTHER_JALR_MISS.id))
+    assert(!(event(RAS_CLEAR_MISPREDICT.id) && event(RAS_CLEAR_CONTEXT.id)))
     var done = false
     if (retired) {
       checker.observe(sampleDebug(c.io.observation.debug))
@@ -72,16 +72,16 @@ private class PerformanceTester(c: PerformanceHarness, ras: Boolean, fenceFault:
     done
   }
   checker.checkComplete()
-  assert(totals(BRANCH) == (if (ras) 8 else 1))
-  assert(totals(MEM_STALL) >= 12)
-  assert(totals(DECODE_REDIRECT) > 0)
+  assert(totals(BRANCH.id) == (if (ras) 8 else 1))
+  assert(totals(MEM_STALL.id) >= 12)
+  assert(totals(DECODE_REDIRECT.id) > 0)
   if (ras) {
-    assert(totals(JAL) == 32 && totals(JALR) == 32)
-    assert(totals(RAS_USED) > 0 && totals(RAS_USED) <= totals(RAS_CANDIDATE))
-    assert(totals(RAS_CLEAR_MISPREDICT) > 0)
+    assert(totals(JAL.id) == 32 && totals(JALR.id) == 32)
+    assert(totals(RAS_USED.id) > 0 && totals(RAS_USED.id) <= totals(RAS_CANDIDATE.id))
+    assert(totals(RAS_CLEAR_MISPREDICT.id) > 0)
   } else {
-    assert(totals(MDU_STALL) > 0 && totals(LOAD_USE_STALL) > 0)
-    assert(totals(CONTEXT_FLUSH) >= 3)
+    assert(totals(MDU_STALL.id) > 0 && totals(LOAD_USE_STALL.id) > 0)
+    assert(totals(CONTEXT_FLUSH.id) >= 3)
   }
 }
 

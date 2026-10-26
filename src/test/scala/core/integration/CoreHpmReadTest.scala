@@ -20,8 +20,8 @@ object HpmReadProgram extends CoreProgram {
   def branch(): Unit = emit32(bne(0, 0, 4))
 
   write(CSR_MCOUNTINHIBIT, allInhibited)
-  write(CSR_MHPMEVENT(3), BRANCH)
-  write(CSR_MHPMEVENT(4), COMPRESSED)
+  write(CSR_MHPMEVENT(3), BRANCH.id)
+  write(CSR_MHPMEVENT(4), COMPRESSED.id)
   write(CSR_MHPMCOUNTERH(3), 0)
   write(CSR_MHPMCOUNTER(3), -1)
   read(CSR_HPMCOUNTERH(3), 0)
@@ -45,7 +45,7 @@ object HpmReadProgram extends CoreProgram {
   read(CSR_HPMCOUNTER(4), 4)
   // Reprogram an active counter. Following compressed instructions no longer
   // count, and the subsequent retired conditional branch increments it once.
-  write(CSR_MHPMEVENT(4), BRANCH)
+  write(CSR_MHPMEVENT(4), BRANCH.id)
   emit16(c_nop())
   branch()
   read(CSR_MHPMCOUNTER(4), 5)

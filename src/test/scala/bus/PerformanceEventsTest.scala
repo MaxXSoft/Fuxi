@@ -236,11 +236,11 @@ class CoreBusPerformanceTester(c: CoreBus) extends PeekPokeTester(c) with AxiTes
     poke(c.reset, 0)
     val port = if (isInst) c.io.rom else c.io.ram
     val axi = if (isInst) c.io.inst else c.io.data
-    val access = if (isInst) c.io.pmu.icacheAccess else c.io.pmu.dcacheAccess
-    val miss = if (isInst) c.io.pmu.icacheMiss else c.io.pmu.dcacheMiss
+    val access = if (isInst) c.io.pmu.icache.access else c.io.pmu.dcache.access
+    val miss = if (isInst) c.io.pmu.icache.miss else c.io.pmu.dcache.miss
     val walkAccess = if (isInst) c.io.pmu.icacheWalkAccess else c.io.pmu.dcacheWalkAccess
     val walkMiss = if (isInst) c.io.pmu.icacheWalkMiss else c.io.pmu.dcacheWalkMiss
-    val tlbMiss = if (isInst) c.io.pmu.itlbMiss else c.io.pmu.dtlbMiss
+    val tlbMiss = if (isInst) c.io.pmu.itlb.miss else c.io.pmu.dtlb.miss
     val signals = Seq(access, miss, walkAccess, walkMiss, tlbMiss)
     val counts = Array.fill(5)(0)
     def tick(): Unit = {

@@ -30,7 +30,7 @@ class Fuxi(hpmCount: Int) extends Module {
   core.io.rom   <> coreBus.io.rom
   core.io.ram   <> coreBus.io.ram
   core.io.debug <> io.debug
-  core.io.busPerf := coreBus.io.pmu
+  core.io.pmu := coreBus.io.pmu
 
   coreBus.io.inst     <> io.inst
   coreBus.io.data     <> io.data

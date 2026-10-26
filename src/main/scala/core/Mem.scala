@@ -223,5 +223,5 @@ class Mem extends Module {
   io.mem.excMon.clear := clearEm
   io.mem.excMon.clearAll := checkExcMon
   io.mem.currentPc    := io.alu.currentPc
-  io.mem.perf         := io.alu.perf
+  io.mem.pmu         := io.alu.pmu
 }

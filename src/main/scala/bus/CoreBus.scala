@@ -135,19 +135,12 @@ class CoreBus extends Module {
   io.ram.accessFault := dmmu.io.accessFault || ddemux.io.in2.accessFault
 
   // performance monitoring
-  io.pmu.icacheAccess := icache.io.pmu.access
-  io.pmu.icacheMiss := icache.io.pmu.miss
-  io.pmu.icacheBusy := icache.io.pmu.busy
+  io.pmu.icache := icache.io.pmu
   io.pmu.icacheWalkAccess := icache.io.pmu.access && !idemux.io.sel2
   io.pmu.icacheWalkMiss := icache.io.pmu.miss && !idemux.io.sel2
-  io.pmu.dcacheAccess := dcache.io.pmu.access
-  io.pmu.dcacheMiss := dcache.io.pmu.miss
-  io.pmu.dcacheBusy := dcache.io.pmu.busy
-  io.pmu.dcacheWriteback := dcache.io.pmu.writeback
+  io.pmu.dcache := dcache.io.pmu
   io.pmu.dcacheWalkAccess := dcache.io.pmu.access && !ddemux.io.sel2
   io.pmu.dcacheWalkMiss := dcache.io.pmu.miss && !ddemux.io.sel2
-  io.pmu.itlbMiss := immu.io.pmu.miss
-  io.pmu.itlbWalkCycle := immu.io.pmu.walkCycle
-  io.pmu.dtlbMiss := dmmu.io.pmu.miss
-  io.pmu.dtlbWalkCycle := dmmu.io.pmu.walkCycle
+  io.pmu.itlb := immu.io.pmu
+  io.pmu.dtlb := dmmu.io.pmu
 }
