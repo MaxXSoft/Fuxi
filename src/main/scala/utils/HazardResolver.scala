@@ -92,13 +92,11 @@ class HazardResolver extends Module {
       val counterAlias = readsCounter && isCounter(write.addr) &&
         counterIndex(read.addr) === counterIndex(write.addr)
       val counterConfig = readsCounter && (write.addr === CSR_MCOUNTINHIBIT ||
-        (isHpmEvent(write.addr) &&
-         counterIndex(read.addr) === counterIndex(write.addr)))
-      val counterAccess = isUserCounter(read.addr) &&
-        isCounterEnable(write.addr)
+        (isHpmEvent(write.addr) && counterIndex(read.addr) === counterIndex(write.addr)))
+      val counterAccess = isUserCounter(read.addr) && isCounterEnable(write.addr)
       write.op =/= CSR_NOP && write.op =/= CSR_R &&
         (read.addr === write.addr || alias || delegatedView || counterAlias ||
-          counterConfig || counterAccess)
+         counterConfig || counterAccess)
     }
     val isRead = read.op =/= CSR_NOP && read.op =/= CSR_W
     // Retired instructions implicitly write instret and may produce HPM

@@ -33,7 +33,7 @@ class FetchIO extends StageIO {
   val accessFault = Bool()
   val faultAddr = UInt(ADDR_WIDTH.W)
   // performance monitoring
-  val pmu = new PredictionPerformanceIO
+  val pmu       = new PredictionPerformanceIO
 }
 
 // ID stage
@@ -61,7 +61,7 @@ class DecoderIO extends StageIO {
   val inst      = UInt(INST_WIDTH.W)
   val currentPc = UInt(ADDR_WIDTH.W)
   // performance monitoring
-  val pmu = new RetirePerformanceIO
+  val pmu       = new RetirePerformanceIO
 }
 
 // EX stage
@@ -81,7 +81,7 @@ class AluIO extends StageIO {
   val inst      = UInt(INST_WIDTH.W)
   val currentPc = UInt(ADDR_WIDTH.W)
   // performance monitoring
-  val pmu = new RetirePerformanceIO
+  val pmu       = new RetirePerformanceIO
 }
 
 // MEM stage
@@ -98,5 +98,5 @@ class MemIO extends StageIO {
   // debug
   val currentPc = UInt(ADDR_WIDTH.W)
   // performance monitoring
-  val pmu = new RetirePerformanceIO
+  val pmu       = new RetirePerformanceIO
 }

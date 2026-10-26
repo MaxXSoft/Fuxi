@@ -96,5 +96,5 @@ class ALU extends Module {
   io.alu.valid        := io.decoder.valid
   io.alu.inst         := io.decoder.inst
   io.alu.currentPc    := io.decoder.currentPc
-  io.alu.pmu         := io.decoder.pmu
+  io.alu.pmu          := io.decoder.pmu
 }

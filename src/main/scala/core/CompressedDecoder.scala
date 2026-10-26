@@ -110,7 +110,8 @@ class CompressedDecoder extends Module {
               hint := shamt === 0.U
             }
             is (1.U) { // C.SRAI
-              expanded := iType(shamt | 0x400.U(12.W), compactRs1, 5, compactRs1, Opcode.OP_IMM)
+              expanded := iType(shamt | 0x400.U(12.W), compactRs1, 5, compactRs1,
+                                Opcode.OP_IMM)
               legal := !inst(12)
               hint := shamt === 0.U
             }

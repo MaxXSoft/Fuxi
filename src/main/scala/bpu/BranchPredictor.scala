@@ -78,10 +78,10 @@ class BranchPredictor extends Module {
                    (btb.io.lookupBranch && (pht.io.taken || btb.io.lookupJump))
   io.predTarget := Mux(predictReturn, ras.io.top, btb.io.lookupTarget)
   io.predIndex  := index
+
   // Capture these with the instruction: later speculative stack updates or
   // recovery clears must not change the classification at retirement.
   io.pmu.prediction.rasCandidate := io.lookupValid && pop
   io.pmu.prediction.rasUsed := predictReturn
-
   io.pmu.ras := ras.io.pmu
 }

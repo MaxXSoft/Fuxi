@@ -77,50 +77,50 @@ class CsrFile(val hpmCount: Int) extends Module {
 
   // all supported CSRs
   val default  =
-  //                                                   writable
-  //                                       csrData readable|
-  //                                          |         |  |
-                                  List(0.U,             N, N)
+  //                                                       writable
+  //                                      csrData      readable|
+  //                                         |              |  |
+                                 List(0.U,                  N, N)
   var csrTable = Array(
-    BitPat(CSR_CYCLE)         ->  List(cycle(31, 0),    Y, N),
-    BitPat(CSR_INSTRET)       ->  List(instret(31, 0),  Y, N),
-    BitPat(CSR_CYCLEH)        ->  List(cycle(63, 32),   Y, N),
-    BitPat(CSR_INSTRETH)      ->  List(instret(63, 32), Y, N),
-    BitPat(CSR_SSTATUS)       ->  List(sstatus.asUInt,  Y, Y),
-    BitPat(CSR_SIE)           ->  List(sie.asUInt,      Y, Y),
-    BitPat(CSR_STVEC)         ->  List(stvec.asUInt,    Y, Y),
-    BitPat(CSR_SCOUNTEREN)    ->  List(scounteren.asUInt, Y, Y),
-    BitPat(CSR_SSCRATCH)      ->  List(sscratch.asUInt, Y, Y),
-    BitPat(CSR_SEPC)          ->  List(sepc.asUInt,     Y, Y),
-    BitPat(CSR_SCAUSE)        ->  List(scause.asUInt,   Y, Y),
-    BitPat(CSR_STVAL)         ->  List(stval.asUInt,    Y, Y),
-    BitPat(CSR_SIP)           ->  List(sip.asUInt,      Y, Y),
-    BitPat(CSR_SATP)          ->  List(satp.asUInt,     Y, Y),
-    BitPat(CSR_MVENDERID)     ->  List(0.U,             Y, N),
-    BitPat(CSR_MARCHID)       ->  List(0.U,             Y, N),
-    BitPat(CSR_MIMPID)        ->  List(0.U,             Y, N),
-    BitPat(CSR_MHARTID)       ->  List(0.U,             Y, N),
-    BitPat(CSR_MSTATUS)       ->  List(mstatus.asUInt,  Y, Y),
-    BitPat(CSR_MISA)          ->  List(misa.asUInt,     Y, Y),
-    BitPat(CSR_MEDELEG)       ->  List(medeleg.asUInt,  Y, Y),
-    BitPat(CSR_MIDELEG)       ->  List(mideleg.asUInt,  Y, Y),
-    BitPat(CSR_MIE)           ->  List(mie.asUInt,      Y, Y),
-    BitPat(CSR_MTVEC)         ->  List(mtvec.asUInt,    Y, Y),
-    BitPat(CSR_MCOUNTEREN)    ->  List(mcounteren.asUInt, Y, Y),
-    BitPat(CSR_MSCRATCH)      ->  List(mscratch.asUInt, Y, Y),
-    BitPat(CSR_MEPC)          ->  List(mepc.asUInt,     Y, Y),
-    BitPat(CSR_MCAUSE)        ->  List(mcause.asUInt,   Y, Y),
-    BitPat(CSR_MTVAL)         ->  List(mtval.asUInt,    Y, Y),
-    BitPat(CSR_MIP)           ->  List(mip.asUInt,      Y, Y),
-    BitPat(CSR_MCYCLE)        ->  List(cycle(31, 0),    Y, Y),
-    BitPat(CSR_MINSTRET)      ->  List(instret(31, 0),  Y, Y),
-    BitPat(CSR_MCYCLEH)       ->  List(cycle(63, 32),   Y, Y),
-    BitPat(CSR_MINSTRETH)     ->  List(instret(63, 32), Y, Y),
-    BitPat(CSR_MCOUNTINHIBIT) ->  List(mcountinhibit.asUInt, Y, Y),
+    BitPat(CSR_CYCLE)         -> List(cycle(31, 0),         Y, N),
+    BitPat(CSR_INSTRET)       -> List(instret(31, 0),       Y, N),
+    BitPat(CSR_CYCLEH)        -> List(cycle(63, 32),        Y, N),
+    BitPat(CSR_INSTRETH)      -> List(instret(63, 32),      Y, N),
+    BitPat(CSR_SSTATUS)       -> List(sstatus.asUInt,       Y, Y),
+    BitPat(CSR_SIE)           -> List(sie.asUInt,           Y, Y),
+    BitPat(CSR_STVEC)         -> List(stvec.asUInt,         Y, Y),
+    BitPat(CSR_SCOUNTEREN)    -> List(scounteren.asUInt,    Y, Y),
+    BitPat(CSR_SSCRATCH)      -> List(sscratch.asUInt,      Y, Y),
+    BitPat(CSR_SEPC)          -> List(sepc.asUInt,          Y, Y),
+    BitPat(CSR_SCAUSE)        -> List(scause.asUInt,        Y, Y),
+    BitPat(CSR_STVAL)         -> List(stval.asUInt,         Y, Y),
+    BitPat(CSR_SIP)           -> List(sip.asUInt,           Y, Y),
+    BitPat(CSR_SATP)          -> List(satp.asUInt,          Y, Y),
+    BitPat(CSR_MVENDERID)     -> List(0.U,                  Y, N),
+    BitPat(CSR_MARCHID)       -> List(0.U,                  Y, N),
+    BitPat(CSR_MIMPID)        -> List(0.U,                  Y, N),
+    BitPat(CSR_MHARTID)       -> List(0.U,                  Y, N),
+    BitPat(CSR_MSTATUS)       -> List(mstatus.asUInt,       Y, Y),
+    BitPat(CSR_MISA)          -> List(misa.asUInt,          Y, Y),
+    BitPat(CSR_MEDELEG)       -> List(medeleg.asUInt,       Y, Y),
+    BitPat(CSR_MIDELEG)       -> List(mideleg.asUInt,       Y, Y),
+    BitPat(CSR_MIE)           -> List(mie.asUInt,           Y, Y),
+    BitPat(CSR_MTVEC)         -> List(mtvec.asUInt,         Y, Y),
+    BitPat(CSR_MCOUNTEREN)    -> List(mcounteren.asUInt,    Y, Y),
+    BitPat(CSR_MSCRATCH)      -> List(mscratch.asUInt,      Y, Y),
+    BitPat(CSR_MEPC)          -> List(mepc.asUInt,          Y, Y),
+    BitPat(CSR_MCAUSE)        -> List(mcause.asUInt,        Y, Y),
+    BitPat(CSR_MTVAL)         -> List(mtval.asUInt,         Y, Y),
+    BitPat(CSR_MIP)           -> List(mip.asUInt,           Y, Y),
+    BitPat(CSR_MCYCLE)        -> List(cycle(31, 0),         Y, Y),
+    BitPat(CSR_MINSTRET)      -> List(instret(31, 0),       Y, Y),
+    BitPat(CSR_MCYCLEH)       -> List(cycle(63, 32),        Y, Y),
+    BitPat(CSR_MINSTRETH)     -> List(instret(63, 32),      Y, Y),
+    BitPat(CSR_MCOUNTINHIBIT) -> List(mcountinhibit.asUInt, Y, Y),
   ) ++ (0 until 4).map { n =>
-    BitPat(pmpCfgAddr(n)) -> List(0.U, Y, Y)
+    BitPat(pmpCfgAddr(n))     -> List(0.U,                  Y, Y)
   } ++ (0 until 16).map { n =>
-    BitPat(pmpAddr(n)) -> List(0.U, Y, Y)
+    BitPat(pmpAddr(n))        -> List(0.U,                  Y, Y)
   } ++ (3 to 31).flatMap { n =>
     val counter = if (n < hpmCount + 3) mhpmcounters(n - 3).asUInt else 0.U(64.W)
     val event = if (n < hpmCount + 3) mhpmevents(n - 3).asUInt else 0.U(32.W)
@@ -148,12 +148,12 @@ class CsrFile(val hpmCount: Int) extends Module {
   val readCounterIndex = counterIndex(io.read.addr)
   val counterValid = mode === CSR_MODE_M || !isUserCounter(io.read.addr) ||
     (mcounteren.data(readCounterIndex) && (mode =/= CSR_MODE_U || scounteren.data(readCounterIndex)))
-  val valid     = readValid && modeValid && counterValid
+  val valid = readValid && modeValid && counterValid
 
   // CSR write related signals
   val csrData :: _ :: _ :: Nil =
       ListLookup(io.write.addr, default, csrTable)
-  val writeEn   = io.write.op =/= CSR_NOP && io.write.op =/= CSR_R
+  val writeEn = io.write.op =/= CSR_NOP && io.write.op =/= CSR_R
   // External SEIP is visible to rd, but CSRRS/CSRRC must modify only the
   // software-pending bit (Privileged ISA 1.11, machine interrupt registers).
   val rmwData = Mux(io.write.addr === CSR_MIP,
