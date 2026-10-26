@@ -4,7 +4,6 @@ import chisel3._
 import chisel3.util.{Cat, log2Ceil}
 
 import consts.PerfEvent
-
 import consts.Parameters._
 
 abstract class CsrBundle extends Bundle {
@@ -24,9 +23,9 @@ abstract class CsrBundle extends Bundle {
   }
 }
 
-trait CsrObject[T <: CsrBundle] {
-  def apply(): T
-  def default(): T = 0.U.asTypeOf(apply())
+abstract class CsrObject[T <: CsrBundle](mk: => T) {
+  def apply(): T = mk
+  def default() = 0.U.asTypeOf(apply())
 
   def apply[U <: Data](data: U): T = {
     val init = WireDefault(default())
@@ -62,9 +61,7 @@ class SstatusCsr extends CsrBundle {
   }
 }
 
-object SstatusCsr extends CsrObject[SstatusCsr] {
-  def apply() = new SstatusCsr
-}
+object SstatusCsr extends CsrObject(new SstatusCsr)
 
 // supervisor interrupt-enable register
 class SieCsr extends CsrBundle {
@@ -86,9 +83,7 @@ class SieCsr extends CsrBundle {
   }
 }
 
-object SieCsr extends CsrObject[SieCsr] {
-  def apply() = new SieCsr
-}
+object SieCsr extends CsrObject(new SieCsr)
 
 // supervisor interrupt-pending register
 class SipCsr extends CsrBundle {
@@ -108,9 +103,7 @@ class SipCsr extends CsrBundle {
   }
 }
 
-object SipCsr extends CsrObject[SipCsr] {
-  def apply() = new SipCsr
-}
+object SipCsr extends CsrObject(new SipCsr)
 
 // supervisor trap vector register
 class StvecCsr extends CsrBundle {
@@ -124,18 +117,14 @@ class StvecCsr extends CsrBundle {
   }
 }
 
-object StvecCsr extends CsrObject[StvecCsr] {
-  def apply() = new StvecCsr
-}
+object StvecCsr extends CsrObject(new StvecCsr)
 
 // supervisor scratch register
 class SscratchCsr extends CsrBundle {
   val data  = UInt(32.W)
 }
 
-object SscratchCsr extends CsrObject[SscratchCsr] {
-  def apply() = new SscratchCsr
-}
+object SscratchCsr extends CsrObject(new SscratchCsr)
 
 // supervisor exception program counter register
 class SepcCsr extends CsrBundle {
@@ -147,9 +136,7 @@ class SepcCsr extends CsrBundle {
   }
 }
 
-object SepcCsr extends CsrObject[SepcCsr] {
-  def apply() = new SepcCsr
-}
+object SepcCsr extends CsrObject(new SepcCsr)
 
 // supervisor exception cause register
 class ScauseCsr extends CsrBundle {
@@ -163,18 +150,14 @@ class ScauseCsr extends CsrBundle {
   }
 }
 
-object ScauseCsr extends CsrObject[ScauseCsr] {
-  def apply() = new ScauseCsr
-}
+object ScauseCsr extends CsrObject(new ScauseCsr)
 
 // supervisor trap value register
 class StvalCsr extends CsrBundle {
   val data  = UInt(32.W)
 }
 
-object StvalCsr extends CsrObject[StvalCsr] {
-  def apply() = new StvalCsr
-}
+object StvalCsr extends CsrObject(new StvalCsr)
 
 // supervisor address translation and protection register
 class SatpCsr extends CsrBundle {
@@ -189,9 +172,7 @@ class SatpCsr extends CsrBundle {
   }
 }
 
-object SatpCsr extends CsrObject[SatpCsr] {
-  def apply() = new SatpCsr
-}
+object SatpCsr extends CsrObject(new SatpCsr)
 
 // machine status register
 class MstatusCsr extends CsrBundle {
@@ -229,9 +210,7 @@ class MstatusCsr extends CsrBundle {
   }
 }
 
-object MstatusCsr extends CsrObject[MstatusCsr] {
-  def apply() = new MstatusCsr
-}
+object MstatusCsr extends CsrObject(new MstatusCsr)
 
 // machine ISA register
 class MisaCsr extends CsrBundle {
@@ -242,8 +221,7 @@ class MisaCsr extends CsrBundle {
   override def <=(data: UInt) = {}
 }
 
-object MisaCsr extends CsrObject[MisaCsr] {
-  def apply() = new MisaCsr
+object MisaCsr extends CsrObject(new MisaCsr) {
   override def default() = "h40141105".U.asTypeOf(apply())
 }
 
@@ -258,9 +236,7 @@ class MedelegCsr extends CsrBundle {
   }
 }
 
-object MedelegCsr extends CsrObject[MedelegCsr] {
-  def apply() = new MedelegCsr
-}
+object MedelegCsr extends CsrObject(new MedelegCsr)
 
 // machine interrupt delegation register
 class MidelegCsr extends CsrBundle {
@@ -272,9 +248,7 @@ class MidelegCsr extends CsrBundle {
   }
 }
 
-object MidelegCsr extends CsrObject[MidelegCsr] {
-  def apply() = new MidelegCsr
-}
+object MidelegCsr extends CsrObject(new MidelegCsr)
 
 // machine interrupt-enable register
 class MieCsr extends CsrBundle {
@@ -303,9 +277,7 @@ class MieCsr extends CsrBundle {
   }
 }
 
-object MieCsr extends CsrObject[MieCsr] {
-  def apply() = new MieCsr
-}
+object MieCsr extends CsrObject(new MieCsr)
 
 // machine interrupt-pending register
 class MipCsr extends CsrBundle {
@@ -331,9 +303,7 @@ class MipCsr extends CsrBundle {
   }
 }
 
-object MipCsr extends CsrObject[MipCsr] {
-  def apply() = new MipCsr
-}
+object MipCsr extends CsrObject(new MipCsr)
 
 // machine trap vector register
 class MtvecCsr extends CsrBundle {
@@ -347,18 +317,14 @@ class MtvecCsr extends CsrBundle {
   }
 }
 
-object MtvecCsr extends CsrObject[MtvecCsr] {
-  def apply() = new MtvecCsr
-}
+object MtvecCsr extends CsrObject(new MtvecCsr)
 
 // machine scratch register
 class MscratchCsr extends CsrBundle {
   val data  = UInt(32.W)
 }
 
-object MscratchCsr extends CsrObject[MscratchCsr] {
-  def apply() = new MscratchCsr
-}
+object MscratchCsr extends CsrObject(new MscratchCsr)
 
 // machine exception program counter register
 class MepcCsr extends CsrBundle {
@@ -370,9 +336,7 @@ class MepcCsr extends CsrBundle {
   }
 }
 
-object MepcCsr extends CsrObject[MepcCsr] {
-  def apply() = new MepcCsr
-}
+object MepcCsr extends CsrObject(new MepcCsr)
 
 // machine exception cause register
 class McauseCsr extends CsrBundle {
@@ -386,47 +350,37 @@ class McauseCsr extends CsrBundle {
   }
 }
 
-object McauseCsr extends CsrObject[McauseCsr] {
-  def apply() = new McauseCsr
-}
+object McauseCsr extends CsrObject(new McauseCsr)
 
 // machine trap value register
 class MtvalCsr extends CsrBundle {
   val data  = UInt(32.W)
 }
 
-object MtvalCsr extends CsrObject[MtvalCsr] {
-  def apply() = new MtvalCsr
-}
+object MtvalCsr extends CsrObject(new MtvalCsr)
 
 // machine cycle counter (64-bit)
 class McycleCsr extends CsrBundle {
   val data  = UInt(64.W)
 }
 
-object McycleCsr extends CsrObject[McycleCsr] {
-  def apply() = new McycleCsr
-}
+object McycleCsr extends CsrObject(new McycleCsr)
 
 // machine instructions-retired counter (64-bit)
 class MinstretCsr extends CsrBundle {
   val data  = UInt(64.W)
 }
 
-object MinstretCsr extends CsrObject[MinstretCsr] {
-  def apply() = new MinstretCsr
-}
+object MinstretCsr extends CsrObject(new MinstretCsr)
 
 // machine hardware performance counter (64-bit)
 class MhpmcounterCsr extends CsrBundle {
   val data = UInt(64.W)
 }
 
-object MhpmcounterCsr extends CsrObject[MhpmcounterCsr] {
-  def apply() = new MhpmcounterCsr
-}
+object MhpmcounterCsr extends CsrObject(new MhpmcounterCsr)
 
-// machine hardware performance event selector (WARL)
+// machine hardware performance event selector
 class MhpmeventCsr extends CsrBundle {
   private val eventWidth = log2Ceil(PerfEvent.values.size)
   val wpri = UInt((32 - eventWidth).W)
@@ -436,13 +390,10 @@ class MhpmeventCsr extends CsrBundle {
     requireWidth(data)
     // Validate the full CSR value before truncating it to the stored selector.
     event := Mux(data < PerfEvent.values.size.U, data(eventWidth - 1, 0), 0.U)
-    wpri := 0.U
   }
 }
 
-object MhpmeventCsr extends CsrObject[MhpmeventCsr] {
-  def apply() = new MhpmeventCsr
-}
+object MhpmeventCsr extends CsrObject(new MhpmeventCsr)
 
 // TIME is not implemented. Absent counter enable/inhibit bits are WARL zero.
 abstract class CounterMaskCsr(hpmCount: Int) extends CsrBundle {
@@ -456,26 +407,23 @@ abstract class CounterMaskCsr(hpmCount: Int) extends CsrBundle {
   }
 }
 
+// Counter mask CSRs take hpmCount at each call, so they cannot extend CsrObject.
+abstract class CounterMaskCsrObject[T <: CounterMaskCsr](mk: Int => T) {
+  def apply(hpmCount: Int): T = mk(hpmCount)
+  def default(hpmCount: Int): T = 0.U.asTypeOf(apply(hpmCount))
+}
+
 // machine counter enable register
 class McounterenCsr(hpmCount: Int) extends CounterMaskCsr(hpmCount)
 
-object McounterenCsr {
-  def apply(hpmCount: Int) = new McounterenCsr(hpmCount)
-  def default(hpmCount: Int) = 0.U.asTypeOf(apply(hpmCount))
-}
+object McounterenCsr extends CounterMaskCsrObject(c => new McounterenCsr(c))
 
 // supervisor counter enable register
 class ScounterenCsr(hpmCount: Int) extends CounterMaskCsr(hpmCount)
 
-object ScounterenCsr {
-  def apply(hpmCount: Int) = new ScounterenCsr(hpmCount)
-  def default(hpmCount: Int) = 0.U.asTypeOf(apply(hpmCount))
-}
+object ScounterenCsr extends CounterMaskCsrObject(c => new ScounterenCsr(c))
 
 // machine counter inhibit register
 class McountinhibitCsr(hpmCount: Int) extends CounterMaskCsr(hpmCount)
 
-object McountinhibitCsr {
-  def apply(hpmCount: Int) = new McountinhibitCsr(hpmCount)
-  def default(hpmCount: Int) = 0.U.asTypeOf(apply(hpmCount))
-}
+object McountinhibitCsr extends CounterMaskCsrObject(c => new McountinhibitCsr(c))
