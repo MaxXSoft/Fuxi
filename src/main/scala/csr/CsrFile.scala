@@ -50,7 +50,7 @@ class CsrFile(val hpmCount: Int) extends Module {
   val mideleg   = RegInit(MidelegCsr.default())
   val mie       = RegInit(MieCsr.default())
   val mtvec     = RegInit(MtvecCsr.default())
-  val mcounteren = RegInit(0.U(32.W))
+  val mcounteren = RegInit(McounterenCsr.default(hpmCount))
   val mscratch  = RegInit(MscratchCsr.default())
   val mepc      = RegInit(MepcCsr.default())
   val mcause    = RegInit(McauseCsr.default())
@@ -59,15 +59,13 @@ class CsrFile(val hpmCount: Int) extends Module {
   val mip       = WireDefault(MipCsr.default())
   val mcycle    = RegInit(McycleCsr.default())
   val minstret  = RegInit(MinstretCsr.default())
-  val mhpmcounter = Seq.fill(hpmCount)(RegInit(0.U(64.W)))
-  val mcountinhibit = RegInit(0.U(32.W))
-  val mhpmevent = Seq.fill(hpmCount)(RegInit(0.U(log2Ceil(PerfEvent.values.size).W)))
-  // TIME is not implemented. Absent counter enable/inhibit bits are WARL zero.
-  val counterMask = (((BigInt(1) << (hpmCount + 3)) - 1) & ~BigInt(2)).U(32.W)
+  val mhpmcounters = Seq.fill(hpmCount)(RegInit(MhpmcounterCsr.default()))
+  val mcountinhibit = RegInit(McountinhibitCsr.default(hpmCount))
+  val mhpmevents = Seq.fill(hpmCount)(RegInit(MhpmeventCsr.default()))
   val sstatus   = SstatusCsr(mstatus)
   val sie       = SieCsr(mie.asUInt & mideleg.asUInt)
   val stvec     = RegInit(StvecCsr.default())
-  val scounteren = RegInit(0.U(32.W))
+  val scounteren = RegInit(ScounterenCsr.default(hpmCount))
   val sscratch  = RegInit(SscratchCsr.default())
   val sepc      = RegInit(SepcCsr.default())
   val scause    = RegInit(ScauseCsr.default())
@@ -91,7 +89,7 @@ class CsrFile(val hpmCount: Int) extends Module {
     BitPat(CSR_SSTATUS)       ->  List(sstatus.asUInt,  Y, Y),
     BitPat(CSR_SIE)           ->  List(sie.asUInt,      Y, Y),
     BitPat(CSR_STVEC)         ->  List(stvec.asUInt,    Y, Y),
-    BitPat(CSR_SCOUNTEREN)    ->  List(scounteren,      Y, Y),
+    BitPat(CSR_SCOUNTEREN)    ->  List(scounteren.asUInt, Y, Y),
     BitPat(CSR_SSCRATCH)      ->  List(sscratch.asUInt, Y, Y),
     BitPat(CSR_SEPC)          ->  List(sepc.asUInt,     Y, Y),
     BitPat(CSR_SCAUSE)        ->  List(scause.asUInt,   Y, Y),
@@ -108,7 +106,7 @@ class CsrFile(val hpmCount: Int) extends Module {
     BitPat(CSR_MIDELEG)       ->  List(mideleg.asUInt,  Y, Y),
     BitPat(CSR_MIE)           ->  List(mie.asUInt,      Y, Y),
     BitPat(CSR_MTVEC)         ->  List(mtvec.asUInt,    Y, Y),
-    BitPat(CSR_MCOUNTEREN)    ->  List(mcounteren,      Y, Y),
+    BitPat(CSR_MCOUNTEREN)    ->  List(mcounteren.asUInt, Y, Y),
     BitPat(CSR_MSCRATCH)      ->  List(mscratch.asUInt, Y, Y),
     BitPat(CSR_MEPC)          ->  List(mepc.asUInt,     Y, Y),
     BitPat(CSR_MCAUSE)        ->  List(mcause.asUInt,   Y, Y),
@@ -118,20 +116,20 @@ class CsrFile(val hpmCount: Int) extends Module {
     BitPat(CSR_MINSTRET)      ->  List(instret(31, 0),  Y, Y),
     BitPat(CSR_MCYCLEH)       ->  List(cycle(63, 32),   Y, Y),
     BitPat(CSR_MINSTRETH)     ->  List(instret(63, 32), Y, Y),
-    BitPat(CSR_MCOUNTINHIBIT) ->  List(mcountinhibit,   Y, Y),
+    BitPat(CSR_MCOUNTINHIBIT) ->  List(mcountinhibit.asUInt, Y, Y),
   ) ++ (0 until 4).map { n =>
     BitPat(pmpCfgAddr(n)) -> List(0.U, Y, Y)
   } ++ (0 until 16).map { n =>
     BitPat(pmpAddr(n)) -> List(0.U, Y, Y)
   } ++ (3 to 31).flatMap { n =>
-    val counter = if (n < hpmCount + 3) mhpmcounter(n - 3) else 0.U(64.W)
-    val event = if (n < hpmCount + 3) mhpmevent(n - 3) else 0.U(log2Ceil(PerfEvent.values.size).W)
+    val counter = if (n < hpmCount + 3) mhpmcounters(n - 3).asUInt else 0.U(64.W)
+    val event = if (n < hpmCount + 3) mhpmevents(n - 3).asUInt else 0.U(32.W)
     Seq(
       BitPat(hpmCounterAddr(n)) -> List(counter(31, 0), Y, N),
       BitPat(hpmCounterHighAddr(n)) -> List(counter(63, 32), Y, N),
       BitPat(mhpmCounterAddr(n)) -> List(counter(31, 0), Y, Y),
       BitPat(mhpmCounterHighAddr(n)) -> List(counter(63, 32), Y, Y),
-      BitPat(mhpmEventAddr(n)) -> List(event.pad(32), Y, Y),
+      BitPat(mhpmEventAddr(n)) -> List(event, Y, Y),
     )
   }
 
@@ -149,7 +147,7 @@ class CsrFile(val hpmCount: Int) extends Module {
   // Low/high counter aliases share their enable bit; M-mode bypasses both.
   val readCounterIndex = counterIndex(io.read.addr)
   val counterValid = mode === CSR_MODE_M || !isUserCounter(io.read.addr) ||
-    (mcounteren(readCounterIndex) && (mode =/= CSR_MODE_U || scounteren(readCounterIndex)))
+    (mcounteren.data(readCounterIndex) && (mode =/= CSR_MODE_U || scounteren.data(readCounterIndex)))
   val valid     = readValid && modeValid && counterValid
 
   // CSR write related signals
@@ -230,16 +228,16 @@ class CsrFile(val hpmCount: Int) extends Module {
   // update performance counters
   // Use the old inhibit and selector values at the committing edge. Explicit
   // half writes below override the entire 64-bit increment, including carry.
-  when (!mcountinhibit(0)) {
+  when (!mcountinhibit.data(0)) {
     mcycle.data := mcycle.data + 1.U
   }
-  when (io.write.retired && !mcountinhibit(2)) {
+  when (io.write.retired && !mcountinhibit.data(2)) {
     minstret.data := minstret.data + 1.U
   }
   for (i <- 0 until hpmCount) {
-    when (!mcountinhibit(i + 3) && mhpmevent(i) =/= 0.U &&
-          io.perfEvents(mhpmevent(i))) {
-      mhpmcounter(i) := mhpmcounter(i) + 1.U
+    when (!mcountinhibit.data(i + 3) && mhpmevents(i).event =/= 0.U &&
+          io.perfEvents(mhpmevents(i).event)) {
+      mhpmcounters(i).data := mhpmcounters(i).data + 1.U
     }
   }
 
@@ -260,31 +258,31 @@ class CsrFile(val hpmCount: Int) extends Module {
         (mipReal.asUInt & ~mideleg.asUInt) | (writeData & mideleg.asUInt))
     }
     when (io.write.addr === CSR_MCYCLE) {
-      mcycle.data := Cat(mcycle.data(63, 32), writeData)
+      mcycle <= Cat(mcycle.data(63, 32), writeData)
     }
     when (io.write.addr === CSR_MINSTRET) {
-      minstret.data := Cat(minstret.data(63, 32), writeData)
+      minstret <= Cat(minstret.data(63, 32), writeData)
     }
     when (io.write.addr === CSR_MCYCLEH) {
-      mcycle.data := Cat(writeData, mcycle.data(31, 0))
+      mcycle <= Cat(writeData, mcycle.data(31, 0))
     }
     when (io.write.addr === CSR_MINSTRETH) {
-      minstret.data := Cat(writeData, minstret.data(31, 0))
+      minstret <= Cat(writeData, minstret.data(31, 0))
     }
     for (i <- 0 until hpmCount) {
       when (io.write.addr === mhpmCounterAddr(i + 3)) {
-        mhpmcounter(i) := Cat(mhpmcounter(i)(63, 32), writeData)
+        mhpmcounters(i) <= Cat(mhpmcounters(i).data(63, 32), writeData)
       }
       when (io.write.addr === mhpmCounterHighAddr(i + 3)) {
-        mhpmcounter(i) := Cat(writeData, mhpmcounter(i)(31, 0))
+        mhpmcounters(i) <= Cat(writeData, mhpmcounters(i).data(31, 0))
       }
       when (io.write.addr === mhpmEventAddr(i + 3)) {
-        mhpmevent(i) := Mux(writeData < PerfEvent.values.size.U, writeData(log2Ceil(PerfEvent.values.size) - 1, 0), 0.U)
+        mhpmevents(i) <= writeData
       }
     }
-    when (io.write.addr === CSR_MCOUNTEREN) { mcounteren := writeData & counterMask }
-    when (io.write.addr === CSR_SCOUNTEREN) { scounteren := writeData & counterMask }
-    when (io.write.addr === CSR_MCOUNTINHIBIT) { mcountinhibit := writeData & counterMask }
+    when (io.write.addr === CSR_MCOUNTEREN) { mcounteren <= writeData }
+    when (io.write.addr === CSR_SCOUNTEREN) { scounteren <= writeData }
+    when (io.write.addr === CSR_MCOUNTINHIBIT) { mcountinhibit <= writeData }
     when (io.write.addr === CSR_STVEC)    { stvec <= writeData }
     when (io.write.addr === CSR_SSCRATCH) { sscratch <= writeData }
     when (io.write.addr === CSR_SEPC)     { sepc <= writeData }
