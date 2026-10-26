@@ -3,7 +3,7 @@ package utils
 import chisel3._
 import core.Core
 import chisel3.util.experimental.BoringUtils
-import consts.Parameters.FETCH_QUEUE_DEPTH
+import consts.Parameters.{FETCH_QUEUE_DEPTH, HPM_COUNT}
 import io.DebugIO
 import sim.{RAM, ROM}
 
@@ -18,7 +18,7 @@ class CoreMemoryHarness(init: ROM.Init, depth: Int = FETCH_QUEUE_DEPTH,
     val fenceRequest = Output(Bool())
     val queueCount = Output(UInt(32.W))
   })
-  val core = Module(new Core(depth))
+  val core = Module(new Core(depth, HPM_COUNT))
   core.io.busPerf := 0.U.asTypeOf(core.io.busPerf)
   val rom = Module(new ROM(init))
   val ram = Module(new RAM)

@@ -1,6 +1,7 @@
 package csr
 
 import chisel3._
+import consts.Parameters.HPM_COUNT
 import consts.CSR._
 import consts.CsrOp._
 import utils.{CsrRegressionTester, TestDriver}
@@ -44,5 +45,5 @@ class CsrDelegationTester(c: CsrFile) extends CsrRegressionTester(c) {
 }
 
 object CsrDelegationTest extends App {
-  if (!TestDriver.execute(args, () => new CsrFile)(c => new CsrDelegationTester(c))) sys.exit(1)
+  if (!TestDriver.execute(args, () => new CsrFile(HPM_COUNT))(c => new CsrDelegationTester(c))) sys.exit(1)
 }
