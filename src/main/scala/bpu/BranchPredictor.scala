@@ -21,6 +21,7 @@ class BranchPredictor extends Module {
     val predIndex   = Output(UInt(GHR_WIDTH.W))
     val rasCandidate = Output(Bool())
     val rasUsed = Output(Bool())
+    // performance monitoring
     val pmu = Output(new RasPerformanceIO)
   })
 
@@ -83,5 +84,6 @@ class BranchPredictor extends Module {
   // recovery clears must not change the classification at retirement.
   io.rasCandidate := io.lookupValid && pop
   io.rasUsed := predictReturn
+
   io.pmu := ras.io.pmu
 }

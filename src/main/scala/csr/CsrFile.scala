@@ -16,6 +16,7 @@ import consts.PerfEvent.EVENT_COUNT
 class CsrFile(val hpmCount: Int) extends Module {
   require(hpmCount >= 0 && hpmCount <= 29)
   require(EVENT_COUNT > 1 && EVENT_COUNT <= 64)
+
   val io = IO(new Bundle {
     // read channel
     val read    = Flipped(new CsrReadIO)
@@ -50,6 +51,7 @@ class CsrFile(val hpmCount: Int) extends Module {
   val mideleg   = RegInit(MidelegCsr.default())
   val mie       = RegInit(MieCsr.default())
   val mtvec     = RegInit(MtvecCsr.default())
+  val mcounteren = RegInit(0.U(32.W))
   val mscratch  = RegInit(MscratchCsr.default())
   val mepc      = RegInit(MepcCsr.default())
   val mcause    = RegInit(McauseCsr.default())
@@ -59,20 +61,19 @@ class CsrFile(val hpmCount: Int) extends Module {
   val mcycle    = RegInit(McycleCsr.default())
   val minstret  = RegInit(MinstretCsr.default())
   val mhpmcounter = Seq.fill(hpmCount)(RegInit(0.U(64.W)))
+  val mcountinhibit = RegInit(0.U(32.W))
   val mhpmevent = Seq.fill(hpmCount)(RegInit(0.U(6.W)))
   // TIME is not implemented. Absent counter enable/inhibit bits are WARL zero.
   val counterMask = (((BigInt(1) << (hpmCount + 3)) - 1) & ~BigInt(2)).U(32.W)
-  val mcounteren = RegInit(0.U(32.W))
-  val scounteren = RegInit(0.U(32.W))
-  val mcountinhibit = RegInit(0.U(32.W))
   val sstatus   = SstatusCsr(mstatus)
   val sie       = SieCsr(mie.asUInt & mideleg.asUInt)
-  val sip       = WireDefault(SipCsr.default())
   val stvec     = RegInit(StvecCsr.default())
+  val scounteren = RegInit(0.U(32.W))
   val sscratch  = RegInit(SscratchCsr.default())
   val sepc      = RegInit(SepcCsr.default())
   val scause    = RegInit(ScauseCsr.default())
   val stval     = RegInit(StvalCsr.default())
+  val sip       = WireDefault(SipCsr.default())
   val satp      = RegInit(SatpCsr.default())
   val cycle     = mcycle.asUInt
   val instret   = minstret.asUInt

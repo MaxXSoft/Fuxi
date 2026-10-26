@@ -18,6 +18,7 @@ class ReturnAddressStack(depth: Int) extends Module {
     val pushAddr = Input(UInt(ADDR_WIDTH.W))
     val valid = Output(Bool())
     val top = Output(UInt(ADDR_WIDTH.W))
+    // performance monitoring
     val pmu = Output(new RasPerformanceIO)
   })
 
@@ -26,13 +27,8 @@ class ReturnAddressStack(depth: Int) extends Module {
   val count = RegInit(0.U(log2Ceil(depth + 1).W))
   val previous = Mux(next === 0.U, (depth - 1).U, next - 1.U)
   val nonEmpty = count =/= 0.U
-  def entry(index: UInt): UInt = if (depth == 1) entries(0) else entries(index)
 
-  io.valid := nonEmpty
-  io.top := Mux(nonEmpty, entry(previous), 0.U)
-  io.pmu.overflow := !io.flush && io.push && !io.pop && count === depth.U
-  io.pmu.emptyPop := !io.flush && io.pop && !nonEmpty
-  io.pmu.clearNonempty := io.flush && nonEmpty
+  def entry(index: UInt): UInt = if (depth == 1) entries(0) else entries(index)
 
   when (io.flush) {
     next := 0.U
@@ -51,4 +47,11 @@ class ReturnAddressStack(depth: Int) extends Module {
     next := previous
     count := count - 1.U
   }
+
+  io.valid := nonEmpty
+  io.top := Mux(nonEmpty, entry(previous), 0.U)
+
+  io.pmu.overflow := !io.flush && io.push && !io.pop && count === depth.U
+  io.pmu.emptyPop := !io.flush && io.pop && !nonEmpty
+  io.pmu.clearNonempty := io.flush && nonEmpty
 }

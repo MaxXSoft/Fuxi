@@ -19,6 +19,7 @@ class DataCache extends Module {
     val flushAccessFault = Output(Bool())
     // AXI interface
     val axi   = new AxiMaster(ADDR_WIDTH, DATA_WIDTH)
+    // performance monitoring
     val pmu   = Output(new CachePerformanceIO)
   })
 
@@ -250,12 +251,6 @@ class DataCache extends Module {
   io.sram.accessFault := state === sAccessFault
   io.sram.rdata       := lines.io.rdata
 
-  io.pmu.access := io.sram.en && io.sram.valid
-  io.pmu.miss := state === sIdle && !(io.flush && isDirty) &&
-                 io.sram.en && !cacheHit
-  io.pmu.busy := state =/= sIdle
-  io.pmu.writeback := io.axi.writeAddr.valid && io.axi.writeAddr.ready
-
   // Cache-maintenance completion is independent of the demand SRAM path, so
   // MMU and cached/uncached routing cannot hide it.  Fault is intentionally
   // not gated by io.flush: Mem withdraws the request while taking the trap.
@@ -280,4 +275,11 @@ class DataCache extends Module {
   io.axi.writeData.bits.last  := wlast
   io.axi.writeData.bits.strb  := wordWriteEn.U
   io.axi.writeResp.ready      := state === sWriteResp || state === sFlushResp
+
+  // performance monitoring
+  io.pmu.access := io.sram.en && io.sram.valid
+  io.pmu.miss := state === sIdle && !(io.flush && isDirty) &&
+                 io.sram.en && !cacheHit
+  io.pmu.busy := state =/= sIdle
+  io.pmu.writeback := io.axi.writeAddr.valid && io.axi.writeAddr.ready
 }
