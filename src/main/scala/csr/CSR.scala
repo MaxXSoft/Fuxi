@@ -1,7 +1,9 @@
 package csr
 
 import chisel3._
-import chisel3.util.Cat
+import chisel3.util.{Cat, log2Ceil}
+
+import consts.PerfEvent
 
 import consts.Parameters._
 
@@ -413,4 +415,67 @@ class MinstretCsr extends CsrBundle {
 
 object MinstretCsr extends CsrObject[MinstretCsr] {
   def apply() = new MinstretCsr
+}
+
+// machine hardware performance counter (64-bit)
+class MhpmcounterCsr extends CsrBundle {
+  val data = UInt(64.W)
+}
+
+object MhpmcounterCsr extends CsrObject[MhpmcounterCsr] {
+  def apply() = new MhpmcounterCsr
+}
+
+// machine hardware performance event selector (WARL)
+class MhpmeventCsr extends CsrBundle {
+  private val eventWidth = log2Ceil(PerfEvent.values.size)
+  val wpri = UInt((32 - eventWidth).W)
+  val event = UInt(eventWidth.W)
+
+  override def <=(data: UInt) = {
+    requireWidth(data)
+    // Validate the full CSR value before truncating it to the stored selector.
+    event := Mux(data < PerfEvent.values.size.U, data(eventWidth - 1, 0), 0.U)
+    wpri := 0.U
+  }
+}
+
+object MhpmeventCsr extends CsrObject[MhpmeventCsr] {
+  def apply() = new MhpmeventCsr
+}
+
+// TIME is not implemented. Absent counter enable/inhibit bits are WARL zero.
+abstract class CounterMaskCsr(hpmCount: Int) extends CsrBundle {
+  require(hpmCount >= 0 && hpmCount <= 29)
+  val data = UInt(32.W)
+
+  override def <=(d: UInt) = {
+    requireWidth(d)
+    val mask = ((BigInt(1) << (hpmCount + 3)) - 1) & ~BigInt(2)
+    data := d & mask.U(32.W)
+  }
+}
+
+// machine counter enable register
+class McounterenCsr(hpmCount: Int) extends CounterMaskCsr(hpmCount)
+
+object McounterenCsr {
+  def apply(hpmCount: Int) = new McounterenCsr(hpmCount)
+  def default(hpmCount: Int) = 0.U.asTypeOf(apply(hpmCount))
+}
+
+// supervisor counter enable register
+class ScounterenCsr(hpmCount: Int) extends CounterMaskCsr(hpmCount)
+
+object ScounterenCsr {
+  def apply(hpmCount: Int) = new ScounterenCsr(hpmCount)
+  def default(hpmCount: Int) = 0.U.asTypeOf(apply(hpmCount))
+}
+
+// machine counter inhibit register
+class McountinhibitCsr(hpmCount: Int) extends CounterMaskCsr(hpmCount)
+
+object McountinhibitCsr {
+  def apply(hpmCount: Int) = new McountinhibitCsr(hpmCount)
+  def default(hpmCount: Int) = 0.U.asTypeOf(apply(hpmCount))
 }
