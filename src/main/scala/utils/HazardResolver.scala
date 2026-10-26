@@ -78,9 +78,6 @@ class HazardResolver extends Module {
       CSR_SIE -> CSR_MIE,
       CSR_SIP -> CSR_MIP,
     )
-    def isCounter(addr: UInt): Bool =
-      (addr(11, 8) === 0xb.U || addr(11, 8) === 0xc.U) &&
-        addr(6, 5) === 0.U && addr(4, 0) =/= 1.U
     val readsCounter = isCounter(read.addr)
     def dependsOn(write: CsrCommitIO): Bool = {
       val alias = aliases.map { case (a, b) =>
@@ -93,12 +90,12 @@ class HazardResolver extends Module {
       // The two halves and machine/user views name one 64-bit counter. A
       // half write suppresses that cycle's increment of the entire counter.
       val counterAlias = readsCounter && isCounter(write.addr) &&
-        read.addr(4, 0) === write.addr(4, 0)
+        counterIndex(read.addr) === counterIndex(write.addr)
       val counterConfig = readsCounter && (write.addr === CSR_MCOUNTINHIBIT ||
-        (write.addr >= CSR_MHPMEVENT(3) && write.addr <= CSR_MHPMEVENT(31) &&
-         read.addr(4, 0) === write.addr(4, 0)))
-      val counterAccess = read.addr(11, 8) === 0xc.U &&
-        (write.addr === CSR_MCOUNTEREN || write.addr === CSR_SCOUNTEREN)
+        (isHpmEvent(write.addr) &&
+         counterIndex(read.addr) === counterIndex(write.addr)))
+      val counterAccess = isUserCounter(read.addr) &&
+        isCounterEnable(write.addr)
       write.op =/= CSR_NOP && write.op =/= CSR_R &&
         (read.addr === write.addr || alias || delegatedView || counterAlias ||
           counterConfig || counterAccess)
@@ -106,7 +103,7 @@ class HazardResolver extends Module {
     val isRead = read.op =/= CSR_NOP && read.op =/= CSR_W
     // Retired instructions implicitly write instret and may produce HPM
     // events. Drain MEM/WB for either snapshot, including high-half carries.
-    val readsRetirementCounter = readsCounter && read.addr(4, 0) >= 2.U
+    val readsRetirementCounter = isInstretOrHpmCounter(read.addr)
     val retirementHazard = readsRetirementCounter &&
       (io.memCsr.retired || io.wbCsr.retired)
     isRead && (dependsOn(io.memCsr) || dependsOn(io.wbCsr) || retirementHazard)

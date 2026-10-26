@@ -10,10 +10,10 @@ import utils.{CsrRegressionTester, TestDriver}
 class CsrPerformanceTester(c: CsrFile) extends CsrRegressionTester(c) {
   val mask = BigInt("7fd", 16)
   def counter(n: Int, value: BigInt): Unit = {
-    read(CSR_MHPMCOUNTER(n), value & 0xffffffffL)
-    read(CSR_HPMCOUNTER(n), value & 0xffffffffL)
-    read(CSR_MHPMCOUNTERH(n), value >> 32)
-    read(CSR_HPMCOUNTERH(n), value >> 32)
+    read(mhpmCounterAddr(n), value & 0xffffffffL)
+    read(hpmCounterAddr(n), value & 0xffffffffL)
+    read(mhpmCounterHighAddr(n), value >> 32)
+    read(hpmCounterHighAddr(n), value >> 32)
   }
   resetCsr()
   read(CSR_MCOUNTINHIBIT, 0)
@@ -27,19 +27,19 @@ class CsrPerformanceTester(c: CsrFile) extends CsrRegressionTester(c) {
   read(CSR_MINSTRET, 0)
   for (n <- 3 to 31) {
     counter(n, 0)
-    read(CSR_MHPMEVENT(n), 0)
+    read(mhpmEventAddr(n), 0)
   }
   for (n <- 11 to 31) {
-    write(CSR_MHPMCOUNTER(n), 0xffffffffL)
-    write(CSR_MHPMCOUNTERH(n), 0xffffffffL)
-    write(CSR_MHPMEVENT(n), 1)
+    write(mhpmCounterAddr(n), 0xffffffffL)
+    write(mhpmCounterHighAddr(n), 0xffffffffL)
+    write(mhpmEventAddr(n), 1)
     counter(n, 0)
-    read(CSR_MHPMEVENT(n), 0)
+    read(mhpmEventAddr(n), 0)
   }
-  write(CSR_MHPMCOUNTER(3), 0xfffffffeL)
-  write(CSR_MHPMCOUNTER(4), 7)
-  write(CSR_MHPMEVENT(3), 1)
-  write(CSR_MHPMEVENT(4), 2)
+  write(mhpmCounterAddr(3), 0xfffffffeL)
+  write(mhpmCounterAddr(4), 7)
+  write(mhpmEventAddr(3), 1)
+  write(mhpmEventAddr(4), 2)
   poke(c.io.perfEvents, 2)
   write(CSR_MCOUNTINHIBIT, mask & ~BigInt(8))
   counter(3, 0xfffffffeL) // Enabling takes effect after this write edge.
@@ -51,29 +51,29 @@ class CsrPerformanceTester(c: CsrFile) extends CsrRegressionTester(c) {
 
   // Each explicit half write wins over a simultaneous selected event, and
   // preserves the other half of the old counter rather than its increment.
-  write(CSR_MHPMCOUNTER(3), 0x12345678)
+  write(mhpmCounterAddr(3), 0x12345678)
   counter(3, BigInt("112345678", 16))
-  write(CSR_MHPMCOUNTERH(3), 2)
+  write(mhpmCounterHighAddr(3), 2)
   counter(3, BigInt("212345678", 16))
-  write(CSR_MHPMEVENT(3), 2)
+  write(mhpmEventAddr(3), 2)
   counter(3, BigInt("212345679", 16)) // Old selector counted at write edge.
   step(3)
   counter(3, BigInt("212345679", 16))
   poke(c.io.perfEvents, 4)
   step(2)
   counter(3, BigInt("21234567b", 16))
-  write(CSR_MHPMEVENT(3), 0)
+  write(mhpmEventAddr(3), 0)
   counter(3, BigInt("21234567c", 16))
   poke(c.io.perfEvents, 1) // Bit zero never counts, even when asserted.
   step(4)
   counter(3, BigInt("21234567c", 16))
   for (invalid <- Seq(BigInt(PerfEvent.values.size), BigInt(64), BigInt(0x10001), BigInt(0xffffffffL))) {
-    write(CSR_MHPMEVENT(3), invalid)
-    read(CSR_MHPMEVENT(3), 0)
+    write(mhpmEventAddr(3), invalid)
+    read(mhpmEventAddr(3), 0)
   }
   // Highest supported ID is selectable; nearby unsupported IDs cannot alias
   // it by truncation to the selector's six stored bits.
-  write(CSR_MHPMEVENT(3), PerfEvent.values.size - 1)
+  write(mhpmEventAddr(3), PerfEvent.values.size - 1)
   poke(c.io.perfEvents, BigInt(1) << (PerfEvent.values.size - 1))
   step(1)
   counter(3, BigInt("21234567d", 16))
@@ -81,13 +81,13 @@ class CsrPerformanceTester(c: CsrFile) extends CsrRegressionTester(c) {
   counter(3, BigInt("21234567e", 16))
   step(3)
   counter(3, BigInt("21234567e", 16))
-  write(CSR_MHPMCOUNTER(3), 0xffffffffL)
-  write(CSR_MHPMCOUNTERH(3), 0xffffffffL)
+  write(mhpmCounterAddr(3), 0xffffffffL)
+  write(mhpmCounterHighAddr(3), 0xffffffffL)
   write(CSR_MCOUNTINHIBIT, 8, CSR_RC)
   counter(3, BigInt("ffffffffffffffff", 16))
-  write(CSR_MHPMCOUNTERH(3), 7)
+  write(mhpmCounterHighAddr(3), 7)
   counter(3, BigInt("7ffffffff", 16)) // Suppress simultaneous low-half carry.
-  write(CSR_MHPMCOUNTER(3), 9)
+  write(mhpmCounterAddr(3), 9)
   counter(3, BigInt("700000009", 16)) // Suppress simultaneous high-half carry.
   step(1)
   counter(3, BigInt("70000000a", 16))
@@ -135,18 +135,18 @@ class CsrPerformanceConfigurationTester(c: CsrFile) extends CsrRegressionTester(
     read(addr, mask)
   }
   val last = if (c.hpmCount == 0) 3 else c.hpmCount + 2
-  write(CSR_MHPMCOUNTER(last), 0xffffffffL)
-  write(CSR_MHPMCOUNTERH(last), 0xffffffffL)
-  write(CSR_MHPMEVENT(last), 1)
-  read(CSR_MHPMCOUNTER(last), if (c.hpmCount == 0) 0 else 0xffffffffL)
-  read(CSR_MHPMCOUNTERH(last), if (c.hpmCount == 0) 0 else 0xffffffffL)
-  read(CSR_MHPMEVENT(last), if (c.hpmCount == 0) 0 else 1)
+  write(mhpmCounterAddr(last), 0xffffffffL)
+  write(mhpmCounterHighAddr(last), 0xffffffffL)
+  write(mhpmEventAddr(last), 1)
+  read(mhpmCounterAddr(last), if (c.hpmCount == 0) 0 else 0xffffffffL)
+  read(mhpmCounterHighAddr(last), if (c.hpmCount == 0) 0 else 0xffffffffL)
+  read(mhpmEventAddr(last), if (c.hpmCount == 0) 0 else 1)
   poke(c.io.perfEvents, 2)
   write(CSR_MCOUNTINHIBIT, mask & ~(BigInt(1) << last))
   step(1)
   // Full 64-bit wrap on the last implemented slot, or the absent slot stays 0.
-  read(CSR_MHPMCOUNTER(last), 0)
-  read(CSR_MHPMCOUNTERH(last), 0)
+  read(mhpmCounterAddr(last), 0)
+  read(mhpmCounterHighAddr(last), 0)
 }
 
 object CsrPerformanceTest extends App {

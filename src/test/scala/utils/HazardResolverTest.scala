@@ -46,31 +46,34 @@ class HazardResolverTester(c: HazardResolver) extends PeekPokeTester(c) {
         poke(port.addr, write)
         read(snapshot.U(12.W), true)
         read(CSR_MSTATUS, false)
-        read((if (index == 3) CSR_MHPMCOUNTER(4) else CSR_MHPMCOUNTER(3)), false)
+        read((if (index == 3) mhpmCounterAddr(4) else mhpmCounterAddr(3)), false)
       }
     }
     for (control <- Seq(CSR_MCOUNTEREN, CSR_SCOUNTEREN)) {
       poke(port.addr, control)
-      for (alias <- Seq(CSR_CYCLE, CSR_INSTRETH, CSR_HPMCOUNTER(3), CSR_HPMCOUNTERH(31))) {
+      for (alias <- Seq(CSR_CYCLE, CSR_INSTRETH, hpmCounterAddr(3), hpmCounterHighAddr(31))) {
         read(alias, true)
       }
       read(CSR_MCYCLE, false)
-      read(CSR_MHPMCOUNTER(3), false)
+      read(mhpmCounterAddr(3), false)
+      // Unimplemented TIME and nearby CSR ranges are not counter aliases.
+      for (address <- Seq(0xc01, 0xc81, 0xc20, 0xca0, 0xcff))
+        read(address.U(12.W), false)
     }
     poke(port.addr, CSR_MCOUNTINHIBIT)
     for (snapshot <- Seq(CSR_MCYCLE, CSR_CYCLEH, CSR_MINSTRET, CSR_INSTRETH,
-                         CSR_MHPMCOUNTER(3), CSR_HPMCOUNTERH(31))) {
+                         mhpmCounterAddr(3), hpmCounterHighAddr(31))) {
       read(snapshot, true)
     }
     read(CSR_MSTATUS, false)
     for (index <- Seq(3, 10, 31)) {
-      poke(port.addr, CSR_MHPMEVENT(index))
-      read(CSR_MHPMCOUNTER(index), true)
-      read(CSR_HPMCOUNTERH(index), true)
+      poke(port.addr, mhpmEventAddr(index))
+      read(mhpmCounterAddr(index), true)
+      read(hpmCounterHighAddr(index), true)
       read(CSR_MCYCLE, false)
     }
-    poke(port.addr, CSR_MHPMCOUNTER(3))
-    poke(c.io.csrRead.addr, CSR_HPMCOUNTERH(3))
+    poke(port.addr, mhpmCounterAddr(3))
+    poke(c.io.csrRead.addr, hpmCounterHighAddr(3))
     for (op <- Seq(CSR_NOP, CSR_W)) {
       poke(c.io.csrRead.op, op)
       expect(c.io.csrFlag, false)
@@ -83,13 +86,13 @@ class HazardResolverTester(c: HazardResolver) extends PeekPokeTester(c) {
     }
     poke(port.op, CSR_NOP)
     poke(port.retired, true)
-    for (snapshot <- Seq(CSR_MINSTRET, CSR_INSTRETH, CSR_MHPMCOUNTER(3), CSR_HPMCOUNTERH(31))) {
+    for (snapshot <- Seq(CSR_MINSTRET, CSR_INSTRETH, mhpmCounterAddr(3), hpmCounterHighAddr(31))) {
       read(snapshot, true)
     }
     read(CSR_CYCLE, false)
-    read(CSR_MHPMEVENT(3), false)
+    read(mhpmEventAddr(3), false)
     poke(port.retired, false)
-    read(CSR_HPMCOUNTER(3), false)
+    read(hpmCounterAddr(3), false)
   }
 }
 

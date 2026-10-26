@@ -18,14 +18,6 @@ object CSR {
   val CSR_CYCLEH      = 0xc80.U(CSR_ADDR_WIDTH.W)
   val CSR_TIMEH       = 0xc81.U(CSR_ADDR_WIDTH.W)
   val CSR_INSTRETH    = 0xc82.U(CSR_ADDR_WIDTH.W)
-  def CSR_HPMCOUNTER(n: Int): UInt = {
-    require(n >= 3 && n <= 31)
-    (0xc00 + n).U(CSR_ADDR_WIDTH.W)
-  }
-  def CSR_HPMCOUNTERH(n: Int): UInt = {
-    require(n >= 3 && n <= 31)
-    (0xc80 + n).U(CSR_ADDR_WIDTH.W)
-  }
   // supervisor trap setup
   val CSR_SSTATUS     = 0x100.U(CSR_ADDR_WIDTH.W)
   val CSR_SIE         = 0x104.U(CSR_ADDR_WIDTH.W)
@@ -58,44 +50,73 @@ object CSR {
   val CSR_MCAUSE      = 0x342.U(CSR_ADDR_WIDTH.W)
   val CSR_MTVAL       = 0x343.U(CSR_ADDR_WIDTH.W)
   val CSR_MIP         = 0x344.U(CSR_ADDR_WIDTH.W)
-  // machine memory protection
-  val CSR_PMPCFG0     = 0x3a0.U(CSR_ADDR_WIDTH.W)
-  val CSR_PMPCFG1     = 0x3a1.U(CSR_ADDR_WIDTH.W)
-  val CSR_PMPCFG2     = 0x3a2.U(CSR_ADDR_WIDTH.W)
-  val CSR_PMPCFG3     = 0x3a3.U(CSR_ADDR_WIDTH.W)
-  val CSR_PMPADDR0    = 0x3b0.U(CSR_ADDR_WIDTH.W)
-  val CSR_PMPADDR1    = 0x3b1.U(CSR_ADDR_WIDTH.W)
-  val CSR_PMPADDR2    = 0x3b2.U(CSR_ADDR_WIDTH.W)
-  val CSR_PMPADDR3    = 0x3b3.U(CSR_ADDR_WIDTH.W)
-  val CSR_PMPADDR4    = 0x3b4.U(CSR_ADDR_WIDTH.W)
-  val CSR_PMPADDR5    = 0x3b5.U(CSR_ADDR_WIDTH.W)
-  val CSR_PMPADDR6    = 0x3b6.U(CSR_ADDR_WIDTH.W)
-  val CSR_PMPADDR7    = 0x3b7.U(CSR_ADDR_WIDTH.W)
-  val CSR_PMPADDR8    = 0x3b8.U(CSR_ADDR_WIDTH.W)
-  val CSR_PMPADDR9    = 0x3b9.U(CSR_ADDR_WIDTH.W)
-  val CSR_PMPADDR10   = 0x3ba.U(CSR_ADDR_WIDTH.W)
-  val CSR_PMPADDR11   = 0x3bb.U(CSR_ADDR_WIDTH.W)
-  val CSR_PMPADDR12   = 0x3bc.U(CSR_ADDR_WIDTH.W)
-  val CSR_PMPADDR13   = 0x3bd.U(CSR_ADDR_WIDTH.W)
-  val CSR_PMPADDR14   = 0x3be.U(CSR_ADDR_WIDTH.W)
-  val CSR_PMPADDR15   = 0x3bf.U(CSR_ADDR_WIDTH.W)
   // machine counters
   val CSR_MCYCLE      = 0xb00.U(CSR_ADDR_WIDTH.W)
   val CSR_MINSTRET    = 0xb02.U(CSR_ADDR_WIDTH.W)
   val CSR_MCYCLEH     = 0xb80.U(CSR_ADDR_WIDTH.W)
   val CSR_MINSTRETH   = 0xb82.U(CSR_ADDR_WIDTH.W)
-  def CSR_MHPMCOUNTER(n: Int): UInt = {
+  // machine counter setup
+  val CSR_MCOUNTINHIBIT = 0x320.U(CSR_ADDR_WIDTH.W)
+
+  def hpmCounterAddr(n: Int): UInt = {
+    require(n >= 3 && n <= 31)
+    (0xc00 + n).U(CSR_ADDR_WIDTH.W)
+  }
+
+  def hpmCounterHighAddr(n: Int): UInt = {
+    require(n >= 3 && n <= 31)
+    (0xc80 + n).U(CSR_ADDR_WIDTH.W)
+  }
+
+  def mhpmCounterAddr(n: Int): UInt = {
     require(n >= 3 && n <= 31)
     (0xb00 + n).U(CSR_ADDR_WIDTH.W)
   }
-  def CSR_MHPMCOUNTERH(n: Int): UInt = {
+
+  def mhpmCounterHighAddr(n: Int): UInt = {
     require(n >= 3 && n <= 31)
     (0xb80 + n).U(CSR_ADDR_WIDTH.W)
   }
-  // machine counter setup
-  val CSR_MCOUNTINHIBIT = 0x320.U(CSR_ADDR_WIDTH.W)
-  def CSR_MHPMEVENT(n: Int): UInt = {
+
+  def mhpmEventAddr(n: Int): UInt = {
     require(n >= 3 && n <= 31)
     (0x320 + n).U(CSR_ADDR_WIDTH.W)
   }
+
+  // RV32 PMP addresses currently exposed by Fuxi (WARL zero).
+  def pmpCfgAddr(n: Int): UInt = {
+    require(n >= 0 && n < 4)
+    (0x3a0 + n).U(CSR_ADDR_WIDTH.W)
+  }
+
+  def pmpAddr(n: Int): UInt = {
+    require(n >= 0 && n < 16)
+    (0x3b0 + n).U(CSR_ADDR_WIDTH.W)
+  }
+
+  def requiredPrivilege(addr: UInt): UInt = addr(9, 8)
+
+  // Architectural counter number N, shared by low/high halves and aliases.
+  // This is not the HPM storage index N - 3. TIME (N = 1) is unimplemented.
+  def counterIndex(addr: UInt): UInt = addr(4, 0)
+
+  private def hasCounterOffset(addr: UInt): Bool =
+    addr(6, 5) === 0.U && counterIndex(addr) =/= 1.U
+
+  def isMachineCounter(addr: UInt): Bool =
+    addr(11, 8) === 0xb.U && hasCounterOffset(addr)
+
+  def isUserCounter(addr: UInt): Bool =
+    addr(11, 8) === 0xc.U && hasCounterOffset(addr)
+
+  def isCounter(addr: UInt): Bool = isMachineCounter(addr) || isUserCounter(addr)
+
+  def isHpmEvent(addr: UInt): Bool =
+    addr >= mhpmEventAddr(3) && addr <= mhpmEventAddr(31)
+
+  def isCounterEnable(addr: UInt): Bool =
+    addr === CSR_MCOUNTEREN || addr === CSR_SCOUNTEREN
+
+  def isInstretOrHpmCounter(addr: UInt): Bool =
+    isCounter(addr) && counterIndex(addr) >= 2.U
 }
