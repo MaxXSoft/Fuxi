@@ -2,6 +2,7 @@ package core.integration
 
 import chisel3._
 import chisel3.util.experimental.BoringUtils
+import consts.PerfEvent
 import consts.PerfEvent._
 import sim.ROM
 import utils.{CoreMemoryHarness, CoreTester, ExpectedRetirement, RetirementChecker, TestDriver}
@@ -9,7 +10,7 @@ import utils.{CoreMemoryHarness, CoreTester, ExpectedRetirement, RetirementCheck
 private class PerformanceHarness(ras: Boolean, depth: Int, fenceFault: Boolean)
     extends CoreMemoryHarness(ROM.Words(if (ras) RasProgram.words else RetirementProgram.words),
                               depth, fenceFault) {
-  val pmu = IO(Output(UInt(values.size.W)))
+  val pmu = IO(Output(UInt(PerfEvent.values.size.W)))
   pmu := BoringUtils.bore(core.csrfile.io.perfEvents)
 }
 
@@ -22,7 +23,7 @@ private class PerformanceTester(c: PerformanceHarness, ras: Boolean, fenceFault:
                  else RetirementProgram.pcs(fenceFault).map(ExpectedRetirement(_))
   val checker = new RetirementChecker(expected)
   val donePc = if (ras) RasProgram.donePc else RetirementProgram.donePc
-  val totals = Array.fill[Long](values.size)(0)
+  val totals = Array.fill[Long](PerfEvent.values.size)(0)
   var memoryWait = 0
   var memoryArmed = true
   var fenceWait = 0
