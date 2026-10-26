@@ -3,6 +3,7 @@ package core
 import chisel3._
 import chisel3.util._
 
+import consts.Opcode
 import consts.Instructions.{EBREAK_INST, NOP}
 import consts.Parameters.INST_WIDTH
 
@@ -23,22 +24,22 @@ class CompressedDecoder extends Module {
   val sp = 2.U(5.W)
 
   def iType(imm: UInt, rs1: UInt, funct3: Int, dest: UInt,
-            opcode: Int): UInt =
-    Cat(imm(11, 0), rs1, funct3.U(3.W), dest, opcode.U(7.W))
+            opcode: UInt): UInt =
+    Cat(imm(11, 0), rs1, funct3.U(3.W), dest, opcode)
 
   def rType(funct7: Int, source2: UInt, source1: UInt,
             funct3: Int, dest: UInt): UInt =
-    Cat(funct7.U(7.W), source2, source1, funct3.U(3.W), dest, 0x33.U(7.W))
+    Cat(funct7.U(7.W), source2, source1, funct3.U(3.W), dest, Opcode.OP)
 
   def store(imm: UInt, source2: UInt, source1: UInt): UInt =
-    Cat(imm(11, 5), source2, source1, 2.U(3.W), imm(4, 0), 0x23.U(7.W))
+    Cat(imm(11, 5), source2, source1, 2.U(3.W), imm(4, 0), Opcode.STORE)
 
   def branch(imm: UInt, source1: UInt, funct3: UInt): UInt =
     Cat(imm(12), imm(10, 5), zero, source1, funct3,
-        imm(4, 1), imm(11), 0x63.U(7.W))
+        imm(4, 1), imm(11), Opcode.BRANCH)
 
   def jump(imm: UInt, dest: UInt): UInt =
-    Cat(imm(20), imm(10, 1), imm(11), imm(19, 12), dest, 0x6f.U(7.W))
+    Cat(imm(20), imm(10, 1), imm(11), imm(19, 12), dest, Opcode.JAL)
 
   val ciImm = Cat(Fill(7, inst(12)), inst(6, 2))
   val addi4spnImm = Cat(0.U(2.W), inst(10, 7), inst(12, 11),
@@ -62,11 +63,11 @@ class CompressedDecoder extends Module {
     is (0.U) {
       switch (inst(15, 13)) {
         is (0.U) { // C.ADDI4SPN
-          expanded := iType(addi4spnImm, sp, 0, compactRd, 0x13)
+          expanded := iType(addi4spnImm, sp, 0, compactRd, Opcode.OP_IMM)
           legal := addi4spnImm =/= 0.U
         }
         is (2.U) { // C.LW
-          expanded := iType(wordImm, compactRs1, 2, compactRd, 0x03)
+          expanded := iType(wordImm, compactRs1, 2, compactRd, Opcode.LOAD)
           legal := true.B
         }
         is (6.U) { // C.SW
@@ -78,7 +79,7 @@ class CompressedDecoder extends Module {
     is (1.U) {
       switch (inst(15, 13)) {
         is (0.U) { // C.ADDI / C.NOP
-          expanded := iType(ciImm, rd, 0, rd, 0x13)
+          expanded := iType(ciImm, rd, 0, rd, Opcode.OP_IMM)
           legal := true.B
           hint := rd === 0.U || ciImm === 0.U
         }
@@ -87,16 +88,16 @@ class CompressedDecoder extends Module {
           legal := true.B
         }
         is (2.U) { // C.LI
-          expanded := iType(ciImm, zero, 0, rd, 0x13)
+          expanded := iType(ciImm, zero, 0, rd, Opcode.OP_IMM)
           legal := true.B
           hint := rd === 0.U
         }
         is (3.U) { // C.ADDI16SP / C.LUI
           when(rd === 2.U) {
-            expanded := iType(addi16spImm, sp, 0, sp, 0x13)
+            expanded := iType(addi16spImm, sp, 0, sp, Opcode.OP_IMM)
             legal := addi16spImm =/= 0.U
           }.otherwise {
-            expanded := Cat(Fill(15, inst(12)), inst(6, 2), rd, 0x37.U(7.W))
+            expanded := Cat(Fill(15, inst(12)), inst(6, 2), rd, Opcode.LUI)
             legal := ciImm =/= 0.U
             hint := rd === 0.U
           }
@@ -104,17 +105,17 @@ class CompressedDecoder extends Module {
         is (4.U) {
           switch (inst(11, 10)) {
             is (0.U) { // C.SRLI
-              expanded := iType(shamt, compactRs1, 5, compactRs1, 0x13)
+              expanded := iType(shamt, compactRs1, 5, compactRs1, Opcode.OP_IMM)
               legal := !inst(12)
               hint := shamt === 0.U
             }
             is (1.U) { // C.SRAI
-              expanded := iType(shamt | 0x400.U(12.W), compactRs1, 5, compactRs1, 0x13)
+              expanded := iType(shamt | 0x400.U(12.W), compactRs1, 5, compactRs1, Opcode.OP_IMM)
               legal := !inst(12)
               hint := shamt === 0.U
             }
             is (2.U) { // C.ANDI
-              expanded := iType(ciImm, compactRs1, 7, compactRs1, 0x13)
+              expanded := iType(ciImm, compactRs1, 7, compactRs1, Opcode.OP_IMM)
               legal := true.B
             }
             is (3.U) {
@@ -141,18 +142,18 @@ class CompressedDecoder extends Module {
     is (2.U) {
       switch (inst(15, 13)) {
         is (0.U) { // C.SLLI
-          expanded := iType(shamt, rd, 1, rd, 0x13)
+          expanded := iType(shamt, rd, 1, rd, Opcode.OP_IMM)
           legal := !inst(12)
           hint := rd === 0.U || shamt === 0.U
         }
         is (2.U) { // C.LWSP
-          expanded := iType(lwspImm, sp, 2, rd, 0x03)
+          expanded := iType(lwspImm, sp, 2, rd, Opcode.LOAD)
           legal := rd =/= 0.U
         }
         is (4.U) {
           when (!inst(12)) {
             when (rs2 === 0.U) { // C.JR
-              expanded := iType(0.U(12.W), rd, 0, zero, 0x67)
+              expanded := iType(0.U(12.W), rd, 0, zero, Opcode.JALR)
               legal := rd =/= 0.U
             } .otherwise { // C.MV
               expanded := rType(0, rs2, zero, 0, rd)
@@ -165,7 +166,7 @@ class CompressedDecoder extends Module {
               when (rd === 0.U) { // C.EBREAK
                 expanded := EBREAK_INST
               } .otherwise { // C.JALR
-                expanded := iType(0.U(12.W), rd, 0, 1.U(5.W), 0x67)
+                expanded := iType(0.U(12.W), rd, 0, 1.U(5.W), Opcode.JALR)
               }
             } .otherwise { // C.ADD
               expanded := rType(0, rs2, rd, 0, rd)
