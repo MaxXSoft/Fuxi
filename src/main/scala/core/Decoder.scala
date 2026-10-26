@@ -11,6 +11,7 @@ import consts.BranchOp._
 import consts.ExceptType._
 import consts.CsrOp._
 import consts.Instructions.NOP
+import consts.Opcode
 import consts.Parameters.{ADDR_WIDTH, INST_ALIGN_WIDTH}
 import consts.MduOp.MDU_NOP
 import consts.LsuOp.LSU_NOP
@@ -175,6 +176,6 @@ class Decoder extends Module {
   io.decoder.pmu.rasCandidate := io.fetch.pmu.rasCandidate
   io.decoder.pmu.rasUsed := io.fetch.pmu.rasUsed
   io.decoder.pmu.compressed := expand.io.isCompressed
-  io.decoder.pmu.load := inst(6, 0) === "b0000011".U
-  io.decoder.pmu.store := inst(6, 0) === "b0100011".U
+  io.decoder.pmu.load := inst(6, 0) === Opcode.LOAD
+  io.decoder.pmu.store := inst(6, 0) === Opcode.STORE
 }
