@@ -50,12 +50,12 @@ jobs:
           verilog/build/Fuxi.v verilog/FuxiWrapper.v
 
     - name: Test Utilities
-      run: |
+      run: >-
         sbt "Test / runMain utils.InstEncodingTest"
-        sbt "Test / runMain utils.CoreTestSupportTest"
-        sbt "Test / runMain utils.AxiTestSupportTest"
-        sbt "Test / runMain utils.CoreWritebackLoopTest"
-        sbt "Test / runMain utils.HazardResolverTest"
+        "Test / runMain utils.CoreTestSupportTest"
+        "Test / runMain utils.AxiTestSupportTest"
+        "Test / runMain utils.CoreWritebackLoopTest"
+        "Test / runMain utils.HazardResolverTest"
 
     - name: Test BPU
       run: >-
@@ -74,56 +74,56 @@ jobs:
         "Test / runMain csr.CsrPerformanceTest"
 
     - name: Test LSU
-      run: |
+      run: >-
         sbt "Test / runMain lsu.AmoExecuteTest"
-        sbt "Test / runMain lsu.ExclusiveMonitorTest"
-        sbt "Test / runMain lsu.AtomicMemoryTest"
-        sbt "Test / runMain lsu.AtomicFaultTest"
-        sbt "Test / runMain lsu.AtomicPermissionTest"
+        "Test / runMain lsu.ExclusiveMonitorTest"
+        "Test / runMain lsu.AtomicMemoryTest"
+        "Test / runMain lsu.AtomicFaultTest"
+        "Test / runMain lsu.AtomicPermissionTest"
 
     - name: Test MDU
-      run: |
+      run: >-
         sbt "Test / runMain mdu.DividerTest"
-        sbt "Test / runMain mdu.MultiplierTest"
-        sbt "Test / runMain mdu.MduTest"
+        "Test / runMain mdu.MultiplierTest"
+        "Test / runMain mdu.MduTest"
 
     - name: Test Sim
       run: sbt "Test / runMain sim.RamTest" "Test / runMain sim.RomTest"
 
     - name: Test Core Stages
-      run: |
+      run: >-
         sbt "Test / runMain core.stages.FetchTest"
-        sbt "Test / runMain core.stages.FetchRasTest"
-        sbt "Test / runMain core.stages.CompressedDecoderTest"
-        sbt "Test / runMain core.stages.DecoderTest"
-        sbt "Test / runMain core.stages.AluTest"
-        sbt "Test / runMain core.stages.MemTest"
-        sbt "Test / runMain core.stages.WriteBackTest"
+        "Test / runMain core.stages.FetchRasTest"
+        "Test / runMain core.stages.CompressedDecoderTest"
+        "Test / runMain core.stages.DecoderTest"
+        "Test / runMain core.stages.AluTest"
+        "Test / runMain core.stages.MemTest"
+        "Test / runMain core.stages.WriteBackTest"
 
     - name: Test Bus
-      run: |
+      run: >-
         sbt "Test / runMain bus.TlbTest"
-        sbt "Test / runMain bus.MmuTest"
-        sbt "Test / runMain bus.UncachedTest"
-        sbt "Test / runMain bus.CoreBusTest"
-        sbt "Test / runMain bus.InstCacheTest"
-        sbt "Test / runMain bus.PerformanceEventsTest"
+        "Test / runMain bus.MmuTest"
+        "Test / runMain bus.UncachedTest"
+        "Test / runMain bus.CoreBusTest"
+        "Test / runMain bus.InstCacheTest"
+        "Test / runMain bus.PerformanceEventsTest"
 
     - name: Test peripheral AXI handshakes
       run: soc/tests/run.sh
 
     - name: Test Core Integration
-      run: |
+      run: >-
         sbt "Test / runMain core.integration.ScSequenceTest"
-        sbt "Test / runMain core.integration.CoreCsrAliasTest"
-        sbt "Test / runMain core.integration.CoreRetirementTest"
-        sbt "Test / runMain core.integration.CoreInstretReadTest"
-        sbt "Test / runMain core.integration.CoreCompressedTest"
-        sbt "Test / runMain core.integration.CoreRasTest"
-        sbt "Test / runMain core.integration.CorePerformanceTest"
-        sbt "Test / runMain core.integration.CoreHpmReadTest"
-        sbt "Test / runMain core.integration.CoreFetchFaultTest"
-        sbt "Test / runMain core.integration.CoreTest -if src/test/resources/fib.txt -tf src/test/resources/fib_trace.txt"
-        sbt "Test / runMain core.integration.CoreTest -if src/test/resources/mdu.txt -tf src/test/resources/mdu_trace.txt"
-        sbt "Test / runMain core.integration.CoreTest -if src/test/resources/mecall.txt -tf src/test/resources/mecall_trace.txt"
-        sbt "Test / runMain core.integration.CoreTest -if src/test/resources/secall.txt -tf src/test/resources/secall_trace.txt"
+        "Test / runMain core.integration.CoreCsrAliasTest"
+        "Test / runMain core.integration.CoreRetirementTest"
+        "Test / runMain core.integration.CoreInstretReadTest"
+        "Test / runMain core.integration.CoreCompressedTest"
+        "Test / runMain core.integration.CoreRasTest"
+        "Test / runMain core.integration.CorePerformanceTest"
+        "Test / runMain core.integration.CoreHpmReadTest"
+        "Test / runMain core.integration.CoreFetchFaultTest"
+        "Test / runMain core.integration.CoreTest -if src/test/resources/fib.txt -tf src/test/resources/fib_trace.txt"
+        "Test / runMain core.integration.CoreTest -if src/test/resources/mdu.txt -tf src/test/resources/mdu_trace.txt"
+        "Test / runMain core.integration.CoreTest -if src/test/resources/mecall.txt -tf src/test/resources/mecall_trace.txt"
+        "Test / runMain core.integration.CoreTest -if src/test/resources/secall.txt -tf src/test/resources/secall_trace.txt"
