@@ -416,14 +416,14 @@ abstract class CounterMaskCsrObject[T <: CounterMaskCsr](mk: Int => T) {
 // machine counter enable register
 class McounterenCsr(hpmCount: Int) extends CounterMaskCsr(hpmCount)
 
-object McounterenCsr extends CounterMaskCsrObject(c => new McounterenCsr(c))
+object McounterenCsr extends CounterMaskCsrObject(new McounterenCsr(_))
 
 // supervisor counter enable register
 class ScounterenCsr(hpmCount: Int) extends CounterMaskCsr(hpmCount)
 
-object ScounterenCsr extends CounterMaskCsrObject(c => new ScounterenCsr(c))
+object ScounterenCsr extends CounterMaskCsrObject(new ScounterenCsr(_))
 
 // machine counter inhibit register
 class McountinhibitCsr(hpmCount: Int) extends CounterMaskCsr(hpmCount)
 
-object McountinhibitCsr extends CounterMaskCsrObject(c => new McountinhibitCsr(c))
+object McountinhibitCsr extends CounterMaskCsrObject(new McountinhibitCsr(_))
