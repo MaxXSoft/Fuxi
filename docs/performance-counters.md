@@ -37,7 +37,7 @@ zero; absent user views read zero in M-mode and trap in S/U because their enable
 bits cannot be set. User aliases reject writes even in M-mode. Event high-half
 CSRs are absent because Sscofpmf is not implemented.
 
-Each counter increments at most once per cycle and wraps modulo 2^64. A write
+Each counter increments at most once per cycle and wraps modulo $2^{64}$. A write
 to either half overrides the entire counter's increment on that edge (including
 carry), preserving the other half. Inhibit/selector writes use their old values
 for the committing edge and their new values thereafter. Thus the instruction
@@ -169,8 +169,6 @@ event groups and repeat deterministic workloads; retain each group's own
 cycle/instret and raw counts. Do not sum events from different runs as if they
 were measured together. Measurement setup, function entry/exit, serialization,
 and the stop instruction can contribute overhead. Print only after freezing.
-The companion `verilator-axi-testbench` Fuxi benchmark supports this workflow;
-keep its generated runs and reports under ignored `build/` or `debug/` paths.
 
 The register behavior follows the [RISC-V machine hardware performance monitor
 and counter control specification](https://github.com/riscv/riscv-isa-manual/blob/main/src/priv/machine.adoc).
