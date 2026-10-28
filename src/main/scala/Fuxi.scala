@@ -38,12 +38,13 @@ class Fuxi(hpmCount: Int) extends Module {
 }
 
 object Fuxi extends App {
-  // Keep the default build small; zero is useful for synthesis comparisons.
-  private val hpmOption = args.indexOf("--hpm-counters")
-  require(hpmOption < 0 || hpmOption + 1 < args.length,
-          "--hpm-counters requires a count from 0 to 29")
-  private val hpmCount = if (hpmOption < 0) HPM_COUNT else args(hpmOption + 1).toInt
-  private val stageArgs = if (hpmOption < 0) args else args.patch(hpmOption, Nil, 2)
+  private val HPM_COUNTERS = "--hpm-counters"
+
+  private def invalidOption(message: String): Nothing = {
+    Console.err.println(s"Fuxi: $message")
+    sys.exit(1)
+  }
+
   private val firtoolOptions = Array(
     "--firtool-option", "-disable-all-randomization",
     "--firtool-option", "-strip-debug-info",
@@ -52,6 +53,21 @@ object Fuxi extends App {
       "disallowPackedStructAssignments,disallowDeclAssignments,noAlwaysComb," +
       "mitigateVivadoArrayIndexConstPropBug"
   )
+
+  // Keep the default build small; zero is useful for synthesis comparisons.
+  if (args.count(_ == HPM_COUNTERS) > 1) {
+    invalidOption(s"$HPM_COUNTERS may be given at most once")
+  }
+  private val hpmOption = args.indexOf(HPM_COUNTERS)
+  private val hpmCount = if (hpmOption < 0) HPM_COUNT else {
+    if (hpmOption + 1 == args.length) {
+      invalidOption(s"$HPM_COUNTERS requires a count from 0 to 29")
+    }
+    val raw = args(hpmOption + 1)
+    raw.toIntOption.filter(n => n >= 0 && n <= 29).getOrElse(
+      invalidOption(s"$HPM_COUNTERS expects an integer from 0 to 29, got '$raw'"))
+  }
+  private val stageArgs = if (hpmOption < 0) args else args.patch(hpmOption, Nil, 2)
 
   (new ChiselStage).execute(
     Array("--target", "verilog") ++ firtoolOptions ++ stageArgs,

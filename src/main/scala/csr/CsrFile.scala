@@ -122,6 +122,9 @@ class CsrFile(val hpmCount: Int) extends Module {
   } ++ (0 until 16).map { n =>
     BitPat(pmpAddr(n))        -> List(0.U,                  Y, Y)
   } ++ (3 to 31).flatMap { n =>
+    // Absent machine slots intentionally remain writable WARL-zero CSRs:
+    // reads return zero and writes are ignored by the implemented-slot loop.
+    // Their user aliases are read-only, just like implemented counter aliases.
     val counter = if (n < hpmCount + 3) mhpmcounters(n - 3).asUInt else 0.U(64.W)
     val event = if (n < hpmCount + 3) mhpmevents(n - 3).asUInt else 0.U(32.W)
     Seq(
