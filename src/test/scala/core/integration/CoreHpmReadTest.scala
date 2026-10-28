@@ -10,7 +10,11 @@ import utils.{CoreMemoryHarness, CoreProgram, CoreProgramTester, CoreTester, Cor
 object HpmReadProgram extends CoreProgram {
   val allInhibited = 0x7fd
   def write(addr: UInt, value: Int): Unit = {
-    emit32(addi(5, 0, value))
+    if (value >= -2048 && value < 2048) emit32(addi(5, 0, value))
+    else {
+      emit32(lui(5, (value + 0x800) >>> 12))
+      emit32(addi(5, 5, value << 20 >> 20))
+    }
     emit32(csrw(addr.litValue.toInt, 5))
   }
   def read(addr: UInt, value: BigInt): Unit = {
@@ -20,8 +24,8 @@ object HpmReadProgram extends CoreProgram {
   def branch(): Unit = emit32(bne(0, 0, 4))
 
   write(CSR_MCOUNTINHIBIT, allInhibited)
-  write(mhpmEventAddr(3), BRANCH.id)
-  write(mhpmEventAddr(4), COMPRESSED.id)
+  write(mhpmEventAddr(3), encode(Group.RETIRED, Retired.BRANCH).toInt)
+  write(mhpmEventAddr(4), encode(Group.RETIRED, Retired.COMPRESSED).toInt)
   write(mhpmCounterHighAddr(3), 0)
   write(mhpmCounterAddr(3), -1)
   read(hpmCounterHighAddr(3), 0)
@@ -45,7 +49,7 @@ object HpmReadProgram extends CoreProgram {
   read(hpmCounterAddr(4), 4)
   // Reprogram an active counter. Following compressed instructions no longer
   // count, and the subsequent retired conditional branch increments it once.
-  write(mhpmEventAddr(4), BRANCH.id)
+  write(mhpmEventAddr(4), encode(Group.RETIRED, Retired.BRANCH).toInt)
   emit16(c_nop())
   branch()
   read(mhpmCounterAddr(4), 5)

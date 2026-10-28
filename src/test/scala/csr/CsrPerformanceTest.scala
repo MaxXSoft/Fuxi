@@ -5,6 +5,7 @@ import consts.Parameters.HPM_COUNT
 import consts.CSR._
 import consts.CsrOp._
 import consts.PerfEvent
+import consts.PerfEvent.{Group, Retired => R, Memory => M}
 import utils.{CsrRegressionTester, TestDriver}
 
 class CsrPerformanceTester(c: CsrFile) extends CsrRegressionTester(c) {
@@ -21,7 +22,7 @@ class CsrPerformanceTester(c: CsrFile) extends CsrRegressionTester(c) {
   read(CSR_MCOUNTINHIBIT, mask)
   read(CSR_MCYCLE, 1) // The freezing write uses the old CY inhibit bit.
   poke(c.io.write.retired, true)
-  poke(c.io.perfEvents, ((BigInt(1) << PerfEvent.values.size) - 1))
+  c.io.perfEvents.groups.foreach(_.foreach(poke(_, true)))
   step(5)
   read(CSR_MCYCLE, 1)
   read(CSR_MINSTRET, 0)
@@ -32,15 +33,15 @@ class CsrPerformanceTester(c: CsrFile) extends CsrRegressionTester(c) {
   for (n <- 11 to 31) {
     write(mhpmCounterAddr(n), 0xffffffffL)
     write(mhpmCounterHighAddr(n), 0xffffffffL)
-    write(mhpmEventAddr(n), 1)
+    write(mhpmEventAddr(n), 0x01000000)
     counter(n, 0)
     read(mhpmEventAddr(n), 0)
   }
   write(mhpmCounterAddr(3), 0xfffffffeL)
   write(mhpmCounterAddr(4), 7)
-  write(mhpmEventAddr(3), 1)
-  write(mhpmEventAddr(4), 2)
-  poke(c.io.perfEvents, 2)
+  write(mhpmEventAddr(3), 0x01000000)
+  write(mhpmEventAddr(4), 0x01000001)
+  driveEvent(Group.RETIRED, R.BRANCH)
   write(CSR_MCOUNTINHIBIT, mask & ~BigInt(8))
   counter(3, 0xfffffffeL) // Enabling takes effect after this write edge.
   step(1)
@@ -55,26 +56,32 @@ class CsrPerformanceTester(c: CsrFile) extends CsrRegressionTester(c) {
   counter(3, BigInt("112345678", 16))
   write(mhpmCounterHighAddr(3), 2)
   counter(3, BigInt("212345678", 16))
-  write(mhpmEventAddr(3), 2)
+  write(mhpmEventAddr(3), 0x01000001)
   counter(3, BigInt("212345679", 16)) // Old selector counted at write edge.
   step(3)
   counter(3, BigInt("212345679", 16))
-  poke(c.io.perfEvents, 4)
+  driveEvent(Group.RETIRED, R.BRANCH_MISS)
   step(2)
   counter(3, BigInt("21234567b", 16))
   write(mhpmEventAddr(3), 0)
   counter(3, BigInt("21234567c", 16))
-  poke(c.io.perfEvents, 1) // Bit zero never counts, even when asserted.
+  driveEvent(Group.RETIRED, R.BRANCH) // Group zero disables even local event zero.
   step(4)
   counter(3, BigInt("21234567c", 16))
-  for (invalid <- Seq(BigInt(PerfEvent.values.size), BigInt(64), BigInt(0x10001), BigInt(0xffffffffL))) {
+  for (invalid <- Seq(BigInt(1), BigInt(0x00ffffff), BigInt(0x04000000),
+                       BigInt(0xff000000L), BigInt(0xffffffffL)) ++
+                  PerfEvent.groups.flatMap { case (group, events) =>
+                    Seq((BigInt(group.id) << 24) | events.values.size,
+                        (BigInt(group.id) << 24) | 0x100,
+                        (BigInt(group.id) << 24) | 0xffffff)
+                  }) {
     write(mhpmEventAddr(3), invalid)
     read(mhpmEventAddr(3), 0)
   }
-  // Highest supported ID is selectable; nearby unsupported IDs cannot alias
-  // it by truncation to the selector's six stored bits.
-  write(mhpmEventAddr(3), PerfEvent.values.size - 1)
-  poke(c.io.perfEvents, BigInt(1) << (PerfEvent.values.size - 1))
+  // The last event of the last group is selectable, independently of the
+  // number of implemented counters. Upper local-ID bits must not alias it.
+  write(mhpmEventAddr(3), 0x0300000e)
+  driveEvent(Group.MEMORY, M.DTLB_WALK_CYCLE)
   step(1)
   counter(3, BigInt("21234567d", 16))
   write(CSR_MCOUNTINHIBIT, 8, CSR_RS)
@@ -91,6 +98,52 @@ class CsrPerformanceTester(c: CsrFile) extends CsrRegressionTester(c) {
   counter(3, BigInt("700000009", 16)) // Suppress simultaneous high-half carry.
   step(1)
   counter(3, BigInt("70000000a", 16))
+
+  resetCsr()
+  for ((selectedGroup, selectedEvents) <- PerfEvent.groups;
+       selectedEvent <- selectedEvents.values) {
+    clearEvents()
+    write(CSR_MCOUNTINHIBIT, mask)
+    write(mhpmCounterAddr(3), 0)
+    val encoded = PerfEvent.encode(selectedGroup, selectedEvent)
+    write(mhpmEventAddr(3), encoded)
+    read(mhpmEventAddr(3), encoded)
+    write(CSR_MCOUNTINHIBIT, mask & ~BigInt(8))
+    var expected = BigInt(0)
+    for ((group, events) <- PerfEvent.groups; event <- events.values) {
+      driveEvent(group, event)
+      step(1)
+      if (group == selectedGroup && event == selectedEvent) expected += 1
+      counter(3, expected)
+    }
+    assert(expected == 1)
+  }
+
+  // Reprogram across groups while active. The write edge uses the old group;
+  // local ID zero is a real event in every implemented group.
+  resetCsr()
+  driveEvent(Group.RETIRED, R.BRANCH)
+  write(mhpmEventAddr(3), 0x01000000)
+  write(mhpmEventAddr(3), 0x02000000)
+  counter(3, 1)
+  step(1)
+  counter(3, 1)
+  driveEvent(Group.MICROARCHITECTURE, PerfEvent.Microarchitecture.FRONTEND_EMPTY)
+  step(1)
+  counter(3, 2)
+  // CSRRS that produces an unsupported local ID disables the entire selector.
+  write(mhpmEventAddr(3), 0x100, CSR_RS)
+  read(mhpmEventAddr(3), 0)
+  counter(3, 3)
+  c.io.perfEvents.groups.foreach(_.foreach(poke(_, true)))
+  step(2)
+  counter(3, 3)
+  write(mhpmEventAddr(3), 0x03000001)
+  write(mhpmEventAddr(3), 0x03000000, CSR_RC)
+  read(mhpmEventAddr(3), 0) // Clearing the group cannot retain a local-only ID.
+  counter(3, 4)
+  step(2)
+  counter(3, 4)
 
   resetCsr()
   write(CSR_MCOUNTINHIBIT, mask)
@@ -137,11 +190,11 @@ class CsrPerformanceConfigurationTester(c: CsrFile) extends CsrRegressionTester(
   val last = if (c.hpmCount == 0) 3 else c.hpmCount + 2
   write(mhpmCounterAddr(last), 0xffffffffL)
   write(mhpmCounterHighAddr(last), 0xffffffffL)
-  write(mhpmEventAddr(last), 1)
+  write(mhpmEventAddr(last), 0x01000000)
   read(mhpmCounterAddr(last), if (c.hpmCount == 0) 0 else 0xffffffffL)
   read(mhpmCounterHighAddr(last), if (c.hpmCount == 0) 0 else 0xffffffffL)
-  read(mhpmEventAddr(last), if (c.hpmCount == 0) 0 else 1)
-  poke(c.io.perfEvents, 2)
+  read(mhpmEventAddr(last), if (c.hpmCount == 0) 0 else 0x01000000)
+  driveEvent(Group.RETIRED, R.BRANCH)
   write(CSR_MCOUNTINHIBIT, mask & ~(BigInt(1) << last))
   step(1)
   // Full 64-bit wrap on the last implemented slot, or the absent slot stays 0.
