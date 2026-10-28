@@ -3,9 +3,18 @@ package utils
 import chisel3._
 import consts.CSR._
 import consts.CsrOp._
+import consts.PerfEvent
 import csr.CsrFile
 
 abstract class CsrRegressionTester(c: CsrFile) extends PeekPokeTester(c) {
+  def clearEvents(): Unit =
+    c.io.perfEvents.groups.foreach(_.foreach(poke(_, false)))
+
+  def driveEvent(group: PerfEvent.Group.Value, event: Enumeration#Value): Unit = {
+    clearEvents()
+    poke(c.io.perfEvents(group)(event.id), true)
+  }
+
   def resetCsr(): Unit = {
     poke(c.io.read.op, CSR_R)
     poke(c.io.read.addr, CSR_MSTATUS)
@@ -13,7 +22,7 @@ abstract class CsrRegressionTester(c: CsrFile) extends PeekPokeTester(c) {
     poke(c.io.write.addr, 0)
     poke(c.io.write.data, 0)
     poke(c.io.write.retired, false)
-    poke(c.io.perfEvents, 0)
+    clearEvents()
     poke(c.io.irq.timer, false)
     poke(c.io.irq.soft, false)
     poke(c.io.irq.extern, false)

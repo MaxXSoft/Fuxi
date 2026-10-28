@@ -9,7 +9,7 @@ import consts.CSR._
 import consts.ExceptCause._
 
 class CsrFileUnitTester(c: CsrFile) extends PeekPokeTester(c) {
-  poke(c.io.perfEvents, 0)
+  c.io.perfEvents.groups.foreach(_.foreach(poke(_, false)))
   def testRead(op: consts.CsrOp.Type, addr: UInt, valid: Boolean, data: BigInt) = {
     poke(c.io.read.op, op)
     poke(c.io.read.addr, addr)

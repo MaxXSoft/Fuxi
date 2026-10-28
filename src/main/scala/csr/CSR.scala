@@ -1,7 +1,7 @@
 package csr
 
 import chisel3._
-import chisel3.util.{Cat, log2Ceil}
+import chisel3.util.Cat
 
 import consts.PerfEvent
 import consts.Parameters._
@@ -382,14 +382,20 @@ object MhpmcounterCsr extends CsrObject(new MhpmcounterCsr)
 
 // machine hardware performance event selector
 class MhpmeventCsr extends CsrBundle {
-  private val eventWidth = log2Ceil(PerfEvent.values.size)
-  val wpri = UInt((32 - eventWidth).W)
-  val event = UInt(eventWidth.W)
+  val group = UInt(PerfEvent.GROUP_WIDTH.W)
+  val event = UInt(PerfEvent.EVENT_WIDTH.W)
 
   override def <=(data: UInt) = {
     requireWidth(data)
-    // Validate the full CSR value before truncating it to the stored selector.
-    event := Mux(data < PerfEvent.values.size.U, data(eventWidth - 1, 0), 0.U)
+    val nextGroup = data(31, PerfEvent.EVENT_WIDTH)
+    val nextEvent = data(PerfEvent.EVENT_WIDTH - 1, 0)
+    val valid = PerfEvent.groups.map { case (g, events) =>
+      nextGroup === g.id.U && nextEvent < events.values.size.U
+    }.reduce(_ || _)
+    // Reject the whole encoding: an invalid local ID must not alias another
+    // event, and group zero always canonicalizes to the disabled selector.
+    group := Mux(valid, nextGroup, 0.U)
+    event := Mux(valid, nextEvent, 0.U)
   }
 }
 

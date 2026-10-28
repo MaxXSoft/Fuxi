@@ -1,6 +1,19 @@
 package io
 
 import chisel3._
+import chisel3.util.MixedVec
+import consts.PerfEvent
+
+// Each group has one bit per local event ID. The registry determines the shape,
+// so adding a group does not require another port in CsrFile.
+class PerformanceEventsIO extends Bundle {
+  val groups = MixedVec(PerfEvent.groups.map { case (_, events) =>
+    Vec(events.values.size, Bool())
+  })
+
+  def apply(group: PerfEvent.Group.Value): Vec[Bool] =
+    groups(PerfEvent.groups.indexWhere(_._1 == group))
+}
 
 // These signals only observe local activity; no performance-monitor signal
 // participates in the request, ready/valid, or prediction control paths.

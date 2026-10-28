@@ -25,8 +25,8 @@ class CsrFile(val hpmCount: Int) extends Module {
     val irq     = new InterruptIO
     // exception information
     val except  = Input(new ExceptInfoIO)
-    // Event ID indexes a one-cycle pulse or an active wait-cycle level.
-    val perfEvents = Input(UInt(PerfEvent.values.size.W))
+    // Each local event indexes a pulse or an active wait-cycle level.
+    val perfEvents = Input(new PerformanceEventsIO)
     // CSR status
     val hasInt  = Output(Bool())
     val busy    = Output(Bool())
@@ -238,8 +238,14 @@ class CsrFile(val hpmCount: Int) extends Module {
     minstret.data := minstret.data + 1.U
   }
   for (i <- 0 until hpmCount) {
-    when (!mcountinhibit.data(i + 3) && mhpmevents(i).event =/= 0.U &&
-          io.perfEvents(mhpmevents(i).event)) {
+    val selected = PerfEvent.groups.map { case (group, _) =>
+      val events = io.perfEvents(group)
+      // WARL validation checks the full local ID before it is stored.
+      val hit = if (events.size == 1) events.head
+                else events(mhpmevents(i).event(log2Ceil(events.size) - 1, 0))
+      mhpmevents(i).group === group.id.U && hit
+    }.reduce(_ || _)
+    when (!mcountinhibit.data(i + 3) && selected) {
       mhpmcounters(i).data := mhpmcounters(i).data + 1.U
     }
   }
