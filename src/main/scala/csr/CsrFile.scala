@@ -23,7 +23,7 @@ class CsrFile(val hpmCount: Int) extends Module {
     val write   = Flipped(new CsrWriteIO)
     // interrupt request
     val irq     = new InterruptIO
-    val rtcTime = Input(UInt(64.W))
+    val rtcTime = Input(UInt(RTC_WIDTH.W))
     // exception information
     val except  = Input(new ExceptInfoIO)
     // Each local event indexes a pulse or an active wait-cycle level.
