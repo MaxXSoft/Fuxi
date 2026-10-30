@@ -52,4 +52,7 @@ object Parameters {
 
   // performance counters
   val HPM_COUNT = 8
+
+  // real-time clock
+  val RTC_WIDTH = 64
 }

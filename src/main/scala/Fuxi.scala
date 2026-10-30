@@ -14,7 +14,7 @@ class Fuxi(hpmCount: Int) extends Module {
     // interrupt request
     val irq       = new InterruptIO
     // The platform timebase, shared with the memory-mapped timer.
-    val rtcTime   = Input(UInt(64.W))
+    val rtcTime   = Input(UInt(RTC_WIDTH.W))
     // for trace generating
     val debug     = new DebugIO
     // AXI interfaces

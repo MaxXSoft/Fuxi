@@ -18,7 +18,7 @@ class Core(val fetchQueueDepth: Int, val hpmCount: Int) extends Module {
   val io = IO(new Bundle {
     // interrupt request
     val irq   = new InterruptIO
-    val rtcTime = Input(UInt(64.W))
+    val rtcTime = Input(UInt(RTC_WIDTH.W))
     // TLB/cache control
     val tlb   = new TlbControlIO(PPN_WIDTH)
     val cache = new CacheControlIO
