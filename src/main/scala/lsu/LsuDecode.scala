@@ -11,6 +11,11 @@ object LsuWidth extends ChiselEnum {
   val LS_DATA_BYTE = Value
   val LS_DATA_HALF = Value
   val LS_DATA_WORD = Value
+
+  // Mem passes this encoding directly to SRAM/AXI as log2(bytes per transfer).
+  require(LS_DATA_BYTE.litValue == 0 && LS_DATA_HALF.litValue == 1 &&
+          LS_DATA_WORD.litValue == 2,
+          "LsuWidth encoding must equal log2 of the transfer size in bytes")
 }
 
 // Operations of the ALU for AMO instructions.
