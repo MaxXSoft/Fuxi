@@ -34,10 +34,11 @@ All state resets to zero. Counter enable controls access, independently of
 counting. M-mode can read the user aliases regardless of enable bits. Bit 1
 (TIME) is writable in both enable registers, but hardwired zero in
 `mcountinhibit`: the hart cannot stop the platform timebase. Bits for absent
-HPM counters are hardwired zero in all three control registers. All absent machine counters/selectors are readable and writable as
-zero; absent user views read zero in M-mode and trap in S/U because their enable
-bits cannot be set. User aliases reject writes even in M-mode. Event high-half
-CSRs are absent because Sscofpmf is not implemented.
+HPM counters are hardwired zero in all three control registers. All absent machine
+counters/selectors are readable and writable as zero; absent user views read zero
+in M-mode and trap in S/U because their enable bits cannot be set. User aliases
+reject writes even in M-mode. Event high-half CSRs are absent because Sscofpmf is
+not implemented.
 
 Each counter increments at most once per cycle and wraps modulo $2^{64}$. A write
 to either half overrides the entire counter's increment on that edge (including
