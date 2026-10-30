@@ -38,30 +38,19 @@ Fuxi processor is designed for running [GeeOS](https://github.com/MaxXSoft/GeeOS
 
 ## Platform Integration
 
-The core supports Sv32 with software-managed accessed/dirty bits. `MPRV`
-selects the privilege used for data accesses, while `SUM` and `MXR` control
-supervisor access to user pages and loads from executable pages. Instruction
-fetch always uses the current privilege. `mstatush` is a writable WARL-zero
-CSR: the hart is little-endian and has no hypervisor or double-trap state.
+The core supports Sv32 with software-managed accessed/dirty bits. `MPRV` selects the privilege used for data accesses, while `SUM` and `MXR` control supervisor access to user pages and loads from executable pages. Instruction fetch always uses the current privilege. `mstatush` is a writable WARL-zero CSR: the hart is little-endian and has no hypervisor or double-trap state.
 
 `FuxiWrapper` expects the platform to supply these inputs:
 
-| Input | Meaning |
-| - | - |
-| `rtc_time[63:0]` | Platform real-time counter, shared with the timer peripheral and exposed through `time`/`timeh`. |
-| `irq_extern` | Machine external interrupt pending (`MEIP`). |
-| `irq_sextern` | Supervisor external interrupt pending (`SEIP`). |
-| `irq_timer` | Machine timer interrupt pending (`MTIP`). |
-| `irq_soft` | Machine software interrupt pending (`MSIP`). |
+| Input            | Meaning
+| -                | -
+| `rtc_time[63:0]` | Platform real-time counter, shared with the timer peripheral and exposed through `time`/`timeh`.
+| `irq_extern`     | Machine external interrupt pending (`MEIP`).
+| `irq_sextern`    | Supervisor external interrupt pending (`SEIP`).
+| `irq_timer`      | Machine timer interrupt pending (`MTIP`).
+| `irq_soft`       | Machine software interrupt pending (`MSIP`).
 
-Machine firmware forwards timer/software events to supervisor mode through
-the writable `mip.STIP` and `mip.SSIP` bits. Counter access from S/U mode is
-controlled by `mcounteren`/`scounteren`; `mcountinhibit` does not stop the
-platform clock.
-
-Uncached AXI accesses preserve the load/store byte address and transfer size,
-so reading a byte-sized MMIO register does not read neighbouring registers.
-Cache refills and page-table reads remain word-sized.
+Machine firmware forwards timer/software events to supervisor mode through the writable `mip.STIP` and `mip.SSIP` bits. Counter access from S/U mode is controlled by `mcounteren`/`scounteren`; `mcountinhibit` does not stop the platform clock.
 
 ## Performance
 
@@ -135,4 +124,4 @@ All provided programs:
 
 Copyright (C) 2020-2026 MaxXing. License GPLv3.
 
-Special thanks to [@Yukiteru Lee](https://github.com/yukiiiteru).
+Special thanks to [@Yukiteru](https://github.com/yukiiiteru).
