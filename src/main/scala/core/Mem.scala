@@ -104,7 +104,9 @@ class Mem extends Module {
   val memoryInProgress = RegInit(false.B)
   when (io.flush) {
     memoryInProgress := false.B
-  } .elsewhen (io.alu.valid && (en || flushDc)) {
+  } .elsewhen (!io.csrBusy && io.alu.valid && (en || flushDc)) {
+    // CSR serialization prevents requests from starting. Preserve the prior
+    // state until it ends so a newly enabled IRQ can preempt an unstarted op.
     memoryInProgress := stallReq
   }
 

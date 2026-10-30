@@ -118,6 +118,7 @@ jobs:
       run: >-
         sbt "Test / runMain core.integration.ScSequenceTest"
         "Test / runMain core.integration.CoreCsrAliasTest"
+        "Test / runMain core.integration.CoreCsrInterruptTest"
         "Test / runMain core.integration.CoreRetirementTest"
         "Test / runMain core.integration.CoreInstretReadTest"
         "Test / runMain core.integration.CoreCompressedTest"
