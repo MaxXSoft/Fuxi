@@ -364,11 +364,11 @@ class CsrFile(val hpmCount: Int) extends Module {
   io.trapVec  := trapVec
 
   // paging signals
-  val dataMode = Mux(mstatus.mprv, mstatus.mpp, mode)
-  io.pageEn   := !mode(1) && satp.mode
+  val dataMode  = Mux(mstatus.mprv, mstatus.mpp, mode)
+  io.pageEn     := !mode(1) && satp.mode
   io.dataPageEn := !dataMode(1) && satp.mode
-  io.dataMode := dataMode
-  io.mxr      := mstatus.mxr
-  io.basePpn  := satp.ppn
-  io.sum      := mstatus.sum
+  io.dataMode   := dataMode
+  io.mxr        := mstatus.mxr
+  io.basePpn    := satp.ppn
+  io.sum        := mstatus.sum
 }

@@ -11,25 +11,25 @@ import lsu.ExclusiveMonitor
 import consts.Paging.PPN_WIDTH
 import consts.PerfEvent._
 import consts.PerfEvent.{Retired => R, Microarchitecture => U, Memory => M}
-import consts.CSR.CSR_SATP
+import consts.CSR.{CSR_MODE_S, CSR_SATP}
 import consts.CsrOp.{CSR_NOP, CSR_R}
 
 class Core(val fetchQueueDepth: Int, val hpmCount: Int) extends Module {
   val io = IO(new Bundle {
     // interrupt request
-    val irq   = new InterruptIO
+    val irq     = new InterruptIO
     val rtcTime = Input(UInt(RTC_WIDTH.W))
     // TLB/cache control
-    val tlb   = new TlbControlIO(PPN_WIDTH)
-    val cache = new CacheControlIO
+    val tlb     = new TlbControlIO(PPN_WIDTH)
+    val cache   = new CacheControlIO
     // ROM interface (I-cache)
-    val rom   = new SramIO(ADDR_WIDTH, INST_WIDTH)
+    val rom     = new SramIO(ADDR_WIDTH, INST_WIDTH)
     // RAM interface (D-cache)
-    val ram   = new SramIO(ADDR_WIDTH, DATA_WIDTH)
+    val ram     = new SramIO(ADDR_WIDTH, DATA_WIDTH)
     // for trace generating
-    val debug = new DebugIO
+    val debug   = new DebugIO
     // performance monitoring
-    val pmu = Input(new BusPerformanceIO)
+    val pmu     = Input(new BusPerformanceIO)
   })
 
   // all stages
@@ -225,7 +225,7 @@ class Core(val fetchQueueDepth: Int, val hpmCount: Int) extends Module {
   // TLB/cache control
   io.tlb.en           := csrfile.io.pageEn
   io.tlb.dataEn       := csrfile.io.dataPageEn
-  io.tlb.dataSmode    := csrfile.io.dataMode === consts.CSR.CSR_MODE_S
+  io.tlb.dataSmode    := csrfile.io.dataMode === CSR_MODE_S
   io.tlb.mxr          := csrfile.io.mxr
   io.tlb.dataWrite    := mem.io.writeIntent
   io.tlb.flushInst    := mem.io.flushIt
