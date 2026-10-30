@@ -38,8 +38,8 @@ object CSR {
   val CSR_MHARTID     = 0xf14.U(CSR_ADDR_WIDTH.W)
   // machine trap setup
   val CSR_MSTATUS     = 0x300.U(CSR_ADDR_WIDTH.W)
-  val CSR_MISA        = 0x301.U(CSR_ADDR_WIDTH.W)
   val CSR_MSTATUSH    = 0x310.U(CSR_ADDR_WIDTH.W)
+  val CSR_MISA        = 0x301.U(CSR_ADDR_WIDTH.W)
   val CSR_MEDELEG     = 0x302.U(CSR_ADDR_WIDTH.W)
   val CSR_MIDELEG     = 0x303.U(CSR_ADDR_WIDTH.W)
   val CSR_MIE         = 0x304.U(CSR_ADDR_WIDTH.W)
@@ -101,8 +101,7 @@ object CSR {
   // This is not the HPM storage index N - 3. TIME (N = 1) has only user aliases.
   def counterIndex(addr: UInt): UInt = addr(4, 0)
 
-  private def hasCounterOffset(addr: UInt): Bool =
-    addr(6, 5) === 0.U
+  private def hasCounterOffset(addr: UInt): Bool = addr(6, 5) === 0.U
 
   def isMachineCounter(addr: UInt): Bool =
     addr(11, 8) === 0xb.U && hasCounterOffset(addr) && counterIndex(addr) =/= 1.U

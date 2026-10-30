@@ -26,14 +26,14 @@ class Fuxi(hpmCount: Int) extends Module {
   val core    = Module(new Core(FETCH_QUEUE_DEPTH, hpmCount))
   val coreBus = Module(new CoreBus)
 
-  core.io.irq   <> io.irq
+  core.io.irq     <> io.irq
   core.io.rtcTime := io.rtcTime
-  core.io.tlb   <> coreBus.io.tlb
-  core.io.cache <> coreBus.io.cache
-  core.io.rom   <> coreBus.io.rom
-  core.io.ram   <> coreBus.io.ram
-  core.io.debug <> io.debug
-  core.io.pmu   := coreBus.io.pmu
+  core.io.tlb     <> coreBus.io.tlb
+  core.io.cache   <> coreBus.io.cache
+  core.io.rom     <> coreBus.io.rom
+  core.io.ram     <> coreBus.io.ram
+  core.io.debug   <> io.debug
+  core.io.pmu     := coreBus.io.pmu
 
   coreBus.io.inst     <> io.inst
   coreBus.io.data     <> io.data
