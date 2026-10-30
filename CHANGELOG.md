@@ -34,6 +34,7 @@ All notable changes to the Fuxi will be documented in this file.
 - Fixed instruction refill faults attaching to unrelated lookups.
 - Fixed page-walk access faults attaching to unrelated lookups.
 - Fixed data accesses and traps using stale privilege state during an older CSR write.
+- Fixed CSR-blocked memory operations incorrectly delaying newly enabled interrupts.
 - Fixed SATP commits to refetch younger instructions under the new address space.
 - Fixed uncached MMIO accesses to preserve byte addresses and byte/halfword/word transfer sizes.
 

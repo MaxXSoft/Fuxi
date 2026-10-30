@@ -387,6 +387,38 @@ class MemUnitTester(c: core.Mem) extends PeekPokeTester(c) {
   poke(c.io.ram.valid, true)
   poke(c.io.ram.accessFault, true)
   expectExc(EXC_STAMO_ACCESS, 0x00000400, 0x10000004)
+
+  // A CSR-blocked access has not started. If that CSR enables a pending IRQ,
+  // take the interrupt before issuing any memory or cache-maintenance request.
+  for ((op, excType) <- Seq(LSU_LW -> EXC_LOAD, LSU_SW -> EXC_STAMO,
+                            LSU_ADD -> EXC_STAMO, LSU_FENI -> EXC_NONE,
+                            LSU_FENV -> EXC_SPRIV)) {
+    pokeLsu(op, 0x10000000)
+    pokeExc(excType, 0x00000500, false, false)
+    poke(c.io.ram.valid, false)
+    poke(c.io.flushDcDone, false)
+    poke(c.io.csrBusy, true)
+    poke(c.io.flush, true)
+    step(1)
+    poke(c.io.flush, false)
+    for (_ <- 0 until 2) {
+      expect(c.io.stallReq, true)
+      expect(c.io.ram.en, false)
+      expect(c.io.flushDc, false)
+      expectExc()
+      step(1)
+    }
+    poke(c.io.csrBusy, false)
+    poke(c.io.csrHasInt, true)
+    expect(c.io.except.hasTrap, true)
+    expect(c.io.except.isInterrupt, true)
+    expect(c.io.except.excPc, 0x00000500)
+    expect(c.io.ram.en, false)
+    expect(c.io.flushIc, false)
+    expect(c.io.flushDc, false)
+    expect(c.io.flushIt, false)
+    expect(c.io.flushDt, false)
+  }
 }
 
 object MemTest extends App {
