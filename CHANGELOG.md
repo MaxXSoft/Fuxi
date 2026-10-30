@@ -15,18 +15,27 @@ All notable changes to the Fuxi will be documented in this file.
 - Added configurable 64-bit HPM counters with 44 branch/RAS, pipeline,
   cache, and translation events, plus counter access and inhibit controls.
 - Added CSR, pipeline retirement, and local PMU event regressions.
+- Added MPRV and MXR data-access privilege control.
+- Added platform `time`/`timeh` CSR reads and a separate supervisor external interrupt input.
+- Added RV32 `mstatush` as a writable WARL-zero CSR.
 
 ### Changed
 
 - Reorganized core tests into stage and integration suites.
 - Consolidated shared test fixtures and execution checkers.
 - Updated CI and documentation for the new frontend and test layout.
+- Extended `FuxiWrapper` with `rtc_time[63:0]` and `irq_sextern` inputs that platforms must drive.
+- Made `mip.STIP` and `mip.SSIP` independent of machine timer/software inputs,
+  requiring explicit forwarding by machine firmware.
 
 ### Fixed
 
 - Fixed redirected fetches using stale translation contexts.
 - Fixed instruction refill faults attaching to unrelated lookups.
 - Fixed page-walk access faults attaching to unrelated lookups.
+- Fixed data accesses and traps using stale privilege state during an older CSR write.
+- Fixed SATP commits to refetch younger instructions under the new address space.
+- Fixed uncached MMIO accesses to preserve byte addresses and byte/halfword/word transfer sizes.
 
 ## 0.0.2 - 2026-09-25
 
