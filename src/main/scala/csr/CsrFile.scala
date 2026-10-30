@@ -35,6 +35,8 @@ class CsrFile(val hpmCount: Int) extends Module {
     val sepc    = Output(UInt(ADDR_WIDTH.W))
     val mepc    = Output(UInt(ADDR_WIDTH.W))
     val trapVec = Output(UInt(ADDR_WIDTH.W))
+    // CSR commit events
+    val satpWritten = Output(Bool())
     // paging signals
     val pageEn  = Output(Bool())
     val dataPageEn = Output(Bool())
@@ -362,6 +364,10 @@ class CsrFile(val hpmCount: Int) extends Module {
   io.sepc     := sepc.asUInt
   io.mepc     := mepc.asUInt
   io.trapVec  := trapVec
+
+  // Same-cycle commit event for refetching under the new address space.
+  // TLB invalidation remains the job of SFENCE.VMA.
+  io.satpWritten := io.write.retired && writeEn && io.write.addr === CSR_SATP
 
   // paging signals
   val dataMode  = Mux(mstatus.mprv, mstatus.mpp, mode)

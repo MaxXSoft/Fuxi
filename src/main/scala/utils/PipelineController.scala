@@ -15,6 +15,8 @@ class PipelineController extends Module {
     val decTarget = Input(UInt(ADDR_WIDTH.W))
     val memFlush  = Input(Bool())
     val memTarget = Input(UInt(ADDR_WIDTH.W))
+    val wbFlush   = Input(Bool())
+    val wbTarget  = Input(UInt(ADDR_WIDTH.W))
     // hazard flags
     val load      = Input(Bool())
     val csr       = Input(Bool())
@@ -30,9 +32,10 @@ class PipelineController extends Module {
     val stallMm   = Output(Bool())
     val stallWb   = Output(Bool())
     // flush signals
-    val flush     = Output(Bool())
-    val flushIf   = Output(Bool())
-    val flushPc   = Output(UInt(ADDR_WIDTH.W))
+    val flush      = Output(Bool())
+    val flushIf    = Output(Bool())
+    val flushPc    = Output(UInt(ADDR_WIDTH.W))
+    val flushMemWb = Output(Bool())
   })
 
   // stall signals (Id -> Wb)
@@ -46,12 +49,18 @@ class PipelineController extends Module {
 
   // flush signals
   val excFlush  = io.except.hasTrap
-  val memFlush  = io.memFlush
-  // avoid CSR RAW hazard before trap handling
-  val flushAll  = excFlush || memFlush
+  // A committing SATP write redirects from WB. Mem holds younger accesses,
+  // fences and traps while the CSR write is busy, so they cannot compete.
+  val flushAll  = excFlush || io.wbFlush || io.memFlush
   val flushIf   = flushAll || io.decFlush
   val flushPc   = Mux(excFlush, excPc,
-                  Mux(memFlush, io.memTarget, io.decTarget))
+                  Mux(io.wbFlush, io.wbTarget,
+                  Mux(io.memFlush, io.memTarget, io.decTarget)))
+
+  // Fences and legal xRET instructions redirect younger stages but still
+  // retire. Synchronous faults and interrupted instructions are discarded.
+  val serializingDone = (io.memFlush && !excFlush) ||
+    (excFlush && (io.except.isSret || io.except.isMret))
 
   // stall signals
   io.stallId  := stall(3)
@@ -60,7 +69,8 @@ class PipelineController extends Module {
   io.stallWb  := stall(0)
 
   // flush signals
-  io.flush    := flushAll
-  io.flushIf  := flushIf
-  io.flushPc  := flushPc
+  io.flush      := flushAll
+  io.flushIf    := flushIf
+  io.flushPc    := flushPc
+  io.flushMemWb := flushAll && !serializingDone
 }
