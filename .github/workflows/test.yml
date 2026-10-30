@@ -124,6 +124,7 @@ jobs:
         "Test / runMain core.integration.CoreRasTest"
         "Test / runMain core.integration.CorePerformanceTest"
         "Test / runMain core.integration.CoreHpmReadTest"
+        "Test / runMain core.integration.CoreTimeTest"
         "Test / runMain core.integration.CoreFetchFaultTest"
         "Test / runMain core.integration.CorePrivilegeTest"
         "Test / runMain core.integration.CoreSatpTest"
