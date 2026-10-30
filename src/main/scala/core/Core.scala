@@ -9,8 +9,6 @@ import utils._
 import csr.CsrFile
 import lsu.ExclusiveMonitor
 import consts.Paging.PPN_WIDTH
-import consts.PerfEvent._
-import consts.PerfEvent.{Retired => R, Microarchitecture => U, Memory => M}
 import consts.CSR.CSR_MODE_S
 
 class Core(val fetchQueueDepth: Int, val hpmCount: Int) extends Module {
@@ -55,6 +53,9 @@ class Core(val fetchQueueDepth: Int, val hpmCount: Int) extends Module {
   // hazard resolve & pipeline control
   val resolve = Module(new HazardResolver)
   val control = Module(new PipelineController)
+
+  // performance event collection
+  val perf    = Module(new CorePerformanceEvents)
 
   // fetch stage
   fetch.io.flush    := control.io.flushIf
@@ -125,60 +126,7 @@ class Core(val fetchQueueDepth: Int, val hpmCount: Int) extends Module {
   csrfile.io.irq            <> io.irq
   csrfile.io.rtcTime        := io.rtcTime
   csrfile.io.except         <> mem.io.except
-
-  // Passive event collection. Retirement gates architectural events; the
-  // other sources deliberately include speculative work and overlapping waits.
-  val events = Wire(new PerformanceEventsIO)
-  val retiredEvents = events(Group.RETIRED)
-  val microEvents = events(Group.MICROARCHITECTURE)
-  val memoryEvents = events(Group.MEMORY)
-  val retired = wb.io.csr.retired
-  val p = memwb.io.next.pmu
-  retiredEvents(R.BRANCH.id) := retired && p.branch
-  retiredEvents(R.BRANCH_MISS.id) := retired && p.branch && p.miss
-  retiredEvents(R.BRANCH_DIRECTION_MISS.id) := retired && p.branch && p.directionMiss
-  retiredEvents(R.BRANCH_TARGET_MISS.id) := retired && p.branch && p.targetMiss
-  retiredEvents(R.JAL.id) := retired && p.jal
-  retiredEvents(R.JAL_MISS.id) := retired && p.jal && p.miss
-  retiredEvents(R.JALR.id) := retired && p.jalr
-  retiredEvents(R.JALR_MISS.id) := retired && p.jalr && p.miss
-  retiredEvents(R.RAS_CANDIDATE.id) := retired && p.jalr && p.rasCandidate
-  retiredEvents(R.RAS_USED.id) := retired && p.jalr && p.rasUsed
-  retiredEvents(R.RAS_MISS.id) := retired && p.jalr && p.rasUsed && p.miss
-  retiredEvents(R.RAS_FALLBACK_MISS.id) := retired && p.jalr && p.rasCandidate && !p.rasUsed && p.miss
-  retiredEvents(R.OTHER_JALR.id) := retired && p.jalr && !p.rasCandidate
-  retiredEvents(R.OTHER_JALR_MISS.id) := retired && p.jalr && !p.rasCandidate && p.miss
-  retiredEvents(R.COMPRESSED.id) := retired && p.compressed
-  retiredEvents(R.LOAD.id) := retired && p.load
-  retiredEvents(R.STORE.id) := retired && p.store
-  microEvents(U.FRONTEND_EMPTY.id) := !control.io.flushIf && !control.io.stallId && !ifid.io.deq.valid
-  microEvents(U.LOAD_USE_STALL.id) := !control.io.flush && resolve.io.loadFlag
-  microEvents(U.MDU_STALL.id) := !control.io.flush && alu.io.stallReq
-  microEvents(U.MEM_STALL.id) := !control.io.flush && mem.io.stallReq
-  microEvents(U.CSR_STALL.id) := !control.io.flush && resolve.io.csrFlag
-  microEvents(U.FETCH_QUEUE_FULL.id) := !control.io.flushIf && fetch.io.fetch.valid && !ifid.io.enq.ready
-  microEvents(U.DECODE_REDIRECT.id) := !control.io.flush && decoder.io.flushIf
-  microEvents(U.CONTEXT_FLUSH.id) := control.io.flush
-  microEvents(U.RAS_OVERFLOW.id) := fetch.io.pmu.overflow
-  microEvents(U.RAS_EMPTY_POP.id) := fetch.io.pmu.emptyPop
-  microEvents(U.RAS_CLEAR_MISPREDICT.id) := fetch.io.pmu.clearNonempty && !control.io.flush
-  microEvents(U.RAS_CLEAR_CONTEXT.id) := fetch.io.pmu.clearNonempty && control.io.flush
-  memoryEvents(M.ICACHE_ACCESS.id) := io.pmu.icache.access
-  memoryEvents(M.ICACHE_MISS.id) := io.pmu.icache.miss
-  memoryEvents(M.ICACHE_BUSY.id) := io.pmu.icache.busy
-  memoryEvents(M.ICACHE_WALK_ACCESS.id) := io.pmu.icacheWalkAccess
-  memoryEvents(M.ICACHE_WALK_MISS.id) := io.pmu.icacheWalkMiss
-  memoryEvents(M.DCACHE_ACCESS.id) := io.pmu.dcache.access
-  memoryEvents(M.DCACHE_MISS.id) := io.pmu.dcache.miss
-  memoryEvents(M.DCACHE_BUSY.id) := io.pmu.dcache.busy
-  memoryEvents(M.DCACHE_WRITEBACK.id) := io.pmu.dcache.writeback
-  memoryEvents(M.DCACHE_WALK_ACCESS.id) := io.pmu.dcacheWalkAccess
-  memoryEvents(M.DCACHE_WALK_MISS.id) := io.pmu.dcacheWalkMiss
-  memoryEvents(M.ITLB_MISS.id) := io.pmu.itlb.miss
-  memoryEvents(M.ITLB_WALK_CYCLE.id) := io.pmu.itlb.walkCycle
-  memoryEvents(M.DTLB_MISS.id) := io.pmu.dtlb.miss
-  memoryEvents(M.DTLB_WALK_CYCLE.id) := io.pmu.dtlb.walkCycle
-  csrfile.io.perfEvents := events
+  csrfile.io.perfEvents     := perf.io.events
 
   // exclusive monitor
   excMon.io.flush         := control.io.flush
@@ -225,4 +173,21 @@ class Core(val fetchQueueDepth: Int, val hpmCount: Int) extends Module {
   io.tlb.smode        := csrfile.io.mode(0)
   io.cache.flushInst  := mem.io.flushIc
   io.cache.flushData  := mem.io.flushDc
+
+  // performance events
+  perf.io.retired        := wb.io.csr.retired
+  perf.io.retire         := memwb.io.next.pmu
+  perf.io.flush          := control.io.flush
+  perf.io.flushIf        := control.io.flushIf
+  perf.io.stallId        := control.io.stallId
+  perf.io.fetchValid     := fetch.io.fetch.valid
+  perf.io.fetchReady     := ifid.io.enq.ready
+  perf.io.decodeValid    := ifid.io.deq.valid
+  perf.io.decodeRedirect := decoder.io.flushIf
+  perf.io.loadHazard     := resolve.io.loadFlag
+  perf.io.csrHazard      := resolve.io.csrFlag
+  perf.io.aluStall       := alu.io.stallReq
+  perf.io.memStall       := mem.io.stallReq
+  perf.io.ras            := fetch.io.pmu
+  perf.io.bus            := io.pmu
 }
