@@ -2,7 +2,7 @@ package bus
 
 import chisel3._
 import org.chipsalliance.cde.config.Parameters
-import configs.{HasCoreParams, HasPlatformParams}
+import configs.{ConfigValidation, HasCoreParams, HasPlatformParams}
 
 import io._
 import consts.Architecture._
@@ -43,6 +43,9 @@ Structure of core bus:
 
 class CoreBus(implicit val p: Parameters) extends Module
     with HasCoreParams with HasPlatformParams {
+  // Direct CDE callers may bypass the generator's configuration validation.
+  ConfigValidation(p)
+
   val io = IO(new Bundle {
     // SRAM interface for core
     val rom       = Flipped(new SramIO(ADDR_WIDTH, INST_WIDTH))

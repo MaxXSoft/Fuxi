@@ -23,7 +23,28 @@ class IncompleteConfig extends Config((site, here, up) => {
   case PlatformParamsKey => PlatformParams()
 })
 
+class UnalignedUncachedPreset extends Config(
+  new WithDataUncachedRegion(BigInt("10000020", 16), BigInt("10000040", 16)) ++
+    new DefaultConfig
+)
+
 class GeneratorOptionsTest extends AnyFunSuite {
+  test("validate uncached boundaries after CLI cache-line overrides") {
+    def resolve(lineBytes: Option[Int]) =
+      ConfigOptions(preset = "cli.UnalignedUncachedPreset", cacheLineBytes = lineBytes).resolve()
+
+    for (lineBytes <- Seq(None, Some(64), Some(128))) {
+      val result = resolve(lineBytes)
+      assert(result.left.exists(error => error.startsWith("Invalid configuration:") &&
+        error.contains("uncached range start")))
+    }
+    // A CLI override can make an otherwise invalid preset valid.
+    for (lineBytes <- Seq(8, 32)) {
+      val p = resolve(Some(lineBytes)).fold(error => fail(error), identity)
+      assert(p(CoreParamsKey).dcache.lineBytes == lineBytes)
+    }
+  }
+
   test("parse presets, overrides and forwarded generator arguments") {
     def parsed(args: String*): GeneratorOptions = GeneratorOptions.parse(args).fold(
       exit => throw new AssertionError(exit.message), identity)

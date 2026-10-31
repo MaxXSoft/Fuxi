@@ -86,7 +86,18 @@ case object PlatformParamsKey extends Field[PlatformParams]
 object ConfigValidation {
   // Force both queries before elaboration, including constructor checks in fragments.
   def apply(p: Parameters): Unit = {
-    require(p(CoreParamsKey) != null, "CoreParamsKey must be defined")
-    require(p(PlatformParamsKey) != null, "PlatformParamsKey must be defined")
+    val core = p(CoreParamsKey)
+    val platform = p(PlatformParamsKey)
+    require(core != null, "CoreParamsKey must be defined")
+    require(platform != null, "PlatformParamsKey must be defined")
+
+    // Cached refills and writebacks cover whole lines, so no line may straddle
+    // cached and uncached routing regions. Check the final composed parameters.
+    val lineBytes = core.dcache.lineBytes
+    val range = platform.dataUncached
+    require(range.start % lineBytes == 0,
+      s"data uncached range start must align to the D-cache line size ($lineBytes bytes)")
+    require(range.end % lineBytes == 0,
+      s"data uncached range end must align to the D-cache line size ($lineBytes bytes)")
   }
 }

@@ -102,7 +102,11 @@ Leftmost fragments take precedence. Each fragment uses `up` and `copy` to modify
 one field while preserving the other fields from lower-priority configurations.
 `WithICacheLineBytes` and `WithDCacheLineBytes` provide independent line sizes;
 `WithDataUncachedRegion(start, end)` sets a single half-open physical range for
-data routing. It does not define a general PMA map or instruction-cache policy.
+data routing. Both boundaries must align to the final configured D-cache line
+size, so cached refills and writebacks cannot cross into the uncached range.
+The exclusive upper bound may be $2^{32}$. This constraint is checked during
+configuration validation and when constructing `CoreBus` directly. The range
+does not define a general PMA map or instruction-cache policy.
 
 `CoreParamsKey` contains frontend, predictor, cache, MMU, multiplier and counter
 parameters. `PlatformParamsKey` contains reset, hart identity and uncached routing.

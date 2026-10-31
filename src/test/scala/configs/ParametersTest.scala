@@ -5,6 +5,41 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.chipsalliance.cde.config.{Config, Parameters}
 
 class ParametersTest extends AnyFunSuite {
+  test("validate uncached boundaries against the effective D-cache line size") {
+    val base = BigInt("10000000", 16)
+    val limit = BigInt(1) << 32
+    for (lineBytes <- Seq(8, 32, 64, 1024)) {
+      def parameters(start: BigInt, end: BigInt): Parameters =
+        new WithDataUncachedRegion(start, end) ++
+          new WithDCacheLineBytes(lineBytes) ++
+          new WithICacheLineBytes(1024) ++ new DefaultConfig
+
+      // Include ranges not aligned to the I-cache, a single line at each
+      // address-space boundary, and the entire RV32 address space.
+      for ((start, end) <- Seq((BigInt(0), BigInt(lineBytes)),
+                               (base + lineBytes, base + 2 * lineBytes),
+                               (limit - lineBytes, limit), (BigInt(0), limit))) {
+        ConfigValidation(parameters(start, end))
+      }
+      for (offset <- Seq(1, 4, lineBytes - 1)) {
+        val startError = intercept[IllegalArgumentException] {
+          ConfigValidation(parameters(base + offset, base + lineBytes))
+        }
+        assert(startError.getMessage.contains("uncached range start"))
+        val endError = intercept[IllegalArgumentException] {
+          ConfigValidation(parameters(base, base + lineBytes + offset))
+        }
+        assert(endError.getMessage.contains("uncached range end"))
+      }
+    }
+
+    val narrowRegion = new WithDataUncachedRegion(base + 32, base + 64) ++ new DefaultConfig
+    ConfigValidation(new WithDCacheLineBytes(32) ++ new WithDCacheLineBytes(128) ++ narrowRegion)
+    intercept[IllegalArgumentException] {
+      ConfigValidation(new WithDCacheLineBytes(128) ++ new WithDCacheLineBytes(32) ++ narrowRegion)
+    }
+  }
+
   test("validate defaults, configuration composition and parameter traits") {
     val defaults = new DefaultConfig
     ConfigValidation(defaults)
