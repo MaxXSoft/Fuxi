@@ -2,7 +2,7 @@ package core
 
 import chisel3._
 import org.chipsalliance.cde.config.Parameters
-import configs.{CoreParamsKey, PlatformParamsKey}
+import configs.{HasCoreParams, HasPlatformParams}
 import chisel3.util.Queue
 
 import io._
@@ -13,8 +13,7 @@ import lsu.ExclusiveMonitor
 import consts.Paging.PPN_WIDTH
 import consts.CSR.CSR_MODE_S
 
-class Core(implicit val p: Parameters) extends Module {
-  val params = p(CoreParamsKey)
+class Core(implicit val p: Parameters) extends Module with HasCoreParams with HasPlatformParams {
   val io = IO(new Bundle {
     // interrupt request
     val irq     = new InterruptIO
@@ -34,7 +33,7 @@ class Core(implicit val p: Parameters) extends Module {
 
   // all stages
   val fetch   = Module(new Fetch)
-  val ifid    = Module(new Queue(new FetchIO, params.frontend.fetchQueueDepth,
+  val ifid    = Module(new Queue(new FetchIO, FETCH_QUEUE_DEPTH,
                                  pipe = true, flow = true, hasFlush = true))
   val decoder = Module(new Decoder)
   val idex    = Module(new MidStage(new DecoderIO))
@@ -48,7 +47,7 @@ class Core(implicit val p: Parameters) extends Module {
   val regfile = Module(new RegFile)
 
   // CSR file
-  val csrfile = Module(new CsrFile(params.hpmCounters, p(PlatformParamsKey).hartId))
+  val csrfile = Module(new CsrFile(HPM_COUNTERS, HART_ID))
 
   // exclusive monitor
   val excMon  = Module(new ExclusiveMonitor)
