@@ -2,23 +2,20 @@ package bpu
 
 import chisel3._
 import org.chipsalliance.cde.config.Parameters
-import configs.CoreParamsKey
+import configs.HasCoreParams
 import chisel3.util.Cat
 
 import consts.Architecture._
 
 // single line in BTB
-class BtbLine(implicit p: Parameters) extends Bundle {
-  private val params = p(CoreParamsKey).bpu
+class BtbLine(implicit val p: Parameters) extends Bundle with HasCoreParams {
   val jump    = Bool()
-  val pc      = UInt(params.btbTagBits.W)
+  val pc      = UInt(BTB_TAG_BITS.W)
   val target  = UInt((ADDR_WIDTH - INST_ALIGN_WIDTH).W)
 }
 
 // branch target buffer
-class BTB(implicit val p: Parameters) extends Module {
-  val params = p(CoreParamsKey).bpu
-
+class BTB(implicit val p: Parameters) extends Module with HasCoreParams {
   val io = IO(new Bundle {
     // branch information (from decoder)
     val branch        = Input(Bool())
@@ -33,13 +30,13 @@ class BTB(implicit val p: Parameters) extends Module {
   })
 
   // definitions of BTB lines and valid bits
-  val valids  = RegInit(VecInit(Seq.fill(params.btbEntries) { false.B }))
-  val lines   = Mem(params.btbEntries, new BtbLine)
+  val valids  = RegInit(VecInit(Seq.fill(BTB_ENTRIES) { false.B }))
+  val lines   = Mem(BTB_ENTRIES, new BtbLine)
 
   // branch info for BTB lines
-  val index   = io.pc(params.btbIndexBits + INST_ALIGN_WIDTH - 1,
+  val index   = io.pc(BTB_INDEX_BITS + INST_ALIGN_WIDTH - 1,
                       INST_ALIGN_WIDTH)
-  val linePc  = io.pc(ADDR_WIDTH - 1, params.btbIndexBits + INST_ALIGN_WIDTH)
+  val linePc  = io.pc(ADDR_WIDTH - 1, BTB_INDEX_BITS + INST_ALIGN_WIDTH)
 
   // write to BTB lines
   when (io.branch) {
@@ -50,10 +47,10 @@ class BTB(implicit val p: Parameters) extends Module {
   }
 
   // signals about BTB lookup
-  val lookupIndex = io.lookupPc(params.btbIndexBits + INST_ALIGN_WIDTH - 1,
+  val lookupIndex = io.lookupPc(BTB_INDEX_BITS + INST_ALIGN_WIDTH - 1,
                                 INST_ALIGN_WIDTH)
   val lookupPcSel = io.lookupPc(ADDR_WIDTH - 1,
-                                params.btbIndexBits + INST_ALIGN_WIDTH)
+                                BTB_INDEX_BITS + INST_ALIGN_WIDTH)
   val btbHit      = valids(lookupIndex) &&
                     lines(lookupIndex).pc === lookupPcSel
 

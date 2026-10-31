@@ -108,6 +108,32 @@ depth and HPM count have no competing constructor arguments. Reusable leaves
 such as `TLB(size)`, `ReturnAddressStack(depth)` and `CsrFile(hpmCount, hartId)`
 still take explicit local values selected by their parents.
 
+Modules and bundles mix in `HasCoreParams` and/or `HasPlatformParams` where they
+consume configuration values. These traits expose immutable Scala `final val`s
+with upper snake case names, such as `FETCH_QUEUE_DEPTH`, `GHR_BITS`,
+`ICACHE_LINE_BYTES`, `RESET_VECTOR` and `HART_ID`. Derived values such as
+`PHT_ENTRIES`, `BTB_TAG_BITS` and cache index/offset widths are included too.
+
+```scala
+import chisel3._
+import configs.{HasCoreParams, HasPlatformParams}
+import consts.Architecture._
+import org.chipsalliance.cde.config.Parameters
+
+class Example(implicit val p: Parameters)
+    extends Module with HasCoreParams with HasPlatformParams {
+  val pc = RegInit(RESET_VECTOR.U(ADDR_WIDTH.W))
+  val predictionIndex = Reg(UInt(GHR_BITS.W))
+}
+```
+
+Supply `p` as a constructor `val`: the traits initialize their constants before
+the class body runs, so a `p` defined in the class body would be too late. Each
+instance reads its own configuration, and each trait queries only its own key.
+Addresses remain `BigInt` values; use `.U` when constructing hardware rather
+than storing Chisel literals in the traits. Classes that only forward `p` to
+children do not need either trait.
+
 Test harnesses must pass the same environment to their Core, ROM and program
 builder. Test sources offer `utils.DefaultTestConfig._` for tests that explicitly
 want the baseline; production sources do not import a global default.

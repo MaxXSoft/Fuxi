@@ -1,7 +1,7 @@
 package utils
 
 import org.chipsalliance.cde.config.Parameters
-import configs.PlatformParamsKey
+import configs.HasPlatformParams
 import chisel3._
 import consts.Instructions.NOP
 import sim.ROM
@@ -12,21 +12,21 @@ case class ExpectedWriteback(pc: BigInt, rd: Int, data: BigInt, occurrence: Int 
 }
 
 // Program layout is separate from its dynamic execution expectations.
-class CoreProgram(fillWord: BigInt = NOP.litValue)(implicit p: Parameters) {
+class CoreProgram(fillWord: BigInt = NOP.litValue)(implicit val p: Parameters) extends HasPlatformParams {
   private val image = new utils.InstructionImage(fillWord)
   private val checks = scala.collection.mutable.ArrayBuffer.empty[ExpectedWriteback]
-  private var cursor = p(PlatformParamsKey).resetVector
+  private var cursor = RESET_VECTOR
 
   def words: Seq[BigInt] = {
     val end = image.endAddress.getOrElse(throw new IllegalArgumentException("Empty program"))
-    image.words(p(PlatformParamsKey).resetVector, ((end - p(PlatformParamsKey).resetVector + 3) / 4).toInt)
+    image.words(RESET_VECTOR, ((end - RESET_VECTOR + 3) / 4).toInt)
   }
   def expected: Seq[ExpectedWriteback] = checks.toVector
   def pc: BigInt = cursor
-  def pcAtWord(wordIndex: Int): BigInt = p(PlatformParamsKey).resetVector + 4 * wordIndex
+  def pcAtWord(wordIndex: Int): BigInt = RESET_VECTOR + 4 * wordIndex
 
   private def checkAddress(address: BigInt, size: Int): Unit =
-    require(address >= p(PlatformParamsKey).resetVector && address + size <= pcAtWord(ROM.DEPTH),
+    require(address >= RESET_VECTOR && address + size <= pcAtWord(ROM.DEPTH),
       "Program exceeds ROM capacity")
 
   def place16(address: BigInt, instruction: Int): Unit = {
@@ -71,7 +71,7 @@ case class ExpectedTrap(pc: BigInt, cause: BigInt, value: BigInt)
 
 // Convenience builder for explicit execution traces. Placing out-of-line code
 // never adds events; callers describe branches, repeated calls and traps.
-class CoreTraceProgram(implicit p: Parameters) extends CoreProgram(utils.InstructionImage.CompressedNops) {
+class CoreTraceProgram(implicit parameters: Parameters) extends CoreProgram(utils.InstructionImage.CompressedNops)(parameters) {
   val retired = scala.collection.mutable.ArrayBuffer.empty[ExpectedRetirement]
   val traps = scala.collection.mutable.ArrayBuffer.empty[ExpectedTrap]
   var donePc: BigInt = 0

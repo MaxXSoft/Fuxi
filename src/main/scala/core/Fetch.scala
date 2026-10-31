@@ -2,7 +2,7 @@ package core
 
 import chisel3._
 import org.chipsalliance.cde.config.Parameters
-import configs.{CoreParamsKey, PlatformParamsKey}
+import configs.{HasCoreParams, HasPlatformParams}
 import chisel3.util._
 
 import io._
@@ -15,9 +15,7 @@ class FetchWord extends Bundle {
   val accessFault = Bool()
 }
 
-class Fetch(implicit val p: Parameters) extends Module {
-  val params = p(CoreParamsKey).frontend
-
+class Fetch(implicit val p: Parameters) extends Module with HasCoreParams with HasPlatformParams {
   val io = IO(new Bundle {
     // pipeline control signals
     val flush     = Input(Bool())
@@ -34,7 +32,7 @@ class Fetch(implicit val p: Parameters) extends Module {
     val pmu = Output(new RasPerformanceIO)
   })
 
-  val pc = RegInit(p(PlatformParamsKey).resetVector.U(ADDR_WIDTH.W))
+  val pc = RegInit(RESET_VECTOR.U(ADDR_WIDTH.W))
   val faultBlocked = RegInit(false.B)
   val bpu = Module(new BranchPredictor)
   bpu.io.branchInfo <> io.branch
@@ -42,20 +40,19 @@ class Fetch(implicit val p: Parameters) extends Module {
 
   // SRAM valid accepts a word now; its synchronous data arrives next cycle.
   // Keep an unaccepted request stable even when its instruction stream dies.
-  val requestAddr = RegInit(p(PlatformParamsKey).resetVector.U(ADDR_WIDTH.W))
+  val requestAddr = RegInit(RESET_VECTOR.U(ADDR_WIDTH.W))
   val requestActive = RegInit(false.B)
   val requestKilled = RegInit(false.B)
-  val restartAddr = RegInit(p(PlatformParamsKey).resetVector.U(ADDR_WIDTH.W))
+  val restartAddr = RegInit(RESET_VECTOR.U(ADDR_WIDTH.W))
   val pending = RegInit(false.B)
   val pendingKilled = RegInit(false.B)
   val pendingPageFault = Reg(Bool())
   val pendingAccessFault = Reg(Bool())
 
-  val depth = params.fetchBufferEntries
-  val words = Reg(Vec(depth, new FetchWord))
-  val head = RegInit(0.U(log2Ceil(depth).W))
-  val tail = RegInit(0.U(log2Ceil(depth).W))
-  val count = RegInit(0.U(log2Ceil(depth + 1).W))
+  val words = Reg(Vec(FETCH_BUFFER_ENTRIES, new FetchWord))
+  val head = RegInit(0.U(log2Ceil(FETCH_BUFFER_ENTRIES).W))
+  val tail = RegInit(0.U(log2Ceil(FETCH_BUFFER_ENTRIES).W))
+  val count = RegInit(0.U(log2Ceil(FETCH_BUFFER_ENTRIES + 1).W))
   val nextHead = head + 1.U
   val responseValid = pending && !pendingKilled && !faultBlocked
   val response = Wire(new FetchWord)
@@ -156,7 +153,7 @@ class Fetch(implicit val p: Parameters) extends Module {
 
   // Reserve room before issuing. Drain old requests with their old VA so
   // neither their data nor their faults can join the redirected stream.
-  val room = count +& responseValid.asUInt < depth.U
+  val room = count +& responseValid.asUInt < FETCH_BUFFER_ENTRIES.U
   io.rom.en := requestActive || steerRequest || (room && !faultBlocked)
   io.rom.addr := Mux(steerRequest, alignedTarget, requestAddr)
   io.rom.wen := 0.U
