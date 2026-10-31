@@ -55,6 +55,7 @@ class MduUnitTester(c: MDU) extends PeekPokeTester(c) {
     }
     assert(peek(c.io.valid) != 0, s"MDU operation $op ($opr1, $opr2) timed out")
     expect(c.io.result, ans)
+    step(1) // accept completion, including clearing a pipelined multiply
     poke(c.io.op, MDU_NOP)
     step(1)
   }
@@ -91,10 +92,21 @@ class MduUnitTester(c: MDU) extends PeekPokeTester(c) {
     testMdu(MDU_REM)
     testMdu(MDU_REMU)
   }
+
+  // A canceled multiply must not leak a result/done into its replacement.
+  poke(c.io.op, MDU_MUL)
+  poke(c.io.opr1, 13)
+  poke(c.io.opr2, 17)
+  step(1)
+  poke(c.io.flush, true)
+  step(1)
+  checkMdu(MDU_MULH, mask, 7, mask) // signed -1 * 7
 }
 
 object MduTest extends App {
-  if (!TestDriver.execute(args, () => new MDU) {
-    (c) => new MduUnitTester(c)
-  }) sys.exit(1)
+  for (latency <- Seq(0, 1, 3)) {
+    if (!TestDriver.execute(args, () => new MDU()(new configs.WithMulLatency(latency).orElse(p))) {
+      c => new MduUnitTester(c)
+    }) sys.exit(1)
+  }
 }

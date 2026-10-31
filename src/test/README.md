@@ -17,6 +17,7 @@ subject; using a simulator alone does not make a test a Core integration test.
 | Directory / package | Contents | CI step |
 | --- | --- | --- |
 | `utils` | Shared helpers and their regression tests | Test Utilities |
+| `configs`, `cli` | Parameter composition, validation, preset loading and command-line parsing | Test Configurations |
 | `core/stages` / `core.stages` | Fetch, compressed decoder, decoder, ALU, memory and writeback stage tests | Test Core Stages |
 | `core/integration` / `core.integration` | Full-core instruction streams, traps, retirement and LR/SC sequences | Test Core Integration |
 | `bpu`, `bus`, `csr`, `lsu`, `mdu`, `sim` | Subsystem tests, including focused combinations of modules | Corresponding subsystem step |
@@ -43,16 +44,41 @@ current PC, before the following instruction is emitted. `finish()` appends an
 
 ```scala
 import utils.{CoreProgram, InstEncoding}
+import utils.DefaultTestConfig._
 
 val program = new CoreProgram(utils.InstructionImage.CompressedNops)
 program.emit16(InstEncoding.c_nop())
 program.expectWriteback(10, 42)
-program.emit32(InstEncoding.addi(10, 0, 42)) // starts at RESET_PC + 2
+program.emit32(InstEncoding.addi(10, 0, 42)) // starts at resetVector + 2
 val donePc = program.finish()
 // new CoreWrapper(program.words), then CoreProgramTester(..., donePc, maxCycles)
 ```
 
-`seekWord(wordIndex)` and `pcAtWord(wordIndex)` use word indices relative to RESET_PC.
+`CoreProgram`, `CoreWrapper` and `CoreMemoryHarness` require an implicit CDE
+`Parameters` environment. For a customized test, define one locally instead of
+importing `DefaultTestConfig`, and use it for both the program and its hardware:
+
+```scala
+import configs._
+import org.chipsalliance.cde.config.Parameters
+implicit val p: Parameters = new WithResetVector(0x1000)
+  .orElse(new WithFetchQueueDepth(2)).orElse(new SmallConfig)
+```
+
+`core.integration.CoreConfigTest` executes programs under all three presets and
+custom reset/hart/frontend/multiplier settings in the same JVM.
+`bus.CacheConfigTest` checks refill, dirty eviction and flush at different cache
+geometries, including 2-beat and 256-beat AXI bursts. It also exercises small TLBs
+through CoreBus and the uncached range ending at 2^32. The pure Scala
+`cli.GeneratorOptionsTest` and `utils.CoreTestOptionsTest` cover reflection,
+override precedence, aliases, paths containing spaces and malformed input.
+`CoreTest` shares the generator's configuration options, while `-if/-tf/-gt`
+remain available for ROM images and traces. Use `--help` for the full schema;
+test-only flags are not forwarded to ChiselSim.
+`mdu.MduTest` checks signed/unsigned arithmetic and cancellation at multiplier
+latencies 0, 1 and 3.
+
+`seekWord(wordIndex)` and `pcAtWord(wordIndex)` use word indices relative to the configured reset vector.
 `seekAddress` uses an absolute, halfword-aligned address. Both seek methods only
 move the cursor forward; gaps use the image fill pattern once code is placed
 beyond them. Neither seek method emits instructions or updates reference counters. `place16` and

@@ -31,6 +31,8 @@ object CoreTestOptionsTest extends App {
     rejected("-if", input.toString, "-gt", "true")
     rejected("-if", input.toString, "-gt", "maybe")
     rejected("-if", input.toString, "--gen-trace", "--trace-file", trace.toString)
+    rejected("-if", input.toString, "--gen-trace", "true", "--trace-file", "--help")
+    rejected("-if", input.toString, "--gen-trace", "true", "--trace-file", "")
     rejected("-if", input.toString, "-tf", directory.toString, "-gt", "1")
     rejected("-if", input.toString, "-tf", directory.resolve("missing/out").toString, "-gt", "true")
     rejected("-if", input.toString, "--init-file", input.toString)

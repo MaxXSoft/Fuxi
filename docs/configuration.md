@@ -9,7 +9,7 @@ CSR settings. The default configuration preserves the previous hardware.
 
 ```sh
 sbt 'runMain Fuxi --target-dir verilog/build'
-sbt 'runMain Fuxi --config SmallConfig --hpm-counters 4 --target-dir verilog/small'
+sbt 'runMain Fuxi --config SmallConfig --hpm-counters 4 --target-dir verilog/small/build'
 sbt 'runMain Fuxi --config ProfilingConfig --dump-config'
 sbt 'runMain Fuxi --help'
 ```

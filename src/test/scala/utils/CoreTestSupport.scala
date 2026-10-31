@@ -42,7 +42,7 @@ class CoreProgram(fillWord: BigInt = NOP.litValue)(implicit p: Parameters) {
   def emit32(word: Long): Unit = { place32(pc, word); cursor += 4 }
   def emit32All(words: Seq[Long]): Unit = words.foreach(emit32)
 
-  // Word indices are relative to RESET_PC; both seek methods only move the cursor.
+  // Word indices are relative to resetVector; both seek methods only move the cursor.
   def seekWord(wordIndex: Int): Unit = seekAddress(pcAtWord(wordIndex))
   // Sparse placement uses the image's fill pattern and adds no execution events.
   def seekAddress(address: BigInt): Unit = {

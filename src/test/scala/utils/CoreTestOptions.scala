@@ -15,6 +15,7 @@ case class CoreTestOptions(
 object CoreTestOptions {
   private val builder = OParser.builder[CoreTestOptions]
   import builder._
+  private def validPath(file: File): Boolean = file.getPath.nonEmpty && !file.getPath.startsWith("-")
   private def readable(file: File): Boolean = file.isFile && file.canRead
   private def writable(file: File): Boolean =
     if (file.exists()) file.isFile && file.canWrite
@@ -25,10 +26,11 @@ object CoreTestOptions {
     ConfigOptions.parser[CoreTestOptions](_.config, (c, config) => c.copy(config = config)),
     opt[File]("init-file").abbr("if").maxOccurs(1).valueName("<file>")
       .text("ROM image (required unless --dump-config)")
-      .validate(f => if (readable(f)) success else failure(s"ROM image is not a readable file: $f"))
+      .validate(f => if (validPath(f) && readable(f)) success else failure(s"ROM image is not a readable file: $f"))
       .action((f, c) => c.copy(initFile = Some(f.getAbsoluteFile))),
     opt[File]("trace-file").abbr("tf").maxOccurs(1).valueName("<file>")
       .text("Expected trace, or output trace when --gen-trace true")
+      .validate(f => if (validPath(f)) success else failure("Invalid trace path; use ./ for names starting with '-'"))
       .action((f, c) => c.copy(traceFile = Some(f.getAbsoluteFile))),
     opt[String]("gen-trace").abbr("gt").maxOccurs(1).valueName("<true|false|1|0>")
       .text("Generate a trace (default: false); requires --trace-file")

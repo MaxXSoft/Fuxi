@@ -26,15 +26,16 @@ class InstCachePerformanceTester(c: InstCache) extends PeekPokeTester(c) with Ax
     expect(c.io.pmu.busy, true)
     step(1)
   }
+  expect(c.io.axi.readAddr.bits.len, c.params.lineBytes / 4 - 1)
   poke(c.io.axi.readAddr.ready, true)
   step(1)
   poke(c.io.axi.readAddr.ready, false)
-  for (i <- 0 until p(CoreParamsKey).icache.lineBytes / 4) {
+  for (i <- 0 until c.p(CoreParamsKey).icache.lineBytes / 4) {
     expect(c.io.pmu.miss, false)
     expect(c.io.pmu.access, false)
     expect(c.io.pmu.busy, true)
     if (i == 4) step(3)
-    driveAxiRead(c.io.axi, 0x100 + i, last = i == p(CoreParamsKey).icache.lineBytes / 4 - 1)
+    driveAxiRead(c.io.axi, 0x100 + i, last = i == c.p(CoreParamsKey).icache.lineBytes / 4 - 1)
     step(1)
     poke(c.io.axi.readData.valid, false)
   }
@@ -46,6 +47,7 @@ class InstCachePerformanceTester(c: InstCache) extends PeekPokeTester(c) with Ax
   expect(c.io.pmu.busy, false)
   step(1)
   poke(c.io.sram.en, false)
+  expect(c.io.sram.rdata, 0x100)
   expect(c.io.pmu.access, false)
   poke(c.io.flush, true)
   expect(c.io.pmu.miss, false)
@@ -58,7 +60,7 @@ class InstCachePerformanceTester(c: InstCache) extends PeekPokeTester(c) with Ax
 
 class DataCachePerformanceTester(c: DataCache) extends PeekPokeTester(c) with AxiTestSupport {
   val base = BigInt("80000000", 16)
-  val beats = p(CoreParamsKey).dcache.lineBytes / 4
+  val beats = c.p(CoreParamsKey).dcache.lineBytes / 4
   poke(c.io.sram.en, false)
   poke(c.io.sram.wen, 0)
   poke(c.io.sram.addr, base)
@@ -77,6 +79,7 @@ class DataCachePerformanceTester(c: DataCache) extends PeekPokeTester(c) with Ax
   }
   def refill(): Unit = {
     waitFor(c.io.axi.readAddr.valid)
+    expect(c.io.axi.readAddr.bits.len, beats - 1)
     for (_ <- 0 until 4) {
       expect(c.io.pmu.miss, false)
       expect(c.io.pmu.access, false)
@@ -102,6 +105,7 @@ class DataCachePerformanceTester(c: DataCache) extends PeekPokeTester(c) with Ax
   }
   def writeback(): Unit = {
     waitFor(c.io.axi.writeAddr.valid)
+    expect(c.io.axi.writeAddr.bits.len, beats - 1)
     for (_ <- 0 until 4) {
       expect(c.io.pmu.writeback, false)
       expect(c.io.pmu.miss, false)
@@ -118,6 +122,7 @@ class DataCachePerformanceTester(c: DataCache) extends PeekPokeTester(c) with Ax
     for (i <- 0 until beats) {
       expect(c.io.axi.writeData.valid, true)
       expect(c.io.axi.writeData.bits.last, i == beats - 1)
+      expect(c.io.axi.writeData.bits.data, if (i == 0) 0x12345678 else 0x200 + i)
       expect(c.io.pmu.writeback, false)
       expect(c.io.pmu.miss, false)
       step(1)
@@ -140,7 +145,7 @@ class DataCachePerformanceTester(c: DataCache) extends PeekPokeTester(c) with Ax
   expect(c.io.pmu.miss, false)
   step(1)
   poke(c.io.sram.wen, 0)
-  poke(c.io.sram.addr, base + p(CoreParamsKey).dcache.lines * p(CoreParamsKey).dcache.lineBytes)
+  poke(c.io.sram.addr, base + c.p(CoreParamsKey).dcache.lines * c.p(CoreParamsKey).dcache.lineBytes)
   expect(c.io.pmu.miss, true)
   step(1)
   writeback()
