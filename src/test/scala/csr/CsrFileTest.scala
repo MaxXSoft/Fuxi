@@ -1,7 +1,7 @@
 package csr
 
 import utils.DefaultTestConfig._
-import configs.CoreParamsKey
+import configs.{CoreParamsKey, PlatformParamsKey}
 import chisel3.UInt
 import utils.{PeekPokeTester, TestDriver}
 
@@ -161,7 +161,8 @@ class CsrFileUnitTester(c: CsrFile) extends PeekPokeTester(c) {
 }
 
 object CsrFileTest extends App {
-  if (!TestDriver.execute(args, () => new CsrFile(p(CoreParamsKey).hpmCounters)) {
-    (c) => new CsrFileUnitTester(c)
+  if (!TestDriver.execute(args, () =>
+      new CsrFile(p(CoreParamsKey).hpmCounters, p(PlatformParamsKey).hartId)) { c =>
+    new CsrFileUnitTester(c)
   }) sys.exit(1)
 }

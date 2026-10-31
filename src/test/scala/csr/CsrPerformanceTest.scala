@@ -1,7 +1,7 @@
 package csr
 
 import utils.DefaultTestConfig._
-import configs.CoreParamsKey
+import configs.{CoreParamsKey, PlatformParamsKey}
 import chisel3._
 import consts.CSR._
 import consts.CsrOp._
@@ -205,14 +205,14 @@ class CsrPerformanceConfigurationTester(c: CsrFile) extends CsrRegressionTester(
 
 object CsrPerformanceTest extends App {
   if (!TestDriver.execute(args, () =>
-      new CsrFile(p(CoreParamsKey).hpmCounters)) { c =>
+      new CsrFile(p(CoreParamsKey).hpmCounters, p(PlatformParamsKey).hartId)) { c =>
     new CsrPerformanceTester(c)
   }) {
     sys.exit(1)
   }
   for (count <- Seq(0, 29)) {
     if (!TestDriver.execute(args, () =>
-        new CsrFile(count)) { c =>
+        new CsrFile(count, p(PlatformParamsKey).hartId)) { c =>
       new CsrPerformanceConfigurationTester(c)
     }) {
       sys.exit(1)

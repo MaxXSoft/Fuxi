@@ -1,7 +1,7 @@
 package csr
 
 import utils.DefaultTestConfig._
-import configs.CoreParamsKey
+import configs.{CoreParamsKey, PlatformParamsKey}
 import consts.CSR._
 import utils.{CsrRegressionTester, TestDriver}
 
@@ -51,7 +51,7 @@ class CsrTimeTester(c: CsrFile) extends CsrRegressionTester(c) {
 
 object CsrTimeTest extends App {
   if (!TestDriver.execute(args, () =>
-      new CsrFile(p(CoreParamsKey).hpmCounters)) { c =>
+      new CsrFile(p(CoreParamsKey).hpmCounters, p(PlatformParamsKey).hartId)) { c =>
     new CsrTimeTester(c)
   }) {
     sys.exit(1)
