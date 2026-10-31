@@ -4,7 +4,8 @@ import utils.DefaultTestConfig._
 import consts.Architecture._
 import utils.{AxiTestSupport, PeekPokeTester, TestDriver}
 
-class InstCachePerformanceTester(c: InstCache) extends PeekPokeTester(c) with AxiTestSupport {
+class InstCachePerformanceTester(c: InstCache) extends PeekPokeTester(c)
+    with AxiTestSupport {
   poke(c.io.sram.en, false)
   poke(c.io.sram.wen, 0)
   poke(c.io.sram.addr, BigInt("80000000", 16))
@@ -57,7 +58,8 @@ class InstCachePerformanceTester(c: InstCache) extends PeekPokeTester(c) with Ax
   expect(c.io.pmu.miss, true)
 }
 
-class DataCachePerformanceTester(c: DataCache) extends PeekPokeTester(c) with AxiTestSupport {
+class DataCachePerformanceTester(c: DataCache) extends PeekPokeTester(c)
+    with AxiTestSupport {
   val base = BigInt("80000000", 16)
   val beats = c.DCACHE_LINE_BYTES / 4
   poke(c.io.sram.en, false)
@@ -218,7 +220,8 @@ class MmuPerformanceTester(c: MMU) extends PeekPokeTester(c) {
   expect(c.io.pmu.miss, false) // Bare mode never starts a page walk
 }
 
-class CoreBusPerformanceTester(c: CoreBus) extends PeekPokeTester(c) with AxiTestSupport {
+class CoreBusPerformanceTester(c: CoreBus) extends PeekPokeTester(c)
+    with AxiTestSupport {
   // Exercise both actual SRAM demuxes: one page-table transfer and one
   // translated program transfer, each cold, with AXI backpressure.
   for (isInst <- Seq(true, false)) {

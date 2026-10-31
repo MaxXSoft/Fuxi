@@ -3,20 +3,32 @@ package cli
 import configs._
 import org.chipsalliance.cde.config.Config
 
-class TestPreset extends Config(new WithHpmCounters(2) ++ new WithRasEntries(3) ++ new DefaultConfig)
+class TestPreset extends Config(
+  new WithHpmCounters(2) ++
+    new WithRasEntries(3) ++
+    new DefaultConfig
+)
+
 class NotAConfig
 class NeedsArgument(n: Int) extends DefaultConfig
 class PrivateConstructor private () extends DefaultConfig
-class BrokenConstructor extends DefaultConfig { throw new IllegalArgumentException("broken preset") }
-class IncompleteConfig extends Config((site, here, up) => { case PlatformParamsKey => PlatformParams() })
+
+class BrokenConstructor extends DefaultConfig {
+  throw new IllegalArgumentException("broken preset")
+}
+
+class IncompleteConfig extends Config((site, here, up) => {
+  case PlatformParamsKey => PlatformParams()
+})
 
 object GeneratorOptionsTest extends App {
   def parsed(args: String*): GeneratorOptions = GeneratorOptions.parse(args).fold(
     exit => throw new AssertionError(exit.message), identity)
   def parameters(args: String*) = parsed(args: _*).config.resolve().fold(
     error => throw new AssertionError(error), identity)
-  def rejects(args: String*): Unit = assert(GeneratorOptions.parse(args).exists(
-    _.config.resolve().isLeft) || GeneratorOptions.parse(args).left.exists(_.status != 0), args.mkString(" "))
+  def rejects(args: String*): Unit = assert(
+    GeneratorOptions.parse(args).exists(_.config.resolve().isLeft) ||
+      GeneratorOptions.parse(args).left.exists(_.status != 0), args.mkString(" "))
 
   val defaults = parameters()
   assert(defaults(CoreParamsKey) == CoreParams())
@@ -42,8 +54,9 @@ object GeneratorOptionsTest extends App {
   assert(parsed("--dump-config").dumpConfig)
   assert(ConfigDump(after).contains("hpmCounters = 5"))
   for (name <- Seq("DoesNotExist", "cli.NotAConfig", "cli.NeedsArgument",
-                    "cli.PrivateConstructor", "cli.BrokenConstructor", "cli.IncompleteConfig"))
+                    "cli.PrivateConstructor", "cli.BrokenConstructor", "cli.IncompleteConfig")) {
     rejects("--config", name)
+  }
   rejects("--hpm-counters"); rejects("--hpm-counters", "--dump-config")
   rejects("--hpm-counters", "0", "--hpm-counters=1")
   rejects("--config", "SmallConfig", "--config", "DefaultConfig")

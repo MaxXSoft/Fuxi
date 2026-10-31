@@ -41,7 +41,8 @@ Structure of core bus:
 
 */
 
-class CoreBus(implicit val p: Parameters) extends Module with HasCoreParams with HasPlatformParams {
+class CoreBus(implicit val p: Parameters) extends Module
+    with HasCoreParams with HasPlatformParams {
   val io = IO(new Bundle {
     // SRAM interface for core
     val rom       = Flipped(new SramIO(ADDR_WIDTH, INST_WIDTH))

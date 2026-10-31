@@ -143,8 +143,10 @@ object CoreCompressedTest extends App {
     (CompressedFlowProgram, 4, true),
     (CompressedTrapProgram, 4, false),
   )) {
-    if (!TestDriver.execute(args, () => new CoreMemoryHarness(ROM.Words(program.words))(new configs.WithFetchQueueDepth(depth) ++ p)) {
-      c => new CoreCompressedTester(c, program, depth, stall)
+    if (!TestDriver.execute(args, () =>
+      new CoreMemoryHarness(ROM.Words(program.words))
+        (new configs.WithFetchQueueDepth(depth) ++ p)) { c =>
+      new CoreCompressedTester(c, program, depth, stall)
     }) sys.exit(1)
   }
 }

@@ -21,5 +21,5 @@ scalacOptions ++= Seq(
   "-deprecation",
   "-feature",
   "-Xcheckinit",
-  "-Ymacro-annotations"
+  "-Ymacro-annotations",
 )

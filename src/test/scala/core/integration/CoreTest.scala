@@ -71,10 +71,14 @@ object CoreTest extends App {
     case Right(options) => options.config.resolve() match {
       case Left(error) => CliExit(1, s"CoreTest: $error").report()
       case Right(parameters) =>
-        if (options.dumpConfig) println(ConfigDump(parameters))
-        else if (!TestDriver.execute(Array.empty, () => new CoreWrapper(options.initFile.get.toString)(parameters)) {
-          c => new CoreUnitTester(c, options.traceFile.fold("")(_.toString), options.genTrace)
-        }) sys.exit(1)
+        if (options.dumpConfig) {
+          println(ConfigDump(parameters))
+        } else if (!TestDriver.execute(Array.empty, () =>
+            new CoreWrapper(options.initFile.get.toString)(parameters)) { c =>
+              new CoreUnitTester(c, options.traceFile.fold("")(_.toString), options.genTrace)
+            }) {
+          sys.exit(1)
+        }
     }
   }
 }

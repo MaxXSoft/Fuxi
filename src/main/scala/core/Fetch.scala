@@ -15,7 +15,8 @@ class FetchWord extends Bundle {
   val accessFault = Bool()
 }
 
-class Fetch(implicit val p: Parameters) extends Module with HasCoreParams with HasPlatformParams {
+class Fetch(implicit val p: Parameters) extends Module
+    with HasCoreParams with HasPlatformParams {
   val io = IO(new Bundle {
     // pipeline control signals
     val flush     = Input(Bool())

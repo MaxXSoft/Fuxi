@@ -108,7 +108,7 @@ class CsrFile(val hpmCount: Int, val hartId: BigInt = BigInt(0)) extends Module 
     BitPat(CSR_MVENDERID)     -> List(0.U,                  Y, N),
     BitPat(CSR_MARCHID)       -> List(0.U,                  Y, N),
     BitPat(CSR_MIMPID)        -> List(0.U,                  Y, N),
-    BitPat(CSR_MHARTID)       -> List(hartId.U,                  Y, N),
+    BitPat(CSR_MHARTID)       -> List(hartId.U,             Y, N),
     BitPat(CSR_MSTATUS)       -> List(mstatus.asUInt,       Y, Y),
     // RV32 high status: fixed little-endian, without H or double-trap state.
     BitPat(CSR_MSTATUSH)      -> List(0.U,                  Y, Y),

@@ -26,7 +26,7 @@ object ConfigDump {
       "platform.resetVector" -> s"0x${platform.resetVector.toString(16)}",
       "platform.hartId" -> platform.hartId,
       "platform.dataUncached.start" -> s"0x${platform.dataUncached.start.toString(16)}",
-      "platform.dataUncached.endExclusive" -> s"0x${platform.dataUncached.end.toString(16)}"
+      "platform.dataUncached.endExclusive" -> s"0x${platform.dataUncached.end.toString(16)}",
     ).map { case (name, value) => s"$name = $value" }.mkString("\n")
   }
 }

@@ -22,13 +22,15 @@ object ROM {
 }
 
 // for simulation only
-class ROM(init: ROM.Init)(implicit val p: Parameters) extends Module with HasPlatformParams {
+class ROM(init: ROM.Init)(implicit val p: Parameters) extends Module
+    with HasPlatformParams {
   def this(initFile: String)(implicit p: Parameters) = this(ROM.File(initFile))(p)
   def this(words: Seq[BigInt])(implicit p: Parameters) = this(ROM.Words(words))(p)
+
   val io = IO(Flipped(new SramIO(ADDR_WIDTH, INST_WIDTH)))
 
-  val data  = RegInit(NOP)
-  val addr  = io.addr - RESET_VECTOR.U(ADDR_WIDTH.W)
+  val data = RegInit(NOP)
+  val addr = io.addr - RESET_VECTOR.U(ADDR_WIDTH.W)
   val index = addr(ADDR_ALIGN_WIDTH + chisel3.util.log2Ceil(ROM.DEPTH) - 1, ADDR_ALIGN_WIDTH)
   val readData = init match {
     case ROM.File(path) =>

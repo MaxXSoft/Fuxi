@@ -12,7 +12,8 @@ case class ExpectedWriteback(pc: BigInt, rd: Int, data: BigInt, occurrence: Int 
 }
 
 // Program layout is separate from its dynamic execution expectations.
-class CoreProgram(fillWord: BigInt = NOP.litValue)(implicit val p: Parameters) extends HasPlatformParams {
+class CoreProgram(fillWord: BigInt = NOP.litValue)(implicit val p: Parameters)
+    extends HasPlatformParams {
   private val image = new utils.InstructionImage(fillWord)
   private val checks = scala.collection.mutable.ArrayBuffer.empty[ExpectedWriteback]
   private var cursor = RESET_VECTOR

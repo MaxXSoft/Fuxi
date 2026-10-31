@@ -13,7 +13,8 @@ import lsu.ExclusiveMonitor
 import consts.Paging.PPN_WIDTH
 import consts.CSR.CSR_MODE_S
 
-class Core(implicit val p: Parameters) extends Module with HasCoreParams with HasPlatformParams {
+class Core(implicit val p: Parameters) extends Module
+    with HasCoreParams with HasPlatformParams {
   val io = IO(new Bundle {
     // interrupt request
     val irq     = new InterruptIO

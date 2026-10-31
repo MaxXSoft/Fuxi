@@ -87,5 +87,8 @@ class CsrPrivilegeTester(c: CsrFile) extends CsrRegressionTester(c) {
 }
 
 object CsrPrivilegeTest extends App {
-  if (!TestDriver.execute(args, () => new CsrFile(p(CoreParamsKey).hpmCounters))(c => new CsrPrivilegeTester(c))) sys.exit(1)
+  if (!TestDriver.execute(args, () =>
+      new CsrFile(p(CoreParamsKey).hpmCounters))(c => new CsrPrivilegeTester(c))) {
+    sys.exit(1)
+  }
 }
