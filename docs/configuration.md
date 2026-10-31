@@ -2,8 +2,7 @@
 
 Fuxi uses CDE (`org.chipsalliance.cde.config`) for elaboration-time parameters.
 The implementation lives in `src/main/scala/configs`; command-line parsing uses
-scopt in `src/main/scala/cli`. Parameters describe generated hardware, not runtime
-CSR settings. The default configuration preserves the previous hardware.
+scopt in `src/main/scala/cli`.
 
 ## Presets and generation
 
@@ -35,8 +34,7 @@ types, constructor failures and invalid parameter values are errors.
 | HPM counters (excluding cycle/instret) | 8 | 0 | 29 |
 
 All presets use reset vector `0x200`, hart ID `0`, and the data uncached range
-`[0x10000000, 0x20000000)`. `SmallConfig` is a smaller resource configuration;
-these names do not claim measured timing or performance improvements.
+`[0x10000000, 0x20000000)`. `SmallConfig` is a smaller resource configuration.
 
 Only explicitly supplied CLI options override the preset, regardless of where
 `--config` appears. Singleton options cannot be repeated. Both `--option value`
@@ -47,7 +45,7 @@ including derived capacities, and exits without generating RTL.
 | --- | --- | --- |
 | `--fetch-queue-depth` | `WithFetchQueueDepth` | Positive instruction count |
 | `--fetch-buffer-entries` | `WithFetchBufferEntries` | Power of two, at least 2 words |
-| `--ghr-bits` | `WithGhrBits` | 2..30; PHT contains 2^n counters |
+| `--ghr-bits` | `WithGhrBits` | 2..30; PHT contains $2^n$ counters |
 | `--btb-entries` | `WithBtbEntries` | Power of two, at least 2 |
 | `--ras-entries` | `WithRasEntries` | Positive, less than Int.MaxValue; need not be a power of two |
 | `--icache-lines`, `--dcache-lines` | `WithICacheLines`, `WithDCacheLines` | Power of two, at least 2 |
@@ -59,9 +57,7 @@ including derived capacities, and exits without generating RTL.
 | `--hart-id` | `WithHartId` | Unsigned 32-bit value |
 
 Address values accept decimal and `0x` hexadecimal. Cache geometry must leave a
-positive tag width and fit the implementation's integer word count. The checks
-describe valid geometry, not a promise that very large memories will fit on a
-particular FPGA or host.
+positive tag width and fit the implementation's integer word count.
 
 Unknown Fuxi arguments are rejected. Pass additional Chisel/firtool arguments
 after `--`, for example:
