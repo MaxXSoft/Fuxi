@@ -1,5 +1,7 @@
 package core.integration
 
+import org.scalatest.funsuite.AnyFunSuite
+
 import utils.DefaultTestConfig._
 import chisel3._
 import consts.CSR._
@@ -80,8 +82,10 @@ private class TimeTester(c: TimeHarness) extends CoreTester(c) {
   assert(samplesDriven == TimeProgram.samples.size, "Not all RTC samples were driven")
 }
 
-object CoreTimeTest extends App {
-  if (!TestDriver.execute(args, () => new TimeHarness) { c =>
-    new TimeTester(c)
-  }) sys.exit(1)
+class CoreTimeTest extends AnyFunSuite {
+  test("read platform time and handle timer interrupts") {
+    TestDriver.run(new TimeHarness) { c =>
+      new TimeTester(c)
+    }
+  }
 }

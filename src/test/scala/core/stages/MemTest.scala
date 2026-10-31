@@ -1,5 +1,7 @@
 package core.stages
 
+import org.scalatest.funsuite.AnyFunSuite
+
 import chisel3._
 import utils.{PeekPokeTester, TestDriver}
 
@@ -421,8 +423,10 @@ class MemUnitTester(c: core.Mem) extends PeekPokeTester(c) {
   }
 }
 
-object MemTest extends App {
-  if (!TestDriver.execute(args, () => new core.Mem) {
-    (c) => new MemUnitTester(c)
-  }) sys.exit(1)
+class MemTest extends AnyFunSuite {
+  test("execute memory stage operations") {
+    TestDriver.run(new core.Mem) {
+      (c) => new MemUnitTester(c)
+    }
+  }
 }

@@ -1,5 +1,7 @@
 package bus
 
+import org.scalatest.funsuite.AnyFunSuite
+
 import utils.{PeekPokeTester, TestDriver}
 
 class MmuUnitTester(c: MMU) extends PeekPokeTester(c) {
@@ -399,22 +401,24 @@ class MmuFaultOwnershipTester(c: MMU) extends PeekPokeTester(c) {
   }
 }
 
-object MmuTest extends App {
-  if (!TestDriver.execute(args, () => new MMU(16, false)) {
-    (c) => new MmuUnitTester(c)
-  }) sys.exit(1)
-  for (isInst <- Seq(true, false)) {
-    if (!TestDriver.execute(args, () => new MMU(16, isInst)) {
-      (c) => new MmuFaultOwnershipTester(c)
-    }) sys.exit(1)
-    if (!TestDriver.execute(args, () => new MMU(16, isInst)) {
-      (c) => new MmuRedirectTester(c)
-    }) sys.exit(1)
-    if (!TestDriver.execute(args, () => new MMU(16, isInst)) {
-      (c) => new MmuPrivilegeTester(c)
-    }) sys.exit(1)
-    if (!TestDriver.execute(args, () => new MMU(16, isInst)) {
-      (c) => new MmuFlushTester(c)
-    }) sys.exit(1)
+class MmuTest extends AnyFunSuite {
+  test("translate addresses and handle faults, redirects, privileges and flushes") {
+    TestDriver.run(new MMU(16, false)) {
+      (c) => new MmuUnitTester(c)
+    }
+    for (isInst <- Seq(true, false)) {
+      TestDriver.run(new MMU(16, isInst)) {
+        (c) => new MmuFaultOwnershipTester(c)
+      }
+      TestDriver.run(new MMU(16, isInst)) {
+        (c) => new MmuRedirectTester(c)
+      }
+      TestDriver.run(new MMU(16, isInst)) {
+        (c) => new MmuPrivilegeTester(c)
+      }
+      TestDriver.run(new MMU(16, isInst)) {
+        (c) => new MmuFlushTester(c)
+      }
+    }
   }
 }

@@ -1,5 +1,7 @@
 package lsu
 
+import org.scalatest.funsuite.AnyFunSuite
+
 import org.chipsalliance.cde.config.Parameters
 import utils.DefaultTestConfig._
 import utils.InstEncoding._
@@ -55,36 +57,40 @@ class AtomicFaultHarness(implicit val p: Parameters) extends Module {
   io.request := mem.io.ram.en
 }
 
-object AtomicFaultTest extends App {
-  if (!TestDriver.execute(args, () => new AtomicFaultHarness) { c => new PeekPokeTester(c) {
-    // Decode real LR/SC/AMO encodings through the ALU and memory stage.
-    for ((instruction, alignment, page, access) <- Seq(
-      (lr_w(4, 1), 4, 13, 5),        // lr.w x4, (x1)
-      (sc_w(4, 3, 1), 6, 15, 7),     // sc.w x4, x3, (x1)
-      (amoadd_w(4, 3, 1), 6, 15, 7), // amoadd.w x4, x3, (x1)
-    )) {
-      poke(c.io.instruction, instruction)
-      poke(c.io.address, 0x101)
-      poke(c.io.pageFault, false)
-      poke(c.io.accessFault, false)
-      expect(c.io.hasTrap, true)
-      expect(c.io.cause, alignment)
-      expect(c.io.value, 0x101)
-      expect(c.io.request, false)
+class AtomicFaultTest extends AnyFunSuite {
+  test("report alignment, page and access faults for atomics") {
+    TestDriver.run(new AtomicFaultHarness) { c =>
+      new PeekPokeTester(c) {
+        // Decode real LR/SC/AMO encodings through the ALU and memory stage.
+        for ((instruction, alignment, page, access) <- Seq(
+          (lr_w(4, 1), 4, 13, 5),        // lr.w x4, (x1)
+          (sc_w(4, 3, 1), 6, 15, 7),     // sc.w x4, x3, (x1)
+          (amoadd_w(4, 3, 1), 6, 15, 7), // amoadd.w x4, x3, (x1)
+        )) {
+          poke(c.io.instruction, instruction)
+          poke(c.io.address, 0x101)
+          poke(c.io.pageFault, false)
+          poke(c.io.accessFault, false)
+          expect(c.io.hasTrap, true)
+          expect(c.io.cause, alignment)
+          expect(c.io.value, 0x101)
+          expect(c.io.request, false)
 
-      poke(c.io.address, 0x100)
-      poke(c.io.pageFault, true)
-      expect(c.io.hasTrap, true)
-      expect(c.io.cause, page)
-      expect(c.io.value, 0x100)
-      expect(c.io.request, false)
+          poke(c.io.address, 0x100)
+          poke(c.io.pageFault, true)
+          expect(c.io.hasTrap, true)
+          expect(c.io.cause, page)
+          expect(c.io.value, 0x100)
+          expect(c.io.request, false)
 
-      poke(c.io.pageFault, false)
-      poke(c.io.accessFault, true)
-      expect(c.io.hasTrap, true)
-      expect(c.io.cause, access)
-      expect(c.io.value, 0x100)
-      expect(c.io.request, false)
+          poke(c.io.pageFault, false)
+          poke(c.io.accessFault, true)
+          expect(c.io.hasTrap, true)
+          expect(c.io.cause, access)
+          expect(c.io.value, 0x100)
+          expect(c.io.request, false)
+        }
+      }
     }
-  }}) sys.exit(1)
+  }
 }

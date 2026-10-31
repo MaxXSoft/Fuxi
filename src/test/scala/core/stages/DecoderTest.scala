@@ -1,5 +1,7 @@
 package core.stages
 
+import org.scalatest.funsuite.AnyFunSuite
+
 import utils.DefaultTestConfig._
 import core.Decoder
 import utils.InstEncoding._
@@ -243,8 +245,10 @@ class DecoderUnitTester(c: Decoder) extends PeekPokeTester(c) {
   expectExc(EXC_IACCESS)
 }
 
-object DecoderTest extends App {
-  if (!TestDriver.execute(args, () => new Decoder) {
-    (c) => new DecoderUnitTester(c)
-  }) sys.exit(1)
+class DecoderTest extends AnyFunSuite {
+  test("decode supported instructions") {
+    TestDriver.run(new Decoder) {
+      (c) => new DecoderUnitTester(c)
+    }
+  }
 }

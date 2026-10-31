@@ -1,5 +1,7 @@
 package csr
 
+import org.scalatest.funsuite.AnyFunSuite
+
 import utils.DefaultTestConfig._
 import configs.{CoreParamsKey, PlatformParamsKey}
 import chisel3._
@@ -86,11 +88,10 @@ class CsrPrivilegeTester(c: CsrFile) extends CsrRegressionTester(c) {
   read(CSR_MSTATUS, 0)
 }
 
-object CsrPrivilegeTest extends App {
-  if (!TestDriver.execute(args, () =>
-      new CsrFile(p(CoreParamsKey).hpmCounters, p(PlatformParamsKey).hartId)) { c =>
-    new CsrPrivilegeTester(c)
-  }) {
-    sys.exit(1)
+class CsrPrivilegeTest extends AnyFunSuite {
+  test("enforce CSR privilege and trap return rules") {
+    TestDriver.run(new CsrFile(p(CoreParamsKey).hpmCounters, p(PlatformParamsKey).hartId)) { c =>
+      new CsrPrivilegeTester(c)
+    }
   }
 }

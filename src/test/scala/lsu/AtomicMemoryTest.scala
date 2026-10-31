@@ -1,5 +1,7 @@
 package lsu
 
+import org.scalatest.funsuite.AnyFunSuite
+
 import org.chipsalliance.cde.config.Parameters
 import utils.DefaultTestConfig._
 import configs.CoreParamsKey
@@ -259,10 +261,12 @@ class AtomicMemoryTester(c: AtomicMemoryHarness, cached: Boolean)
   assert(memory(base) == 15, "interrupted AMO did not complete exactly once")
 }
 
-object AtomicMemoryTest extends App {
-  for (cached <- Seq(false, true)) {
-    if (!TestDriver.execute(args, () => new AtomicMemoryHarness(cached)) {
-      c => new AtomicMemoryTester(c, cached)
-    }) sys.exit(1)
+class AtomicMemoryTest extends AnyFunSuite {
+  test("execute cached and uncached atomic sequences") {
+    for (cached <- Seq(false, true)) {
+      TestDriver.run(new AtomicMemoryHarness(cached)) {
+        c => new AtomicMemoryTester(c, cached)
+      }
+    }
   }
 }

@@ -1,5 +1,7 @@
 package lsu
 
+import org.scalatest.funsuite.AnyFunSuite
+
 import utils.{PeekPokeTester, TestDriver}
 
 class ExclusiveMonitorUnitTester(c: ExclusiveMonitor)
@@ -84,8 +86,10 @@ class ExclusiveMonitorUnitTester(c: ExclusiveMonitor)
 
 }
 
-object ExclusiveMonitorTest extends App {
-  if (!TestDriver.execute(args, () => new ExclusiveMonitor) {
-    (c) => new ExclusiveMonitorUnitTester(c)
-  }) sys.exit(1)
+class ExclusiveMonitorTest extends AnyFunSuite {
+  test("track and invalidate exclusive reservations") {
+    TestDriver.run(new ExclusiveMonitor) {
+      (c) => new ExclusiveMonitorUnitTester(c)
+    }
+  }
 }

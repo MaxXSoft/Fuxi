@@ -1,5 +1,7 @@
 package sim
 
+import org.scalatest.funsuite.AnyFunSuite
+
 import utils.{PeekPokeTester, TestDriver}
 
 class RamUnitTester(c: RAM) extends PeekPokeTester(c) {
@@ -28,8 +30,10 @@ class RamUnitTester(c: RAM) extends PeekPokeTester(c) {
   expect(c.io.rdata, 0x33344478)
 }
 
-object RamTest extends App {
-  if (!TestDriver.execute(args, () => new RAM) {
-    (c) => new RamUnitTester(c)
-  }) sys.exit(1)
+class RamTest extends AnyFunSuite {
+  test("read and write simulated RAM") {
+    TestDriver.run(new RAM) {
+      (c) => new RamUnitTester(c)
+    }
+  }
 }

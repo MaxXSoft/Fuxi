@@ -1,5 +1,7 @@
 package core.stages
 
+import org.scalatest.funsuite.AnyFunSuite
+
 import core.WriteBack
 import chisel3.UInt
 import utils.{PeekPokeTester, TestDriver}
@@ -118,8 +120,10 @@ class WriteBackUnitTester(c: WriteBack) extends PeekPokeTester(c) {
   expect(c.io.reg.data, 0x12345678)
 }
 
-object WriteBackTest extends App {
-  if (!TestDriver.execute(args, () => new WriteBack) {
-    (c) => new WriteBackUnitTester(c)
-  }) sys.exit(1)
+class WriteBackTest extends AnyFunSuite {
+  test("select register writeback results") {
+    TestDriver.run(new WriteBack) {
+      (c) => new WriteBackUnitTester(c)
+    }
+  }
 }

@@ -1,5 +1,7 @@
 package core.integration
 
+import org.scalatest.funsuite.AnyFunSuite
+
 import utils.DefaultTestConfig._
 import chisel3._
 import consts.CSR._
@@ -63,11 +65,13 @@ private class CsrInterruptTester(c: CsrInterruptHarness, program: CsrInterruptPr
   assert(trapCount == 1, s"Expected one timer interrupt, observed $trapCount")
 }
 
-object CoreCsrInterruptTest extends App {
-  for (enableGlobal <- Seq(true, false)) {
-    val program = new CsrInterruptProgram(enableGlobal)
-    if (!TestDriver.execute(args, () => new CsrInterruptHarness(program)) { c =>
-      new CsrInterruptTester(c, program)
-    }) sys.exit(1)
+class CoreCsrInterruptTest extends AnyFunSuite {
+  test("handle interrupts across CSR updates") {
+    for (enableGlobal <- Seq(true, false)) {
+      val program = new CsrInterruptProgram(enableGlobal)
+      TestDriver.run(new CsrInterruptHarness(program)) { c =>
+        new CsrInterruptTester(c, program)
+      }
+    }
   }
 }

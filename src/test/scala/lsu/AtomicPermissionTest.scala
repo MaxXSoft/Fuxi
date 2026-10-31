@@ -1,5 +1,7 @@
 package lsu
 
+import org.scalatest.funsuite.AnyFunSuite
+
 import org.chipsalliance.cde.config.Parameters
 import utils.DefaultTestConfig._
 import chisel3._
@@ -162,10 +164,12 @@ class AtomicPermissionTester(c: AtomicPermissionHarness, writable: Boolean, dirt
   }
 }
 
-object AtomicPermissionTest extends App {
-  for ((writable, dirty) <- Seq((false, true), (true, false), (true, true))) {
-    if (!TestDriver.execute(args, () => new AtomicPermissionHarness) {
-      c => new AtomicPermissionTester(c, writable, dirty)
-    }) sys.exit(1)
+class AtomicPermissionTest extends AnyFunSuite {
+  test("enforce write and dirty permissions for atomics") {
+    for ((writable, dirty) <- Seq((false, true), (true, false), (true, true))) {
+      TestDriver.run(new AtomicPermissionHarness) {
+        c => new AtomicPermissionTester(c, writable, dirty)
+      }
+    }
   }
 }

@@ -1,5 +1,7 @@
 package core.integration
 
+import org.scalatest.funsuite.AnyFunSuite
+
 import utils.DefaultTestConfig._
 import utils.InstEncoding._
 import sim.ROM
@@ -58,11 +60,12 @@ class CoreRetirementTester(c: CoreMemoryHarness, fenceFault: Boolean) extends Co
   checker.checkCount(peek(c.io.observation.count))
 }
 
-object CoreRetirementTest extends App {
-  for (fenceFault <- Seq(false, true)) {
-    if (!TestDriver.execute(args, () =>
-        new CoreMemoryHarness(ROM.Words(RetirementProgram.words), fenceFault = fenceFault)) { c =>
-      new CoreRetirementTester(c, fenceFault)
-    }) sys.exit(1)
+class CoreRetirementTest extends AnyFunSuite {
+  test("observe retirement and fence traps") {
+    for (fenceFault <- Seq(false, true)) {
+      TestDriver.run(new CoreMemoryHarness(ROM.Words(RetirementProgram.words), fenceFault = fenceFault)) { c =>
+        new CoreRetirementTester(c, fenceFault)
+      }
+    }
   }
 }

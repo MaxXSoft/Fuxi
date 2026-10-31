@@ -1,5 +1,7 @@
 package bpu
 
+import org.scalatest.funsuite.AnyFunSuite
+
 import utils.DefaultTestConfig._
 import utils.{PeekPokeTester, TestDriver}
 import utils.InstEncoding._
@@ -145,8 +147,10 @@ class RasPredictionTester(c: BranchPredictor) extends PeekPokeTester(c) {
   expect(c.io.predTarget, 0xc00)
 }
 
-object RasPredictionTest extends App {
-  if (!TestDriver.execute(args, () => new BranchPredictor) {
-    c => new RasPredictionTester(c)
-  }) sys.exit(1)
+class RasPredictionTest extends AnyFunSuite {
+  test("predict calls and returns with the return address stack") {
+    TestDriver.run(new BranchPredictor) {
+      c => new RasPredictionTester(c)
+    }
+  }
 }

@@ -1,26 +1,37 @@
 # Scala tests and shared support
 
-Tests are executable `App`s, run with `sbt 'Test / runMain package.TestName'`.
-`utils.TestDriver` runs the Chisel simulation and reports failures through the
-process exit code. Shared fixtures live only in test sources. Reusable helpers
-and their own tests are colocated in `utils`, including the Core harnesses and
-CSR regression helpers.
+Tests are ScalaTest `AnyFunSuite` classes. Run every suite with `sbt test`, or
+select suites with `sbt 'testOnly package.TestName'` and `sbt 'testOnly csr.*'`.
+Sbt discovers suites automatically; adding a suite or a named `test(...)` case
+does not require registration in the build or CI. `Test / parallelExecution` is
+false so the simulation workload retains serial execution.
+
+`utils.TestDriver.run` runs a fresh Chisel simulation for each call and lets
+failures propagate to ScalaTest. Test bodies use assertions or exceptions instead
+of exiting the JVM. Allocate mutable fixtures inside `test(...)` so discovery
+only registers tests and repeated runs start with fresh state.
+
+Shared fixtures live only in test sources. Reusable helpers and their own tests
+are colocated in `utils`, including the Core harnesses and CSR regression helpers.
+Simulation RAM/ROM models and the manual `sim.CoreRunner` tool live in
+`src/test/scala/sim`; they are not part of the main compilation or JAR.
 Harnesses and reference models used by a single test stay in that test file.
-The CI `Test Utilities` step runs the support tests, including
-`utils.CoreWritebackLoopTest`, which validates writeback selection with a real Core.
+The CI `Test Scala` step runs all suites, including `utils.CoreWritebackLoopTest`,
+which validates writeback selection with a real Core.
 
 ## Test layout
 
 Directory names match Scala packages. Group tests by their primary verification
 subject; using a simulator alone does not make a test a Core integration test.
 
-| Directory / package | Contents | CI step |
-| --- | --- | --- |
-| `utils` | Shared helpers and their regression tests | Test Utilities |
-| `configs`, `cli` | Parameter composition, validation, preset loading and command-line parsing | Test Configurations |
-| `core/stages` / `core.stages` | Fetch, compressed decoder, decoder, ALU, memory and writeback stage tests | Test Core Stages |
-| `core/integration` / `core.integration` | Full-core instruction streams, traps, retirement and LR/SC sequences | Test Core Integration |
-| `bpu`, `bus`, `csr`, `lsu`, `mdu`, `sim` | Subsystem tests, including focused combinations of modules | Corresponding subsystem step |
+| Directory / package | Contents |
+| --- | --- |
+| `utils` | Shared helpers and their regression tests |
+| `configs`, `cli` | Parameter composition, validation, preset loading and command-line parsing |
+| `core/stages` / `core.stages` | Fetch, compressed decoder, decoder, ALU, memory and writeback stage tests |
+| `core/integration` / `core.integration` | Full-core instruction streams, traps, retirement, LR/SC sequences and bundled trace comparisons |
+| `bpu`, `bus`, `csr`, `lsu`, `mdu` | Subsystem tests, including focused combinations of modules |
+| `sim` | Simulation memories, the manual core runner and their tests |
 
 `core.integration.ScSequenceTest` runs a complete Core program to check LR/SC
 reservation and forwarding behavior. Focused combinations such as
@@ -29,8 +40,9 @@ reservation and forwarding behavior. Focused combinations such as
 For example:
 
 ```sh
-sbt 'Test / runMain utils.CoreTestSupportTest'
-sbt 'Test / runMain core.stages.DecoderTest'
+sbt 'testOnly utils.CoreTestSupportTest'
+sbt 'testOnly core.stages.DecoderTest'
+sbt 'testOnly core.integration.CoreTraceTest -- -z fib'
 sbt 'Test / runMain sim.CoreRunner -if src/test/resources/fib.txt -tf src/test/resources/fib_trace.txt'
 ```
 
@@ -101,7 +113,7 @@ register/immediate/alignment validation. Compressed mnemonics use the `c_`
 prefix; U-type immediates are unsigned 20-bit fields. HINT operands are preserved.
 Illegal encodings, packed-byte expectations and independent decoder reference
 vectors deliberately remain literal. `utils.InstEncodingTest` checks fixed
-encoding vectors and invalid operands and is included in CI.
+encoding vectors and invalid operands and is discovered by `sbt test`.
 
 ## Execution expectations and clock ownership
 
@@ -160,4 +172,4 @@ in each test. The atomic-memory read/write model remains test-specific.
 
 `utils.CoreTestSupportTest` covers image boundaries and checker failure behavior;
 `utils.AxiTestSupportTest` checks read-response ownership and backpressure. Both
-are included in the existing CI test entry points.
+are discovered and run by `sbt test`.

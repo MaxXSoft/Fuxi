@@ -88,14 +88,19 @@ The core provides eight programmable 64-bit performance counters by default, alo
 
 See [the test layout and support guide](src/test/README.md) for directory organization and shared helpers.
 
-### Running Unit Tests
+### Running Scala Tests
 
-All unit tests are available in directory `src/test/scala`. For example, unit test for decode stage is available in `core/stages/DecoderTest.scala`, you can run this test by executing the following command lines:
+All ScalaTest suites are discovered automatically under `src/test/scala`:
 
+```sh
+sbt test
+sbt 'testOnly core.stages.DecoderTest'
+sbt 'testOnly csr.*'
 ```
-$ sbt
-> Test / runMain core.stages.DecoderTest
-```
+
+The CI runs the same `sbt test` command. Adding a suite or test case requires no
+change to the workflow. Suites run serially, and each simulation starts with a
+fresh hardware instance. Test failures are reported by ScalaTest and fail sbt.
 
 ### Running Bundled Program Regressions
 
@@ -126,11 +131,11 @@ Trace information during running program `fib.txt` will be printed to the consol
 | `--trace-file`  | `-tf`         | path to trace file    | Specify the trace file, default to empty.
 | `--gen-trace`   | `-gt`         | true / false / 1 / 0  | Generate a trace when true or 1; requires a writable trace path. Default false.
 
-The test CLI uses scopt and shares the generator's `--config`, parameter
+The runner uses scopt and shares the generator's `--config`, parameter
 overrides, `--dump-config` and `--help`. `--dump-config` requires no ROM image and
 does not run a simulation. Unknown/repeated options, missing values and invalid
 files are errors. Trace comparison requires a readable trace file; without a
-trace path, the test prints the execution trace to the console. Bundled images
+trace path, the runner prints the execution trace to the console. Bundled images
 and reference traces assume the default reset vector `0x200`; a different vector
 requires a matching program and trace.
 

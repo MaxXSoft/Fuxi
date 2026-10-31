@@ -1,5 +1,7 @@
 package bus
 
+import org.scalatest.funsuite.AnyFunSuite
+
 import utils.DefaultTestConfig._
 import utils.{AxiTestSupport, PeekPokeTester, TestDriver}
 
@@ -144,11 +146,13 @@ class InstCacheFaultOwnershipTester(c: InstCache) extends PeekPokeTester(c) with
   }
 }
 
-object InstCacheTest extends App {
-  if (!TestDriver.execute(args, () => new InstCache) {
-    c => new InstCacheFlushTester(c)
-  }) sys.exit(1)
-  if (!TestDriver.execute(args, () => new InstCache) {
-    c => new InstCacheFaultOwnershipTester(c)
-  }) sys.exit(1)
+class InstCacheTest extends AnyFunSuite {
+  test("flush the cache and retain fault ownership") {
+    TestDriver.run(new InstCache) {
+      c => new InstCacheFlushTester(c)
+    }
+    TestDriver.run(new InstCache) {
+      c => new InstCacheFaultOwnershipTester(c)
+    }
+  }
 }

@@ -1,5 +1,7 @@
 package core.stages
 
+import org.scalatest.funsuite.AnyFunSuite
+
 import utils.DefaultTestConfig._
 import core.ALU
 import chisel3.UInt
@@ -89,8 +91,10 @@ class AluUnitTester(c: ALU) extends PeekPokeTester(c) {
   }
 }
 
-object AluTest extends App {
-  if (!TestDriver.execute(args, () => new ALU) {
-    (c) => new AluUnitTester(c)
-  }) sys.exit(1)
+class AluTest extends AnyFunSuite {
+  test("execute ALU operations") {
+    TestDriver.run(new ALU) {
+      (c) => new AluUnitTester(c)
+    }
+  }
 }

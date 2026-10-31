@@ -1,5 +1,7 @@
 package bus
 
+import org.scalatest.funsuite.AnyFunSuite
+
 import utils.{AxiTestSupport, PeekPokeTester, TestDriver}
 
 class UncachedUnitTester(c: Uncached) extends PeekPokeTester(c) with AxiTestSupport {
@@ -101,8 +103,10 @@ class UncachedUnitTester(c: Uncached) extends PeekPokeTester(c) with AxiTestSupp
   testRead(3, true)
 }
 
-object UncachedTest extends App {
-  if (!TestDriver.execute(args, () => new Uncached) {
-    (c) => new UncachedUnitTester(c)
-  }) sys.exit(1)
+class UncachedTest extends AnyFunSuite {
+  test("complete uncached memory transfers") {
+    TestDriver.run(new Uncached) {
+      (c) => new UncachedUnitTester(c)
+    }
+  }
 }

@@ -1,5 +1,7 @@
 package mdu
 
+import org.scalatest.funsuite.AnyFunSuite
+
 import utils.DefaultTestConfig._
 import chisel3.UInt
 import utils.{PeekPokeTester, TestDriver}
@@ -103,13 +105,12 @@ class MduUnitTester(c: MDU) extends PeekPokeTester(c) {
   checkMdu(MDU_MULH, mask, 7, mask) // signed -1 * 7
 }
 
-object MduTest extends App {
-  for (latency <- Seq(0, 1, 3)) {
-    if (!TestDriver.execute(args, () =>
-        new MDU()(new configs.WithMulLatency(latency) ++ p)) { c =>
-          new MduUnitTester(c)
-        }) {
-      sys.exit(1)
+class MduTest extends AnyFunSuite {
+  test("execute and cancel operations at different multiplier latencies") {
+    for (latency <- Seq(0, 1, 3)) {
+      TestDriver.run(new MDU()(new configs.WithMulLatency(latency) ++ p)) { c =>
+        new MduUnitTester(c)
+      }
     }
   }
 }

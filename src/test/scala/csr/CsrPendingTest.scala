@@ -1,5 +1,7 @@
 package csr
 
+import org.scalatest.funsuite.AnyFunSuite
+
 import utils.DefaultTestConfig._
 import configs.{CoreParamsKey, PlatformParamsKey}
 import chisel3._
@@ -35,11 +37,10 @@ class CsrPendingTester(c: CsrFile) extends CsrRegressionTester(c) {
   read(CSR_MIP, 0)
 }
 
-object CsrPendingTest extends App {
-  if (!TestDriver.execute(args, () =>
-      new CsrFile(p(CoreParamsKey).hpmCounters, p(PlatformParamsKey).hartId)) { c =>
-    new CsrPendingTester(c)
-  }) {
-    sys.exit(1)
+class CsrPendingTest extends AnyFunSuite {
+  test("update pending interrupt state") {
+    TestDriver.run(new CsrFile(p(CoreParamsKey).hpmCounters, p(PlatformParamsKey).hartId)) { c =>
+      new CsrPendingTester(c)
+    }
   }
 }

@@ -1,5 +1,7 @@
 package core.integration
 
+import org.scalatest.funsuite.AnyFunSuite
+
 import org.chipsalliance.cde.config.Parameters
 import utils.DefaultTestConfig._
 import core.Core
@@ -162,15 +164,17 @@ private[core] class CoreFetchFaultTester(c: CoreFetchFaultWrapper, scenario: Fet
   println(s"CoreFetchFault: ${scenario.name} passed after $cycle cycles.")
 }
 
-object CoreFetchFaultTest extends App {
-  for (scenario <- Seq(
-    FetchPageCase("split instruction across noncontiguous physical pages", secondPagePresent = true),
-    FetchPageCase("second instruction parcel page fault", secondPagePresent = false),
-    FetchPageCase("second instruction parcel AXI access fault", secondPagePresent = true, accessFault = true),
-    FetchPageCase("final compressed jump before unmapped page", secondPagePresent = false, compressedJump = true),
-  )) {
-    if (!TestDriver.execute(args, () => new CoreFetchFaultWrapper) {
-      c => new CoreFetchFaultTester(c, scenario)
-    }) sys.exit(1)
+class CoreFetchFaultTest extends AnyFunSuite {
+  test("attribute split instruction fetch faults correctly") {
+    for (scenario <- Seq(
+      FetchPageCase("split instruction across noncontiguous physical pages", secondPagePresent = true),
+      FetchPageCase("second instruction parcel page fault", secondPagePresent = false),
+      FetchPageCase("second instruction parcel AXI access fault", secondPagePresent = true, accessFault = true),
+      FetchPageCase("final compressed jump before unmapped page", secondPagePresent = false, compressedJump = true),
+    )) {
+      TestDriver.run(new CoreFetchFaultWrapper) {
+        c => new CoreFetchFaultTester(c, scenario)
+      }
+    }
   }
 }

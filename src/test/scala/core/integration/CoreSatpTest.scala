@@ -1,5 +1,7 @@
 package core.integration
 
+import org.scalatest.funsuite.AnyFunSuite
+
 import utils.DefaultTestConfig._
 import utils.{AxiTestSupport, CoreTester, ExpectedTrap, ExpectedWriteback,
               InstEncoding, InstructionImage, TestDriver, TrapChecker, WritebackChecker}
@@ -58,8 +60,10 @@ private[core] class CoreSatpTester(c: CoreFetchFaultWrapper)
   assert(satpRetired == 1, "SATP must commit exactly once while younger instructions are flushed")
 }
 
-object CoreSatpTest extends App {
-  if (!TestDriver.execute(args, () => new CoreFetchFaultWrapper) { c =>
-    new CoreSatpTester(c)
-  }) sys.exit(1)
+class CoreSatpTest extends AnyFunSuite {
+  test("apply address translation changes") {
+    TestDriver.run(new CoreFetchFaultWrapper) { c =>
+      new CoreSatpTester(c)
+    }
+  }
 }

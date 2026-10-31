@@ -1,5 +1,7 @@
 package bus
 
+import org.scalatest.funsuite.AnyFunSuite
+
 import configs._
 import org.chipsalliance.cde.config.Parameters
 import utils.{AxiTestSupport, PeekPokeTester, TestDriver}
@@ -61,31 +63,33 @@ private class ConfiguredRoutingTester(c: CoreBus) extends PeekPokeTester(c)
   }
 }
 
-object CacheConfigTest extends App {
-  // Include both AXI burst-length boundaries and asymmetric I/D geometries.
-  for ((iLines, iBytes, dLines, dBytes) <- Seq((2, 8, 4, 32), (4, 128, 2, 1024))) {
-    implicit val p: Parameters = new WithICacheLines(iLines) ++
-      new WithICacheLineBytes(iBytes) ++
-      new WithDCacheLines(dLines) ++
-      new WithDCacheLineBytes(dBytes) ++
+class CacheConfigTest extends AnyFunSuite {
+  test("support cache geometries and configured memory routing") {
+    // Include both AXI burst-length boundaries and asymmetric I/D geometries.
+    for ((iLines, iBytes, dLines, dBytes) <- Seq((2, 8, 4, 32), (4, 128, 2, 1024))) {
+      implicit val p: Parameters = new WithICacheLines(iLines) ++
+        new WithICacheLineBytes(iBytes) ++
+        new WithDCacheLines(dLines) ++
+        new WithDCacheLineBytes(dBytes) ++
+        new DefaultConfig
+      TestDriver.run(new InstCache) {
+        c => new InstCachePerformanceTester(c)
+      }
+      TestDriver.run(new DataCache) {
+        c => new DataCachePerformanceTester(c)
+      }
+    }
+    val platform = new WithITlbEntries(2) ++
+      new WithDTlbEntries(4) ++
+      new WithICacheLines(2) ++
+      new WithDCacheLines(4) ++
+      new WithDataUncachedRegion(BigInt("f0000000", 16), BigInt(1) << 32) ++
       new DefaultConfig
-    if (!TestDriver.execute(args, () => new InstCache) {
-      c => new InstCachePerformanceTester(c)
-    }) sys.exit(1)
-    if (!TestDriver.execute(args, () => new DataCache) {
-      c => new DataCachePerformanceTester(c)
-    }) sys.exit(1)
+    TestDriver.run(new CoreBus()(platform)) {
+      c => new CoreBusPerformanceTester(c)
+    }
+    TestDriver.run(new CoreBus()(platform)) {
+      c => new ConfiguredRoutingTester(c)
+    }
   }
-  val platform = new WithITlbEntries(2) ++
-    new WithDTlbEntries(4) ++
-    new WithICacheLines(2) ++
-    new WithDCacheLines(4) ++
-    new WithDataUncachedRegion(BigInt("f0000000", 16), BigInt(1) << 32) ++
-    new DefaultConfig
-  if (!TestDriver.execute(args, () => new CoreBus()(platform)) {
-    c => new CoreBusPerformanceTester(c)
-  }) sys.exit(1)
-  if (!TestDriver.execute(args, () => new CoreBus()(platform)) {
-    c => new ConfiguredRoutingTester(c)
-  }) sys.exit(1)
 }

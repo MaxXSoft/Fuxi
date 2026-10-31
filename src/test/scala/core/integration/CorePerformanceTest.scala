@@ -1,5 +1,7 @@
 package core.integration
 
+import org.scalatest.funsuite.AnyFunSuite
+
 import utils.DefaultTestConfig._
 import chisel3._
 import chisel3.util.experimental.BoringUtils
@@ -99,11 +101,13 @@ private class PerformanceTester(c: PerformanceHarness, ras: Boolean, fenceFault:
   }
 }
 
-object CorePerformanceTest extends App {
-  for ((ras, depth, fenceFault) <- Seq((true, 1, false), (true, 4, false),
-                                      (false, 4, false), (false, 4, true))) {
-    if (!TestDriver.execute(args, () => new PerformanceHarness(ras, depth, fenceFault)) {
-      c => new PerformanceTester(c, ras, fenceFault)
-    }) sys.exit(1)
+class CorePerformanceTest extends AnyFunSuite {
+  test("count pipeline, prediction and fence events") {
+    for ((ras, depth, fenceFault) <- Seq((true, 1, false), (true, 4, false),
+                                        (false, 4, false), (false, 4, true))) {
+      TestDriver.run(new PerformanceHarness(ras, depth, fenceFault)) {
+        c => new PerformanceTester(c, ras, fenceFault)
+      }
+    }
   }
 }

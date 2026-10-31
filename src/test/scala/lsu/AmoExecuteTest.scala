@@ -1,5 +1,7 @@
 package lsu
 
+import org.scalatest.funsuite.AnyFunSuite
+
 import utils.{PeekPokeTester, TestDriver}
 
 import AmoOp._
@@ -45,8 +47,10 @@ class AmoExecuteUnitTester(c: AmoExecute) extends PeekPokeTester(c) {
   }
 }
 
-object AmoExecuteTest extends App {
-  if (!TestDriver.execute(args, () => new AmoExecute) {
-    (c) => new AmoExecuteUnitTester(c)
-  }) sys.exit(1)
+class AmoExecuteTest extends AnyFunSuite {
+  test("execute atomic read-modify-write operations") {
+    TestDriver.run(new AmoExecute) {
+      (c) => new AmoExecuteUnitTester(c)
+    }
+  }
 }

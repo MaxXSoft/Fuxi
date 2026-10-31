@@ -5,7 +5,6 @@ import chisel3.experimental.{SourceInfo, UnlocatableSourceInfo}
 import chisel3.simulator.{ChiselSim, PeekPokeAPI}
 
 import scala.util.Random
-import scala.util.control.NonFatal
 
 abstract class PeekPokeTester[T <: Module](val dut: T) extends PeekPokeAPI {
   protected val rnd = new Random
@@ -71,21 +70,4 @@ abstract class PeekPokeTester[T <: Module](val dut: T) extends PeekPokeAPI {
 object TestDriver extends ChiselSim {
   def run[T <: Module](generator: => T)(tester: T => Unit): Unit =
     simulate(generator)(tester)
-
-  def execute[T <: Module](
-    _args: Array[String],
-    generator: () => T
-  )(tester: T => PeekPokeTester[T]): Boolean = {
-    try {
-      run(generator()) { dut =>
-        tester(dut)
-        ()
-      }
-      true
-    } catch {
-      case NonFatal(error) =>
-        error.printStackTrace()
-        false
-    }
-  }
 }
