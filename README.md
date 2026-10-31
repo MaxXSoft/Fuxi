@@ -18,6 +18,19 @@ $ cd Fuxi
 $ make
 ```
 
+Processor parameters are in the `configs` package. `DefaultConfig` preserves the
+default hardware; `SmallConfig` reduces queues/tables/caches and omits HPM
+counters; `ProfilingConfig` enables all 29 HPM counters. Select and override a
+preset with, for example:
+
+```sh
+sbt 'runMain Fuxi --config SmallConfig --hpm-counters 4 --target-dir verilog/small'
+sbt 'runMain Fuxi --config SmallConfig --dump-config'
+```
+
+See the [configuration guide](docs/configuration.md) for the parameter table,
+custom CDE fragments, reflection requirements and Chisel argument forwarding.
+
 ## Implemented ISAs
 
 * RV32I 2.1
