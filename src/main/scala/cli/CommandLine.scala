@@ -17,9 +17,11 @@ object CommandLine {
       case OEffect.ReportError(message) => message
       case OEffect.DisplayToErr(message) => message
     }
-    if (result.isEmpty || errors.nonEmpty) Left(CliExit(1, errors.mkString("\n")))
-    else if (effects.exists { case OEffect.Terminate(Right(_)) => true; case _ => false }) {
+    // runParser records validation effects even after --help. Honor scopt's
+    // successful termination before those checks, as runEffects would do.
+    if (effects.exists { case OEffect.Terminate(Right(_)) => true; case _ => false }) {
       Left(CliExit(0, effects.collect { case OEffect.DisplayToOut(message) => message }.mkString("\n")))
-    } else Right(result.get)
+    } else if (result.isEmpty || errors.nonEmpty) Left(CliExit(1, errors.mkString("\n")))
+    else Right(result.get)
   }
 }

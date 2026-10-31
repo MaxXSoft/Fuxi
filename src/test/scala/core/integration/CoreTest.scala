@@ -1,10 +1,11 @@
 package core.integration
 
-import utils.DefaultTestConfig._
+import cli.CliExit
+import configs.ConfigDump
 import scala.io.Source
 import java.io.{File, PrintWriter}
 
-import utils.{ArgParser, CoreChecks, CoreTester, CoreWrapper, ExpectedWriteback, TestDriver}
+import utils.{CoreTestOptions, CoreChecks, CoreTester, CoreWrapper, ExpectedWriteback, TestDriver}
 
 class CoreUnitTester(c: CoreWrapper, traceFile: String, genTrace: Boolean)
       extends CoreTester(c) {
@@ -65,22 +66,15 @@ class CoreUnitTester(c: CoreWrapper, traceFile: String, genTrace: Boolean)
 }
 
 object CoreTest extends App {
-  var initFile = ""
-  var traceFile = ""
-  var genTrace = false
-
-  ArgParser(args, (o, v) => {
-    o match {
-      case Some("--init-file") | Some("-if") =>
-        initFile = new File(v).getAbsolutePath
-        true
-      case Some("--trace-file") | Some("-tf") => traceFile = v; true
-      case Some("--gen-trace") | Some("-gt") => genTrace = v != "0"; true
-      case _ => false
+  CoreTestOptions.parse(args.toSeq) match {
+    case Left(exit) => exit.report()
+    case Right(options) => options.config.resolve() match {
+      case Left(error) => CliExit(1, s"CoreTest: $error").report()
+      case Right(parameters) =>
+        if (options.dumpConfig) println(ConfigDump(parameters))
+        else if (!TestDriver.execute(Array.empty, () => new CoreWrapper(options.initFile.get.toString)(parameters)) {
+          c => new CoreUnitTester(c, options.traceFile.fold("")(_.toString), options.genTrace)
+        }) sys.exit(1)
     }
-  })
-
-  if (!TestDriver.execute(args, () => new CoreWrapper(initFile)) {
-    (c) => new CoreUnitTester(c, traceFile, genTrace)
-  }) sys.exit(1)
+  }
 }
