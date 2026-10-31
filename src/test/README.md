@@ -81,7 +81,7 @@ implicit val p: Parameters = new WithResetVector(0x1000) ++
 custom reset/hart/frontend/multiplier settings in the same JVM.
 `bus.CacheConfigTest` checks refill, dirty eviction and flush at different cache
 geometries, including 2-beat and 256-beat AXI bursts. It also exercises small TLBs
-through CoreBus and the uncached range ending at 2^32. The pure Scala
+through CoreBus and the uncached range ending at $2^{32}$. The pure Scala
 `cli.GeneratorOptionsTest` and `sim.CoreRunnerOptionsTest` cover reflection,
 override precedence, aliases, paths containing spaces and malformed input.
 `core.integration.CoreTraceTest` runs the four bundled programs as independent
@@ -92,14 +92,15 @@ test-only flags are not forwarded to ChiselSim.
 `mdu.MduTest` checks signed/unsigned arithmetic and cancellation at multiplier
 latencies 0, 1 and 3.
 
-`seekWord(wordIndex)` and `pcAtWord(wordIndex)` use word indices relative to the configured reset vector.
-`seekAddress` uses an absolute, halfword-aligned address. Both seek methods only
-move the cursor forward; gaps use the image fill pattern once code is placed
-beyond them. Neither seek method emits instructions or updates reference counters. `place16` and
-`place32` place out-of-line code without changing the cursor. Overlaps, invalid
-widths and ROM overflow are rejected; illegal instruction *encodings* are
-allowed so that trap tests can construct them. `emit32` remains overridable for
-instruction-specific reference models such as the instret-write tests.
+`seekWord(wordIndex)` and `pcAtWord(wordIndex)` use word indices relative to
+the configured reset vector. `seekAddress` uses an absolute, halfword-aligned
+address. Both seek methods only move the cursor forward; gaps use the image
+fill pattern once code is placed beyond them. Neither seek method emits
+instructions or updates reference counters. `place16` and `place32` place
+out-of-line code without changing the cursor. Overlaps, invalid widths and ROM
+overflow are rejected; illegal instruction *encodings* are allowed so that trap
+tests can construct them. `emit32` remains overridable for instruction-specific
+reference models such as the instret-write tests.
 
 `utils.InstructionImage` provides the same little-endian packing without ROM
 size or reset-PC constraints. It supports explicit `replace16`/`replace32` for
