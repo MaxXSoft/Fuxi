@@ -1,5 +1,6 @@
 package core.integration
 
+import utils.DefaultTestConfig._
 import chisel3._
 import consts.CSR._
 import consts.PerfEvent._

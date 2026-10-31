@@ -1,5 +1,6 @@
 package bus
 
+import utils.DefaultTestConfig._
 import utils.{AxiTestSupport, PeekPokeTester, TestDriver}
 
 class InstCacheFlushTester(c: InstCache) extends PeekPokeTester(c) with AxiTestSupport {

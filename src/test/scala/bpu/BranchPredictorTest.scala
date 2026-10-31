@@ -1,5 +1,6 @@
 package bpu
 
+import utils.DefaultTestConfig._
 import utils.{PeekPokeTester, TestDriver}
 
 object InstType extends Enumeration {

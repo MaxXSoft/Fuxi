@@ -1,5 +1,6 @@
 package core.integration
 
+import utils.DefaultTestConfig._
 import utils.InstEncoding._
 import sim.ROM
 import utils.{CoreMemoryHarness, CoreProgram, CoreTester, ExpectedRetirement, RetirementChecker, TestDriver}

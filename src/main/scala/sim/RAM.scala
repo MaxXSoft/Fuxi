@@ -4,7 +4,7 @@ import chisel3._
 import chisel3.util.Cat
 
 import io._
-import consts.Parameters._
+import consts.Architecture._
 
 // for simulation only
 class RAM extends Module {

@@ -1,10 +1,11 @@
 package csr
 
+import utils.DefaultTestConfig._
+import configs.CoreParamsKey
 import chisel3.UInt
 import utils.{PeekPokeTester, TestDriver}
 
 import consts.CsrOp._
-import consts.Parameters.HPM_COUNT
 import consts.CSR._
 import consts.ExceptCause._
 
@@ -160,7 +161,7 @@ class CsrFileUnitTester(c: CsrFile) extends PeekPokeTester(c) {
 }
 
 object CsrFileTest extends App {
-  if (!TestDriver.execute(args, () => new CsrFile(HPM_COUNT)) {
+  if (!TestDriver.execute(args, () => new CsrFile(p(CoreParamsKey).hpmCounters)) {
     (c) => new CsrFileUnitTester(c)
   }) sys.exit(1)
 }

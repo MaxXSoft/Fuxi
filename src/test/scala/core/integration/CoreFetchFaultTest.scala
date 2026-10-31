@@ -1,24 +1,26 @@
 package core.integration
 
+import org.chipsalliance.cde.config.Parameters
+import utils.DefaultTestConfig._
 import core.Core
 import chisel3._
 import axi.AxiMaster
 import bus.CoreBus
-import consts.Parameters._
+import consts.Architecture._
 import utils.{AxiTestSupport, Checker, CoreObservation, CoreTester, ExpectedTrap, ExpectedWriteback,
               InstEncoding, InstructionImage, TestDriver, TrapChecker, WritebackChecker}
 
 private[core] case class FetchPageCase(name: String, secondPagePresent: Boolean,
                                        accessFault: Boolean = false, compressedJump: Boolean = false)
 
-private[core] class CoreFetchFaultWrapper extends Module {
+private[core] class CoreFetchFaultWrapper(implicit val p: Parameters) extends Module {
   val io = IO(new Bundle {
     val observation = new CoreObservation
     val inst = new AxiMaster(ADDR_WIDTH, DATA_WIDTH)
     val data = new AxiMaster(ADDR_WIDTH, DATA_WIDTH)
     val uncached = new AxiMaster(ADDR_WIDTH, DATA_WIDTH)
   })
-  val core = Module(new Core(FETCH_QUEUE_DEPTH, HPM_COUNT))
+  val core = Module(new Core)
   core.io.pmu := 0.U.asTypeOf(core.io.pmu)
   val bus = Module(new CoreBus)
   core.io.irq.timer := false.B

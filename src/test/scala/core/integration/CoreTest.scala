@@ -1,5 +1,6 @@
 package core.integration
 
+import utils.DefaultTestConfig._
 import scala.io.Source
 import java.io.{File, PrintWriter}
 

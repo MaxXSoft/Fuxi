@@ -2,7 +2,7 @@ package io
 
 import chisel3._
 
-import consts.Parameters.DATA_WIDTH
+import consts.Architecture.DATA_WIDTH
 import consts.CSR.CSR_ADDR_WIDTH
 import consts.CsrOp
 

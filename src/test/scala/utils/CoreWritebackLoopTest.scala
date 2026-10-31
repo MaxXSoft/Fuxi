@@ -1,5 +1,6 @@
 package utils
 
+import utils.DefaultTestConfig._
 import InstEncoding._
 
 class WritebackLoopProgram extends CoreProgram {

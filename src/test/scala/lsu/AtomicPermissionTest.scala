@@ -1,5 +1,7 @@
 package lsu
 
+import org.chipsalliance.cde.config.Parameters
+import utils.DefaultTestConfig._
 import chisel3._
 import consts.LsuOp
 import io._
@@ -8,7 +10,7 @@ import consts.LsuOp._
 import consts.ExceptType._
 import utils.{AxiTestSupport, PeekPokeTester, TestDriver}
 
-class AtomicPermissionHarness extends Module {
+class AtomicPermissionHarness(implicit val p: Parameters) extends Module {
   val io = IO(new Bundle {
     val op = Input(LsuOp())
     val flush = Input(Bool())

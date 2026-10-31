@@ -1,16 +1,18 @@
 package lsu
 
+import org.chipsalliance.cde.config.Parameters
+import utils.DefaultTestConfig._
+import configs.CoreParamsKey
 import chisel3._
 import io._
 import consts.CSR.CSR_MODE_M
 import consts.LsuOp._
 import consts.ExceptType._
-import consts.Parameters.DCACHE_LINE_SIZE
 import utils.{PeekPokeTester, TestDriver}
 
 // Exercise the MEM completion boundary with the actual cached and uncached
 // buses. The AXI model delays every channel independently.
-class AtomicMemoryHarness(cached: Boolean) extends Module {
+class AtomicMemoryHarness(cached: Boolean)(implicit val p: Parameters) extends Module {
   val io = IO(new Bundle {
     val op = Input(consts.LsuOp())
     val address = Input(UInt(32.W))
@@ -193,7 +195,7 @@ class AtomicMemoryTester(c: AtomicMemoryHarness, cached: Boolean)
 
   // A synchronous read error must abort before the store phase. Flush also
   // resets AMO state, allowing the following instruction to start normally.
-  val faultAddress = base + DCACHE_LINE_SIZE * 2
+  val faultAddress = base + p(CoreParamsKey).dcache.lineBytes * 2
   val writesBeforeFault = writes
   readError = true
   poke(c.io.op, LSU_ADD)

@@ -1,5 +1,6 @@
 package core.integration
 
+import utils.DefaultTestConfig._
 import utils.{AxiTestSupport, CoreTester, ExpectedTrap, ExpectedWriteback,
               InstEncoding, InstructionImage, TestDriver, TrapChecker, WritebackChecker}
 

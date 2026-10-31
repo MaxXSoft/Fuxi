@@ -1,10 +1,12 @@
 package sim
 
 import chisel3._
+import org.chipsalliance.cde.config.Parameters
+import configs.PlatformParamsKey
 import chisel3.util.experimental.loadMemoryFromFile
 
 import io.SramIO
-import consts.Parameters._
+import consts.Architecture._
 import consts.Instructions.NOP
 
 object ROM {
@@ -20,13 +22,13 @@ object ROM {
 }
 
 // for simulation only
-class ROM(init: ROM.Init) extends Module {
-  def this(initFile: String) = this(ROM.File(initFile))
-  def this(words: Seq[BigInt]) = this(ROM.Words(words))
+class ROM(init: ROM.Init)(implicit val p: Parameters) extends Module {
+  def this(initFile: String)(implicit p: Parameters) = this(ROM.File(initFile))(p)
+  def this(words: Seq[BigInt])(implicit p: Parameters) = this(ROM.Words(words))(p)
   val io = IO(Flipped(new SramIO(ADDR_WIDTH, INST_WIDTH)))
 
   val data  = RegInit(NOP)
-  val addr  = io.addr - RESET_PC
+  val addr  = io.addr - p(PlatformParamsKey).resetVector.U(ADDR_WIDTH.W)
   val index = addr(ADDR_ALIGN_WIDTH + chisel3.util.log2Ceil(ROM.DEPTH) - 1, ADDR_ALIGN_WIDTH)
   val readData = init match {
     case ROM.File(path) =>

@@ -4,7 +4,7 @@ import chisel3._
 import chisel3.util.Cat
 
 import consts.PerfEvent
-import consts.Parameters._
+import consts.Architecture._
 
 abstract class CsrBundle extends Bundle {
   protected def requireWidth(data: UInt) =

@@ -1,5 +1,6 @@
 package mdu
 
+import utils.DefaultTestConfig._
 import chisel3.UInt
 import utils.{PeekPokeTester, TestDriver}
 

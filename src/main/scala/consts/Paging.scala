@@ -3,7 +3,7 @@ package consts
 import chisel3._
 import chisel3.util._
 
-import consts.Parameters.ADDR_WIDTH
+import consts.Architecture.ADDR_WIDTH
 
 object Paging {
   // physical address & virtual address

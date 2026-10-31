@@ -3,7 +3,7 @@ package core
 import chisel3._
 
 import io._
-import consts.Parameters._
+import consts.Architecture._
 
 class RegFile extends Module {
   val io = IO(new Bundle {

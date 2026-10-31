@@ -2,7 +2,7 @@ package io
 
 import chisel3._
 
-import consts.Parameters._
+import consts.Architecture._
 import consts.ExceptCause.EXC_CAUSE_WIDTH
 
 class ExceptInfoIO extends Bundle {

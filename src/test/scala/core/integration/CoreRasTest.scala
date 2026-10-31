@@ -1,5 +1,7 @@
 package core.integration
 
+import org.chipsalliance.cde.config.Parameters
+import utils.DefaultTestConfig._
 import chisel3._
 import chisel3.util.experimental.BoringUtils
 import sim.ROM
@@ -46,8 +48,8 @@ private[core] object RasProgram extends CoreTraceProgram {
   place16(0x344, c_jr(5))
 }
 
-private[core] class CoreRasHarness(depth: Int)
-    extends CoreMemoryHarness(ROM.Words(RasProgram.words), depth) {
+private[core] class CoreRasHarness(depth: Int)(implicit parameters: Parameters)
+    extends CoreMemoryHarness(ROM.Words(RasProgram.words))(new configs.WithFetchQueueDepth(depth).orElse(parameters)) {
   val prediction = IO(new Bundle {
     val returnAccepted = Output(Bool())
     val pc = Output(UInt(32.W))

@@ -1,6 +1,7 @@
 package core
 
 import chisel3._
+import org.chipsalliance.cde.config.Parameters
 import chisel3.util.MuxLookup
 
 import io._
@@ -12,7 +13,7 @@ import consts.CsrOp.{CSR_NOP, CSR_W, CSR_RS, CSR_RC}
 import consts.ExceptType.EXC_ILLEG
 import mdu.MDU
 
-class ALU extends Module {
+class ALU(implicit val p: Parameters) extends Module {
   val io = IO(new Bundle {
     // from decoder
     val decoder   = Input(new DecoderIO)

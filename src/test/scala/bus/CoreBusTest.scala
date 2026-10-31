@@ -1,5 +1,6 @@
 package bus
 
+import utils.DefaultTestConfig._
 import utils.InstEncoding
 import utils.{AxiTestSupport, PeekPokeTester, TestDriver}
 

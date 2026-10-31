@@ -4,7 +4,7 @@ import chisel3._
 import utils.{PeekPokeTester, TestDriver}
 
 import io._
-import consts.Parameters._
+import consts.Architecture._
 import consts.LsuOp._
 import consts.ExceptType._
 import consts.ExceptCause._

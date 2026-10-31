@@ -1,5 +1,6 @@
 package core.integration
 
+import utils.DefaultTestConfig._
 import chisel3._
 import chisel3.util.experimental.BoringUtils
 import consts.PerfEvent
@@ -7,11 +8,12 @@ import consts.PerfEvent._
 import consts.PerfEvent.{Retired => R, Microarchitecture => U}
 import io.PerformanceEventsIO
 import sim.ROM
+import org.chipsalliance.cde.config.Parameters
 import utils.{CoreMemoryHarness, CoreTester, ExpectedRetirement, RetirementChecker, TestDriver}
 
-private class PerformanceHarness(ras: Boolean, depth: Int, fenceFault: Boolean)
+private class PerformanceHarness(ras: Boolean, depth: Int, fenceFault: Boolean)(implicit parameters: Parameters)
     extends CoreMemoryHarness(ROM.Words(if (ras) RasProgram.words else RetirementProgram.words),
-                              depth, fenceFault) {
+                              fenceFault)(new configs.WithFetchQueueDepth(depth).orElse(parameters)) {
   val pmu = IO(Output(new PerformanceEventsIO))
   pmu := BoringUtils.bore(core.csrfile.io.perfEvents)
 }

@@ -1,8 +1,10 @@
 package io
 
 import chisel3._
+import org.chipsalliance.cde.config.Parameters
+import configs.CoreParamsKey
 
-import consts.Parameters._
+import consts.Architecture._
 import consts.AluOp
 import consts.MduOp
 import consts.LsuOp
@@ -18,7 +20,7 @@ class StageIO extends Bundle {
 }
 
 // IF stage
-class FetchIO extends StageIO {
+class FetchIO(implicit p: Parameters) extends StageIO {
   // instruction info
   val valid     = Bool()
   val pc        = UInt(ADDR_WIDTH.W)
@@ -26,7 +28,7 @@ class FetchIO extends StageIO {
   // branch prediction result
   val taken     = Bool()
   val target    = UInt(ADDR_WIDTH.W)
-  val predIndex = UInt(GHR_WIDTH.W)
+  val predIndex = UInt(p(CoreParamsKey).bpu.ghrBits.W)
   // instruction fetch page fault
   val pageFault = Bool()
   // instruction fetch physical access fault

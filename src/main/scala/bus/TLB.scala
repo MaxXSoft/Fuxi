@@ -3,7 +3,7 @@ package bus
 import chisel3._
 import chisel3.util.{isPow2, log2Ceil}
 
-import consts.Parameters._
+import consts.Architecture._
 import consts.Paging._
 
 class TlbEntry extends Bundle {

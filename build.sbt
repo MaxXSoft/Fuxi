@@ -9,6 +9,7 @@ version := "0.0.1"
 val chiselVersion = "7.13.0"
 
 libraryDependencies += "org.chipsalliance" %% "chisel" % chiselVersion
+libraryDependencies += "io.github.ucb-substrate" %% "cde" % "0.1.1"
 
 addCompilerPlugin(
   "org.chipsalliance" % "chisel-plugin" % chiselVersion cross CrossVersion.full

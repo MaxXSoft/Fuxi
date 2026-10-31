@@ -5,7 +5,7 @@ import chisel3.util._
 
 import io._
 import lsu._
-import consts.Parameters._
+import consts.Architecture._
 import consts.LsuOp._
 import lsu.LsuDecode._
 import lsu.LsuWidth._
