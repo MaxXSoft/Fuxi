@@ -63,11 +63,11 @@ private class ConfiguredRoutingTester(c: CoreBus) extends PeekPokeTester(c) with
 object CacheConfigTest extends App {
   // Include both AXI burst-length boundaries and asymmetric I/D geometries.
   for ((iLines, iBytes, dLines, dBytes) <- Seq((2, 8, 4, 32), (4, 128, 2, 1024))) {
-    implicit val p: Parameters = new WithICacheLines(iLines)
-      .orElse(new WithICacheLineBytes(iBytes))
-      .orElse(new WithDCacheLines(dLines))
-      .orElse(new WithDCacheLineBytes(dBytes))
-      .orElse(new DefaultConfig)
+    implicit val p: Parameters = new WithICacheLines(iLines) ++
+      new WithICacheLineBytes(iBytes) ++
+      new WithDCacheLines(dLines) ++
+      new WithDCacheLineBytes(dBytes) ++
+      new DefaultConfig
     if (!TestDriver.execute(args, () => new InstCache) {
       c => new InstCachePerformanceTester(c)
     }) sys.exit(1)
@@ -75,12 +75,12 @@ object CacheConfigTest extends App {
       c => new DataCachePerformanceTester(c)
     }) sys.exit(1)
   }
-  val platform = new WithITlbEntries(2)
-    .orElse(new WithDTlbEntries(4))
-    .orElse(new WithICacheLines(2))
-    .orElse(new WithDCacheLines(4))
-    .orElse(new WithDataUncachedRegion(BigInt("f0000000", 16), BigInt(1) << 32))
-    .orElse(new DefaultConfig)
+  val platform = new WithITlbEntries(2) ++
+    new WithDTlbEntries(4) ++
+    new WithICacheLines(2) ++
+    new WithDCacheLines(4) ++
+    new WithDataUncachedRegion(BigInt("f0000000", 16), BigInt(1) << 32) ++
+    new DefaultConfig
   if (!TestDriver.execute(args, () => new CoreBus()(platform)) {
     c => new CoreBusPerformanceTester(c)
   }) sys.exit(1)

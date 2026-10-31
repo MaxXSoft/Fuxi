@@ -34,7 +34,7 @@ case class ConfigOptions(
         mulLatency.map(new WithMulLatency(_)), hpmCounters.map(new WithHpmCounters(_)),
         resetVector.map(new WithResetVector(_)), hartId.map(new WithHartId(_))
       )
-      val parameters = fragments.flatten.foldRight(base)((fragment, up) => fragment.orElse(up))
+      val parameters = fragments.flatten.foldRight(base)((fragment, up) => fragment ++ up)
       ConfigValidation(parameters)
       Right(parameters)
     } catch { case NonFatal(e) => Left(s"Invalid configuration: ${e.getMessage}") }

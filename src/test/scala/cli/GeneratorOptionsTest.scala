@@ -3,7 +3,7 @@ package cli
 import configs._
 import org.chipsalliance.cde.config.Config
 
-class TestPreset extends Config(new WithHpmCounters(2).orElse(new WithRasEntries(3)).orElse(new DefaultConfig))
+class TestPreset extends Config(new WithHpmCounters(2) ++ new WithRasEntries(3) ++ new DefaultConfig)
 class NotAConfig
 class NeedsArgument(n: Int) extends DefaultConfig
 class PrivateConstructor private () extends DefaultConfig

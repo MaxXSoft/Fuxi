@@ -9,24 +9,24 @@ import utils.{CoreProgram, CoreProgramTester, CoreWrapper, InstEncoding, TestDri
 object CoreConfigTest extends App {
   val configurations = Seq[Parameters](
     new DefaultConfig, new SmallConfig, new ProfilingConfig,
-    new WithResetVector(BigInt("80000000", 16))
-      .orElse(new WithHartId(7))
-      .orElse(new WithFetchQueueDepth(1))
-      .orElse(new WithFetchBufferEntries(2))
-      .orElse(new WithGhrBits(2))
-      .orElse(new WithBtbEntries(2))
-      .orElse(new WithRasEntries(1))
-      .orElse(new WithMulLatency(0))
-      .orElse(new SmallConfig),
-    new WithResetVector(0x1000)
-      .orElse(new WithHartId(BigInt("ffffffff", 16)))
-      .orElse(new WithFetchQueueDepth(3))
-      .orElse(new WithFetchBufferEntries(8))
-      .orElse(new WithGhrBits(3))
-      .orElse(new WithBtbEntries(8))
-      .orElse(new WithRasEntries(3))
-      .orElse(new WithMulLatency(3))
-      .orElse(new DefaultConfig)
+    new WithResetVector(BigInt("80000000", 16)) ++
+      new WithHartId(7) ++
+      new WithFetchQueueDepth(1) ++
+      new WithFetchBufferEntries(2) ++
+      new WithGhrBits(2) ++
+      new WithBtbEntries(2) ++
+      new WithRasEntries(1) ++
+      new WithMulLatency(0) ++
+      new SmallConfig,
+    new WithResetVector(0x1000) ++
+      new WithHartId(BigInt("ffffffff", 16)) ++
+      new WithFetchQueueDepth(3) ++
+      new WithFetchBufferEntries(8) ++
+      new WithGhrBits(3) ++
+      new WithBtbEntries(8) ++
+      new WithRasEntries(3) ++
+      new WithMulLatency(3) ++
+      new DefaultConfig
   )
   for (parameters <- configurations) {
     implicit val p: Parameters = parameters

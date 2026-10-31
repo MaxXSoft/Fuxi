@@ -61,8 +61,8 @@ importing `DefaultTestConfig`, and use it for both the program and its hardware:
 ```scala
 import configs._
 import org.chipsalliance.cde.config.Parameters
-implicit val p: Parameters = new WithResetVector(0x1000)
-  .orElse(new WithFetchQueueDepth(2)).orElse(new SmallConfig)
+implicit val p: Parameters = new WithResetVector(0x1000) ++
+  new WithFetchQueueDepth(2) ++ new SmallConfig
 ```
 
 `core.integration.CoreConfigTest` executes programs under all three presets and

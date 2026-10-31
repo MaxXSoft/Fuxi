@@ -23,7 +23,7 @@ class WithICacheLines(n: Int) extends WithCoreParams(p => p.copy(icache = p.icac
 class WithDCacheLines(n: Int) extends WithCoreParams(p => p.copy(dcache = p.dcache.copy(lines = n)))
 class WithICacheLineBytes(n: Int) extends WithCoreParams(p => p.copy(icache = p.icache.copy(lineBytes = n)))
 class WithDCacheLineBytes(n: Int) extends WithCoreParams(p => p.copy(dcache = p.dcache.copy(lineBytes = n)))
-class WithCacheLineBytes(n: Int) extends Config(new WithICacheLineBytes(n).orElse(new WithDCacheLineBytes(n)))
+class WithCacheLineBytes(n: Int) extends Config(new WithICacheLineBytes(n) ++ new WithDCacheLineBytes(n))
 class WithITlbEntries(n: Int) extends WithCoreParams(p => p.copy(mmu = p.mmu.copy(itlbEntries = n)))
 class WithDTlbEntries(n: Int) extends WithCoreParams(p => p.copy(mmu = p.mmu.copy(dtlbEntries = n)))
 class WithMulLatency(n: Int) extends WithCoreParams(_.copy(mulLatency = n))

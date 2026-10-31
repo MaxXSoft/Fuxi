@@ -82,11 +82,11 @@ package configs
 import org.chipsalliance.cde.config.Config
 
 class MyConfig extends Config(
-  new WithFetchQueueDepth(8)
-    .orElse(new WithICacheLineBytes(32))
-    .orElse(new WithDCacheLineBytes(64))
-    .orElse(new WithDataUncachedRegion(BigInt("f0000000", 16), BigInt(1) << 32))
-    .orElse(new DefaultConfig)
+  new WithFetchQueueDepth(8) ++
+    new WithICacheLineBytes(32) ++
+    new WithDCacheLineBytes(64) ++
+    new WithDataUncachedRegion(BigInt("f0000000", 16), BigInt(1) << 32) ++
+    new DefaultConfig
 )
 ```
 

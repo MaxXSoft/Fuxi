@@ -105,7 +105,7 @@ class MduUnitTester(c: MDU) extends PeekPokeTester(c) {
 
 object MduTest extends App {
   for (latency <- Seq(0, 1, 3)) {
-    if (!TestDriver.execute(args, () => new MDU()(new configs.WithMulLatency(latency).orElse(p))) {
+    if (!TestDriver.execute(args, () => new MDU()(new configs.WithMulLatency(latency) ++ p)) {
       c => new MduUnitTester(c)
     }) sys.exit(1)
   }
