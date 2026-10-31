@@ -24,8 +24,8 @@ object ROM {
 // for simulation only
 class ROM(init: ROM.Init)(implicit val p: Parameters) extends Module
     with HasPlatformParams {
-  def this(initFile: String)(implicit p: Parameters) = this(ROM.File(initFile))(p)
-  def this(words: Seq[BigInt])(implicit p: Parameters) = this(ROM.Words(words))(p)
+  def this(initFile: String)(implicit p: Parameters) = this(ROM.File(initFile))
+  def this(words: Seq[BigInt])(implicit p: Parameters) = this(ROM.Words(words))
 
   val io = IO(Flipped(new SramIO(ADDR_WIDTH, INST_WIDTH)))
 

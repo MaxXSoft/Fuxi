@@ -1,7 +1,7 @@
 package csr
 
 import utils.DefaultTestConfig._
-import configs.CoreParamsKey
+import configs.{CoreParamsKey, PlatformParamsKey}
 import chisel3._
 import consts.CSR._
 import consts.CsrOp._
@@ -88,7 +88,7 @@ class CsrPrivilegeTester(c: CsrFile) extends CsrRegressionTester(c) {
 
 object CsrPrivilegeTest extends App {
   if (!TestDriver.execute(args, () =>
-      new CsrFile(p(CoreParamsKey).hpmCounters)) { c =>
+      new CsrFile(p(CoreParamsKey).hpmCounters, p(PlatformParamsKey).hartId)) { c =>
     new CsrPrivilegeTester(c)
   }) {
     sys.exit(1)

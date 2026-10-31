@@ -13,7 +13,7 @@ import consts.Control.{Y, N}
 import consts.Paging.PPN_WIDTH
 import consts.PerfEvent
 
-class CsrFile(val hpmCount: Int, val hartId: BigInt = BigInt(0)) extends Module {
+class CsrFile(val hpmCount: Int, val hartId: BigInt) extends Module {
   require(hpmCount >= 0 && hpmCount <= 29)
   require(hartId >= 0 && hartId < (BigInt(1) << 32))
 

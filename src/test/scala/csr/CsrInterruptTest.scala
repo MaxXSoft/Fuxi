@@ -1,7 +1,7 @@
 package csr
 
 import utils.DefaultTestConfig._
-import configs.CoreParamsKey
+import configs.{CoreParamsKey, PlatformParamsKey}
 import chisel3._
 import consts.CSR._
 import utils.{CsrRegressionTester, TestDriver}
@@ -65,7 +65,7 @@ class CsrInterruptTester(c: CsrFile) extends CsrRegressionTester(c) {
 
 object CsrInterruptTest extends App {
   if (!TestDriver.execute(args, () =>
-      new CsrFile(p(CoreParamsKey).hpmCounters)) { c =>
+      new CsrFile(p(CoreParamsKey).hpmCounters, p(PlatformParamsKey).hartId)) { c =>
     new CsrInterruptTester(c)
   }) {
     sys.exit(1)
