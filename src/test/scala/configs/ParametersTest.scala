@@ -7,6 +7,7 @@ object ParametersTest extends App {
   val platform = defaults(PlatformParamsKey)
   assert(c.frontend == FrontendParams(4, 4))
   assert(c.bpu == BpuParams(5, 64, 16) && c.bpu.phtEntries == 32)
+  assert(c.icache == CacheParams(64, 64) && c.dcache == CacheParams(128, 64))
   assert(c.icache.capacityBytes == 4096 && c.dcache.capacityBytes == 8192)
   assert(c.mmu == MmuParams(16, 16) && c.mulLatency == 1 && c.hpmCounters == 8)
   assert(platform.resetVector == 0x200 && platform.hartId == 0)

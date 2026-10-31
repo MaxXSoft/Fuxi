@@ -24,7 +24,7 @@ counters; `ProfilingConfig` enables all 29 HPM counters. Select and override a
 preset with, for example:
 
 ```sh
-sbt 'runMain Fuxi --config SmallConfig --hpm-counters 4 --target-dir verilog/small'
+sbt 'runMain Fuxi --config SmallConfig --hpm-counters 4 --target-dir verilog/small/build'
 sbt 'runMain Fuxi --config SmallConfig --dump-config'
 ```
 
