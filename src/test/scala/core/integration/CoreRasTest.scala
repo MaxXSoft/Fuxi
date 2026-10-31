@@ -49,7 +49,7 @@ private[core] object RasProgram extends CoreTraceProgram {
 }
 
 private[core] class CoreRasHarness(depth: Int)(implicit parameters: Parameters)
-    extends CoreMemoryHarness(ROM.Words(RasProgram.words))(new configs.WithFetchQueueDepth(depth).orElse(parameters)) {
+    extends CoreMemoryHarness(ROM.Words(RasProgram.words))(new configs.WithFetchQueueDepth(depth) ++ parameters) {
   val prediction = IO(new Bundle {
     val returnAccepted = Output(Bool())
     val pc = Output(UInt(32.W))

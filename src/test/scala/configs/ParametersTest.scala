@@ -15,12 +15,12 @@ object ParametersTest extends App {
   assert(platform.resetVector == 0x200 && platform.hartId == 0)
   assert(platform.dataUncached == AddressRange(0x10000000, 0x20000000))
 
-  val combined = new WithGhrBits(3)
-    .orElse(new WithBtbEntries(16))
-    .orElse(new WithGhrBits(4))
-    .orElse(new WithCacheLineBytes(32))
-    .orElse(new WithResetVector(BigInt("80000000", 16)))
-    .orElse(defaults)
+  val combined = new WithGhrBits(3) ++
+    new WithBtbEntries(16) ++
+    new WithGhrBits(4) ++
+    new WithCacheLineBytes(32) ++
+    new WithResetVector(BigInt("80000000", 16)) ++
+    defaults
   assert(combined(CoreParamsKey).bpu == BpuParams(3, 16, 16))
   assert(combined(CoreParamsKey).icache == CacheParams(64, 32))
   assert(combined(CoreParamsKey).dcache == CacheParams(128, 32))
@@ -47,7 +47,7 @@ object ParametersTest extends App {
   rejects(PlatformParams(hartId = BigInt(1) << 32))
   rejects(AddressRange(10, 10))
   assert(AddressRange(0, BigInt(1) << 32).end == (BigInt(1) << 32))
-  ConfigValidation(new WithRasEntries(1).orElse(new WithFetchQueueDepth(1)).orElse(defaults))
+  ConfigValidation(new WithRasEntries(1) ++ new WithFetchQueueDepth(1) ++ defaults)
 
   // Constructor-supplied p must be available to eager trait vals, before the
   // consuming class initializes its own fields (also checked by -Xcheckinit).
@@ -55,9 +55,9 @@ object ParametersTest extends App {
     val widthsAtConstruction = (GHR_BITS, BTB_TAG_BITS, ICACHE_INDEX_BITS, ICACHE_OFFSET_BITS)
     val resetAtConstruction = RESET_VECTOR
   }
-  val customized = new Consumer()(new WithHartId(7)
-    .orElse(new WithDataUncachedRegion(BigInt("f0000000", 16), BigInt(1) << 32))
-    .orElse(combined))
+  val customized = new Consumer()(new WithHartId(7) ++
+    new WithDataUncachedRegion(BigInt("f0000000", 16), BigInt(1) << 32) ++
+    combined)
   assert(customized.widthsAtConstruction == (3, 27, 6, 5))
   assert(customized.PHT_ENTRIES == 8 && customized.ICACHE_CAPACITY_BYTES == 2048)
   assert(customized.resetAtConstruction == BigInt("80000000", 16))

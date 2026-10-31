@@ -13,7 +13,7 @@ import utils.{CoreMemoryHarness, CoreTester, ExpectedRetirement, RetirementCheck
 
 private class PerformanceHarness(ras: Boolean, depth: Int, fenceFault: Boolean)(implicit parameters: Parameters)
     extends CoreMemoryHarness(ROM.Words(if (ras) RasProgram.words else RetirementProgram.words),
-                              fenceFault)(new configs.WithFetchQueueDepth(depth).orElse(parameters)) {
+                              fenceFault)(new configs.WithFetchQueueDepth(depth) ++ parameters) {
   val pmu = IO(Output(new PerformanceEventsIO))
   pmu := BoringUtils.bore(core.csrfile.io.perfEvents)
 }

@@ -9,16 +9,16 @@ class DefaultConfig extends Config((site, here, up) => {
 })
 
 class SmallConfig extends Config(
-  new WithICacheLines(16)
-    .orElse(new WithDCacheLines(32))
-    .orElse(new WithITlbEntries(8))
-    .orElse(new WithDTlbEntries(8))
-    .orElse(new WithGhrBits(4))
-    .orElse(new WithBtbEntries(32))
-    .orElse(new WithRasEntries(8))
-    .orElse(new WithFetchQueueDepth(2))
-    .orElse(new WithHpmCounters(0))
-    .orElse(new DefaultConfig)
+  new WithICacheLines(16) ++
+    new WithDCacheLines(32) ++
+    new WithITlbEntries(8) ++
+    new WithDTlbEntries(8) ++
+    new WithGhrBits(4) ++
+    new WithBtbEntries(32) ++
+    new WithRasEntries(8) ++
+    new WithFetchQueueDepth(2) ++
+    new WithHpmCounters(0) ++
+    new DefaultConfig
 )
 
-class ProfilingConfig extends Config(new WithHpmCounters(29).orElse(new DefaultConfig))
+class ProfilingConfig extends Config(new WithHpmCounters(29) ++ new DefaultConfig)
