@@ -59,6 +59,14 @@ including derived capacities, and exits without generating RTL.
 Address values accept decimal and `0x` hexadecimal. Cache geometry must leave a
 positive tag width and fit the implementation's integer word count.
 
+These constraints check numeric and structural validity, not resource budgets.
+Passing validation does not guarantee that RTL generation or synthesis will fit
+the available memory or complete in a practical amount of time. The PHT expands
+into $2^n$ register counters; large tables, stacks, caches and queues can also
+exhaust JVM or downstream tool resources. Choose sizes according to the available
+resources and verify them with the intended toolchain. `--dump-config` does not
+elaborate hardware and therefore does not check generation feasibility.
+
 Unknown Fuxi arguments are rejected. Pass additional Chisel/firtool arguments
 after `--`, for example:
 
@@ -66,9 +74,13 @@ after `--`, for example:
 sbt 'runMain Fuxi --target-dir verilog/build -- --firtool-option -O=debug'
 ```
 
-`make` remains the default-configuration build. Use separate target directories
-for custom configurations, so a subsequent default build does not reuse custom
-RTL by timestamp.
+`make CONFIG=<Preset>` selects a preset, defaults to `DefaultConfig`, and writes
+RTL to `verilog/build`. Switching presets automatically regenerates the RTL.
+`CONFIG` accepts a short name from the `configs` package or a fully qualified
+configuration class name. Per-option overrides require invoking sbt directly;
+use a separate `--target-dir` for that output. Direct sbt generation does not
+update make's `.config` record, so writing to `verilog/build` can cause a later
+make invocation to reuse RTL generated with different parameters.
 
 ## Defining a configuration
 
