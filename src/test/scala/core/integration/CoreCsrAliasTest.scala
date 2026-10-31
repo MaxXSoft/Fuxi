@@ -35,6 +35,7 @@ object CsrAliasProgram extends CoreProgram {
 }
 
 object CoreCsrAliasTest extends App {
-  if (!TestDriver.execute(args, () => new CoreWrapper(CsrAliasProgram.words))(
-    c => new CoreProgramTester(c, CsrAliasProgram, CsrAliasProgram.donePc, 600))) sys.exit(1)
+  if (!TestDriver.execute(args, () => new CoreWrapper(CsrAliasProgram.words)) { c =>
+    new CoreProgramTester(c, CsrAliasProgram, CsrAliasProgram.donePc, 600)
+  }) sys.exit(1)
 }

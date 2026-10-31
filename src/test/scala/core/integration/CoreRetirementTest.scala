@@ -60,7 +60,9 @@ class CoreRetirementTester(c: CoreMemoryHarness, fenceFault: Boolean) extends Co
 
 object CoreRetirementTest extends App {
   for (fenceFault <- Seq(false, true)) {
-    if (!TestDriver.execute(args, () => new CoreMemoryHarness(ROM.Words(RetirementProgram.words), fenceFault = fenceFault))(
-      c => new CoreRetirementTester(c, fenceFault))) sys.exit(1)
+    if (!TestDriver.execute(args, () =>
+        new CoreMemoryHarness(ROM.Words(RetirementProgram.words), fenceFault = fenceFault)) { c =>
+      new CoreRetirementTester(c, fenceFault)
+    }) sys.exit(1)
   }
 }

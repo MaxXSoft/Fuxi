@@ -108,5 +108,7 @@ class HazardResolverTester(c: HazardResolver) extends PeekPokeTester(c) {
 }
 
 object HazardResolverTest extends App {
-  if (!TestDriver.execute(args, () => new HazardResolver)(c => new HazardResolverTester(c))) sys.exit(1)
+  if (!TestDriver.execute(args, () => new HazardResolver) { c =>
+    new HazardResolverTester(c)
+  }) sys.exit(1)
 }

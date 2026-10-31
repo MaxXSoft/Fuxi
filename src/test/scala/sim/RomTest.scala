@@ -47,7 +47,9 @@ class RomUnitTester(c: ROM) extends PeekPokeTester(c) {
 
 object RomTest extends App {
   val words = Seq(BigInt("89abcdef", 16), BigInt("01234567", 16))
-  if (!TestDriver.execute(args, () => new ROM(words))(c => new RomUnitTester(c))) {
+  if (!TestDriver.execute(args, () => new ROM(words)) { c =>
+    new RomUnitTester(c)
+  }) {
     sys.exit(1)
   }
 }

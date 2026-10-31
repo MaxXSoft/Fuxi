@@ -5,7 +5,7 @@ import utils.{PeekPokeTester, TestDriver}
 
 class CompressedDecoderTester(c: CompressedDecoder) extends PeekPokeTester(c) {
   val nop = 0x13L
-  val expected = Array.fill[Option[Long]](1 << 16)(None)
+  val expected = Array.fill[Option[Long]](1 << 16) { None }
   var hints = 0
 
   def unsigned(value: Long): Long = value & 0xffffffffL

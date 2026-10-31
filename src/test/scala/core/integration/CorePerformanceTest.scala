@@ -28,7 +28,7 @@ private class PerformanceTester(c: PerformanceHarness, ras: Boolean, fenceFault:
   val checker = new RetirementChecker(expected)
   val donePc = if (ras) RasProgram.donePc else RetirementProgram.donePc
   val totals = PerfEvent.groups.map { case (group, events) =>
-    group -> Array.fill[Long](events.values.size)(0)
+    group -> Array.fill[Long](events.values.size) { 0 }
   }.toMap
   var memoryWait = 0
   var memoryArmed = true

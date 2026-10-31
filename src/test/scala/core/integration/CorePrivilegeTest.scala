@@ -80,7 +80,8 @@ object CorePrivilegeTest extends App {
     DataPrivilegeCase("mprv-off", mprv = false),
     DataPrivilegeCase("machine-effective", mpp = 3))
   for (scenario <- cases) {
-    if (!TestDriver.execute(args, () => new CoreFetchFaultWrapper)(
-      c => new CorePrivilegeTester(c, scenario))) sys.exit(1)
+    if (!TestDriver.execute(args, () => new CoreFetchFaultWrapper) { c =>
+      new CorePrivilegeTester(c, scenario)
+    }) sys.exit(1)
   }
 }

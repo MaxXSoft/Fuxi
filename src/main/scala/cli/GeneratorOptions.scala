@@ -18,12 +18,13 @@ object GeneratorOptions {
     head("Fuxi Verilog generator"),
     ConfigOptions.parser[GeneratorOptions](_.config, (c, config) => c.copy(config = config)),
     opt[String]("target-dir").maxOccurs(1).valueName("<directory>")
-      .validate(s => if (s.nonEmpty && !s.startsWith("-")) success
-                     else failure("Invalid target directory; use ./ for names starting with '-'"))
-      .action((s, c) => c.copy(targetDir = Some(s))),
+      .validate { s =>
+        if (s.nonEmpty && !s.startsWith("-")) success
+        else failure("Invalid target directory; use ./ for names starting with '-'")
+      } .action { (s, c) => c.copy(targetDir = Some(s)) },
     opt[Unit]("dump-config").maxOccurs(1)
       .text("Print effective parameters and exit without generating RTL")
-      .action((_, c) => c.copy(dumpConfig = true)),
+      .action { (_, c) => c.copy(dumpConfig = true) },
     help("help").abbr("h"),
     note("Pass additional Chisel/firtool arguments after --."),
   )

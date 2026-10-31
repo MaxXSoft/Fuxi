@@ -95,6 +95,7 @@ private[core] class CoreMmioWidthTester(c: CoreFetchFaultWrapper)
 }
 
 object CoreMmioWidthTest extends App {
-  if (!TestDriver.execute(args, () => new CoreFetchFaultWrapper)(
-    c => new CoreMmioWidthTester(c))) sys.exit(1)
+  if (!TestDriver.execute(args, () => new CoreFetchFaultWrapper) { c =>
+    new CoreMmioWidthTester(c)
+  }) sys.exit(1)
 }

@@ -69,7 +69,13 @@ jobs:
       run: |
         sbt "runMain Fuxi --config SmallConfig --target-dir verilog/small/build" \
           "runMain Fuxi --config ProfilingConfig --target-dir verilog/profiling/build" \
-          "runMain Fuxi --config SmallConfig --icache-lines 2 --dcache-lines 2 --cache-line-bytes 8 --itlb-entries 2 --dtlb-entries 2 --ghr-bits 2 --btb-entries 2 --ras-entries 1 --fetch-queue-depth 1 --fetch-buffer-entries 2 --mul-latency 0 --reset-vector 0x80000000 --hart-id 7 --target-dir verilog/minimum/build"
+          "runMain Fuxi --config SmallConfig \
+            --icache-lines 2 --dcache-lines 2 --cache-line-bytes 8 \
+            --itlb-entries 2 --dtlb-entries 2 --ghr-bits 2 \
+            --btb-entries 2 --ras-entries 1 --fetch-queue-depth 1 \
+            --fetch-buffer-entries 2 --mul-latency 0 \
+            --reset-vector 0x80000000 --hart-id 7 \
+            --target-dir verilog/minimum/build"
         for variant in small profiling minimum; do
           verilator --lint-only -Wno-fatal --language 1364-2005 \
             --top-module FuxiWrapper \

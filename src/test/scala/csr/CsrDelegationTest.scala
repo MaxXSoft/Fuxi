@@ -51,7 +51,9 @@ class CsrDelegationTester(c: CsrFile) extends CsrRegressionTester(c) {
 
 object CsrDelegationTest extends App {
   if (!TestDriver.execute(args, () =>
-      new CsrFile(p(CoreParamsKey).hpmCounters))(c => new CsrDelegationTester(c))) {
+      new CsrFile(p(CoreParamsKey).hpmCounters)) { c =>
+    new CsrDelegationTester(c)
+  }) {
     sys.exit(1)
   }
 }
