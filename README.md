@@ -18,7 +18,16 @@ $ cd Fuxi
 $ make
 ```
 
-Processor parameters are in the `configs` package. `DefaultConfig` preserves the default hardware; `SmallConfig` reduces queues/tables/caches and omits HPM counters; `ProfilingConfig` enables all 29 HPM counters. Select and override a preset with, for example:
+Processor parameters are in the `configs` package. `DefaultConfig` preserves the default hardware; `SmallConfig` reduces queues/tables/caches and omits HPM counters; `ProfilingConfig` enables all 29 HPM counters. `make` uses `CONFIG=DefaultConfig` by default. Select another preset with:
+
+```sh
+make CONFIG=SmallConfig
+make CONFIG=ProfilingConfig
+```
+
+The output remains in `verilog/build`. Changing `CONFIG` automatically regenerates the RTL; `make clean` is not required. `CONFIG` accepts a short name from the `configs` package or a fully qualified configuration class name.
+
+To override individual parameters or print the effective configuration, invoke sbt directly:
 
 ```sh
 sbt 'runMain Fuxi --config SmallConfig --hpm-counters 4 --target-dir verilog/small/build'
