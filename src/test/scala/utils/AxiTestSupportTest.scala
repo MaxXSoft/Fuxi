@@ -1,5 +1,7 @@
 package utils
 
+import org.scalatest.funsuite.AnyFunSuite
+
 import chisel3._
 import axi.AxiMaster
 
@@ -81,8 +83,10 @@ class AxiReadSupportTester(c: AxiReadTestHarness) extends PeekPokeTester(c) with
   assert(responder.requests == Seq(AxiReadRequest(0x1000, 2, 7), AxiReadRequest(0x1004, 1, 9)))
 }
 
-object AxiTestSupportTest extends App {
-  if (!TestDriver.execute(args, () => new AxiReadTestHarness) { c =>
-    new AxiReadSupportTester(c)
-  }) sys.exit(1)
+class AxiTestSupportTest extends AnyFunSuite {
+  test("track AXI read ownership and backpressure") {
+    TestDriver.run(new AxiReadTestHarness) { c =>
+      new AxiReadSupportTester(c)
+    }
+  }
 }

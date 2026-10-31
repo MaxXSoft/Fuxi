@@ -1,5 +1,7 @@
 package bpu
 
+import org.scalatest.funsuite.AnyFunSuite
+
 import org.chipsalliance.cde.config.Parameters
 import utils.DefaultTestConfig._
 import configs.HasCoreParams
@@ -110,8 +112,10 @@ class DecoderTrainingTester(c: DecoderTrainingHarness) extends PeekPokeTester(c)
   expect(c.io.predictionTarget, 0x220)
 }
 
-object DecoderTrainingTest extends App {
-  if (!TestDriver.execute(args, () => new DecoderTrainingHarness) {
-    c => new DecoderTrainingTester(c)
-  }) sys.exit(1)
+class DecoderTrainingTest extends AnyFunSuite {
+  test("train decoded branches only when they advance") {
+    TestDriver.run(new DecoderTrainingHarness) {
+      c => new DecoderTrainingTester(c)
+    }
+  }
 }

@@ -1,5 +1,7 @@
 package bus
 
+import org.scalatest.funsuite.AnyFunSuite
+
 import utils.DefaultTestConfig._
 import consts.Architecture._
 import utils.{AxiTestSupport, PeekPokeTester, TestDriver}
@@ -292,17 +294,19 @@ class CoreBusPerformanceTester(c: CoreBus) extends PeekPokeTester(c)
   }
 }
 
-object PerformanceEventsTest extends App {
-  if (!TestDriver.execute(args, () => new InstCache) {
-    c => new InstCachePerformanceTester(c)
-  }) sys.exit(1)
-  if (!TestDriver.execute(args, () => new DataCache) {
-    c => new DataCachePerformanceTester(c)
-  }) sys.exit(1)
-  if (!TestDriver.execute(args, () => new MMU(16, false)) {
-    c => new MmuPerformanceTester(c)
-  }) sys.exit(1)
-  if (!TestDriver.execute(args, () => new CoreBus) {
-    c => new CoreBusPerformanceTester(c)
-  }) sys.exit(1)
+class PerformanceEventsTest extends AnyFunSuite {
+  test("report cache, MMU and core bus performance events") {
+    TestDriver.run(new InstCache) {
+      c => new InstCachePerformanceTester(c)
+    }
+    TestDriver.run(new DataCache) {
+      c => new DataCachePerformanceTester(c)
+    }
+    TestDriver.run(new MMU(16, false)) {
+      c => new MmuPerformanceTester(c)
+    }
+    TestDriver.run(new CoreBus) {
+      c => new CoreBusPerformanceTester(c)
+    }
+  }
 }

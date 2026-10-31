@@ -1,5 +1,7 @@
 package mdu
 
+import org.scalatest.funsuite.AnyFunSuite
+
 import utils.{PeekPokeTester, TestDriver}
 
 class MultiplierUnitTester(c: Multiplier) extends PeekPokeTester(c) {
@@ -28,8 +30,10 @@ class MultiplierUnitTester(c: Multiplier) extends PeekPokeTester(c) {
   }
 }
 
-object MultiplierTest extends App {
-  if (!TestDriver.execute(args, () => new Multiplier(32, 3)) {
-    (c) => new MultiplierUnitTester(c)
-  }) sys.exit(1)
+class MultiplierTest extends AnyFunSuite {
+  test("multiply signed and unsigned operands") {
+    TestDriver.run(new Multiplier(32, 3)) {
+      (c) => new MultiplierUnitTester(c)
+    }
+  }
 }

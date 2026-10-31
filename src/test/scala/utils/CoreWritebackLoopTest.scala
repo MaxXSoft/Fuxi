@@ -1,5 +1,7 @@
 package utils
 
+import org.scalatest.funsuite.AnyFunSuite
+
 import utils.DefaultTestConfig._
 import InstEncoding._
 
@@ -14,12 +16,14 @@ class WritebackLoopProgram extends CoreProgram {
   val donePc = finish()
 }
 
-object CoreWritebackLoopTest extends App {
-  val program = new WritebackLoopProgram
-  if (!TestDriver.execute(args, () => new CoreWrapper(program.words)) { c =>
-    new CoreProgramTester(c, program, program.donePc, 200) {
-      // Selected values do not imply the loop's total iteration count.
-      checker.checkOccurrences(program.loopPc, 6)
+class CoreWritebackLoopTest extends AnyFunSuite {
+  test("check repeated writeback events and occurrence counts") {
+    val program = new WritebackLoopProgram
+    TestDriver.run(new CoreWrapper(program.words)) { c =>
+      new CoreProgramTester(c, program, program.donePc, 200) {
+        // Selected values do not imply the loop's total iteration count.
+        checker.checkOccurrences(program.loopPc, 6)
+      }
     }
-  }) sys.exit(1)
+  }
 }

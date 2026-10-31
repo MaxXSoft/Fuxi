@@ -1,5 +1,7 @@
 package csr
 
+import org.scalatest.funsuite.AnyFunSuite
+
 import utils.DefaultTestConfig._
 import configs.{CoreParamsKey, PlatformParamsKey}
 import chisel3.UInt
@@ -160,9 +162,10 @@ class CsrFileUnitTester(c: CsrFile) extends PeekPokeTester(c) {
   expectMode(CSR_MODE_M)
 }
 
-object CsrFileTest extends App {
-  if (!TestDriver.execute(args, () =>
-      new CsrFile(p(CoreParamsKey).hpmCounters, p(PlatformParamsKey).hartId)) { c =>
-    new CsrFileUnitTester(c)
-  }) sys.exit(1)
+class CsrFileTest extends AnyFunSuite {
+  test("read, write and update architectural CSRs") {
+    TestDriver.run(new CsrFile(p(CoreParamsKey).hpmCounters, p(PlatformParamsKey).hartId)) { c =>
+      new CsrFileUnitTester(c)
+    }
+  }
 }

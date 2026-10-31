@@ -1,5 +1,7 @@
 package utils
 
+import org.scalatest.funsuite.AnyFunSuite
+
 import chisel3._
 import consts.CSR._
 import consts.CsrOp._
@@ -107,8 +109,10 @@ class HazardResolverTester(c: HazardResolver) extends PeekPokeTester(c) {
   }
 }
 
-object HazardResolverTest extends App {
-  if (!TestDriver.execute(args, () => new HazardResolver) { c =>
-    new HazardResolverTester(c)
-  }) sys.exit(1)
+class HazardResolverTest extends AnyFunSuite {
+  test("resolve pipeline hazards and forwarding") {
+    TestDriver.run(new HazardResolver) { c =>
+      new HazardResolverTester(c)
+    }
+  }
 }

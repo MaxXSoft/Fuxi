@@ -1,5 +1,7 @@
 package core.integration
 
+import org.scalatest.funsuite.AnyFunSuite
+
 import utils.DefaultTestConfig._
 import utils.InstEncoding._
 import chisel3._
@@ -73,8 +75,10 @@ object InstretReadProgram extends CoreProgram {
   val donePc = finish()
 }
 
-object CoreInstretReadTest extends App {
-  if (!TestDriver.execute(args, () => new CoreWrapper(InstretReadProgram.words)) { c =>
-    new CoreProgramTester(c, InstretReadProgram, InstretReadProgram.donePc, 1000)
-  }) sys.exit(1)
+class CoreInstretReadTest extends AnyFunSuite {
+  test("read and update the retired instruction counter") {
+    TestDriver.run(new CoreWrapper(InstretReadProgram.words)) { c =>
+      new CoreProgramTester(c, InstretReadProgram, InstretReadProgram.donePc, 1000)
+    }
+  }
 }

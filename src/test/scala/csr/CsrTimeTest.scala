@@ -1,5 +1,7 @@
 package csr
 
+import org.scalatest.funsuite.AnyFunSuite
+
 import utils.DefaultTestConfig._
 import configs.{CoreParamsKey, PlatformParamsKey}
 import consts.CSR._
@@ -49,11 +51,10 @@ class CsrTimeTester(c: CsrFile) extends CsrRegressionTester(c) {
   read(CSR_MIP, 0x22)
 }
 
-object CsrTimeTest extends App {
-  if (!TestDriver.execute(args, () =>
-      new CsrFile(p(CoreParamsKey).hpmCounters, p(PlatformParamsKey).hartId)) { c =>
-    new CsrTimeTester(c)
-  }) {
-    sys.exit(1)
+class CsrTimeTest extends AnyFunSuite {
+  test("expose platform time through CSRs") {
+    TestDriver.run(new CsrFile(p(CoreParamsKey).hpmCounters, p(PlatformParamsKey).hartId)) { c =>
+      new CsrTimeTester(c)
+    }
   }
 }

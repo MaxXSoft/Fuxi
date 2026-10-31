@@ -1,5 +1,7 @@
 package csr
 
+import org.scalatest.funsuite.AnyFunSuite
+
 import utils.DefaultTestConfig._
 import configs.{CoreParamsKey, PlatformParamsKey}
 import chisel3._
@@ -49,11 +51,10 @@ class CsrDelegationTester(c: CsrFile) extends CsrRegressionTester(c) {
   read(CSR_SIP, 0)
 }
 
-object CsrDelegationTest extends App {
-  if (!TestDriver.execute(args, () =>
-      new CsrFile(p(CoreParamsKey).hpmCounters, p(PlatformParamsKey).hartId)) { c =>
-    new CsrDelegationTester(c)
-  }) {
-    sys.exit(1)
+class CsrDelegationTest extends AnyFunSuite {
+  test("delegate traps and interrupts") {
+    TestDriver.run(new CsrFile(p(CoreParamsKey).hpmCounters, p(PlatformParamsKey).hartId)) { c =>
+      new CsrDelegationTester(c)
+    }
   }
 }

@@ -1,5 +1,7 @@
 package mdu
 
+import org.scalatest.funsuite.AnyFunSuite
+
 import utils.{PeekPokeTester, TestDriver}
 
 class DividerUnitTester(c: Divider) extends PeekPokeTester(c) {
@@ -90,8 +92,10 @@ class DividerUnitTester(c: Divider) extends PeekPokeTester(c) {
   }
 }
 
-object DividerTest extends App {
-  if (!TestDriver.execute(args, () => new Divider(32)) {
-    (c) => new DividerUnitTester(c)
-  }) sys.exit(1)
+class DividerTest extends AnyFunSuite {
+  test("divide signed and unsigned operands") {
+    TestDriver.run(new Divider(32)) {
+      (c) => new DividerUnitTester(c)
+    }
+  }
 }

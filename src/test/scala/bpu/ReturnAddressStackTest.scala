@@ -1,5 +1,7 @@
 package bpu
 
+import org.scalatest.funsuite.AnyFunSuite
+
 import utils.{PeekPokeTester, TestDriver}
 
 class ReturnAddressStackTester(c: ReturnAddressStack, depth: Int) extends PeekPokeTester(c) {
@@ -47,11 +49,13 @@ class ReturnAddressStackTester(c: ReturnAddressStack, depth: Int) extends PeekPo
   }
 }
 
-object ReturnAddressStackTest extends App {
-  // Include a one-entry stack and a non-power-of-two stack to exercise wrap.
-  for (depth <- Seq(1, 3, 16)) {
-    if (!TestDriver.execute(args, () => new ReturnAddressStack(depth)) {
-      c => new ReturnAddressStackTester(c, depth)
-    }) sys.exit(1)
+class ReturnAddressStackTest extends AnyFunSuite {
+  test("push, pop and wrap different stack depths") {
+    // Include a one-entry stack and a non-power-of-two stack to exercise wrap.
+    for (depth <- Seq(1, 3, 16)) {
+      TestDriver.run(new ReturnAddressStack(depth)) {
+        c => new ReturnAddressStackTester(c, depth)
+      }
+    }
   }
 }

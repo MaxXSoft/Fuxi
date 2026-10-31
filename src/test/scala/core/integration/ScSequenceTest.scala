@@ -1,5 +1,7 @@
 package core.integration
 
+import org.scalatest.funsuite.AnyFunSuite
+
 import utils.DefaultTestConfig._
 import utils.InstEncoding._
 import utils.{CoreProgram, CoreProgramTester, CoreWrapper, TestDriver}
@@ -19,13 +21,15 @@ class ScSequenceProgram(gap: Int, interveningSc: Boolean) extends CoreProgram {
   val donePc = finish()
 }
 
-object ScSequenceTest extends App {
-  // Adjacent instructions exercise WB forwarding; gaps exercise committed
-  // reservation state. An unrelated ordinary store preserves the reservation.
-  for (gap <- Seq(0, 1, 2); interveningSc <- Seq(true, false)) {
-    val program = new ScSequenceProgram(gap, interveningSc)
-    if (!TestDriver.execute(args, () => new CoreWrapper(program.words)) {
-      c => new CoreProgramTester(c, program, program.donePc, 60)
-    }) sys.exit(1)
+class ScSequenceTest extends AnyFunSuite {
+  test("execute load-reserved and store-conditional sequences") {
+    // Adjacent instructions exercise WB forwarding; gaps exercise committed
+    // reservation state. An unrelated ordinary store preserves the reservation.
+    for (gap <- Seq(0, 1, 2); interveningSc <- Seq(true, false)) {
+      val program = new ScSequenceProgram(gap, interveningSc)
+      TestDriver.run(new CoreWrapper(program.words)) {
+        c => new CoreProgramTester(c, program, program.donePc, 60)
+      }
+    }
   }
 }
