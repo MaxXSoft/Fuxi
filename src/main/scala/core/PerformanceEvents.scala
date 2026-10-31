@@ -8,7 +8,7 @@ import consts.PerfEvent.{Retired => R, Microarchitecture => U, Memory => M}
 
 // Purely combinational observation: retirement gates architectural events;
 // other sources include speculative work and overlapping waits.
-class CorePerformanceEvents extends Module {
+class PerformanceEvents extends Module {
   val io = IO(new Bundle {
     // retiring instruction
     val retired        = Input(Bool())

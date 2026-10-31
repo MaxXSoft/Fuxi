@@ -57,7 +57,7 @@ class Core(implicit val p: Parameters) extends Module with HasCoreParams with Ha
   val control = Module(new PipelineController)
 
   // performance event collection
-  val perf    = Module(new CorePerformanceEvents)
+  val perf    = Module(new PerformanceEvents)
 
   // fetch stage
   fetch.io.flush    := control.io.flushIf
