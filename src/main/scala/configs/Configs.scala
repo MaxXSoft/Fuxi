@@ -21,4 +21,7 @@ class SmallConfig extends Config(
     new DefaultConfig
 )
 
-class ProfilingConfig extends Config(new WithHpmCounters(29) ++ new DefaultConfig)
+class ProfilingConfig extends Config(
+  new WithHpmCounters(29) ++
+    new DefaultConfig
+)

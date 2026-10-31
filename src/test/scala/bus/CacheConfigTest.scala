@@ -4,7 +4,8 @@ import configs._
 import org.chipsalliance.cde.config.Parameters
 import utils.{AxiTestSupport, PeekPokeTester, TestDriver}
 
-private class ConfiguredRoutingTester(c: CoreBus) extends PeekPokeTester(c) with AxiTestSupport {
+private class ConfiguredRoutingTester(c: CoreBus) extends PeekPokeTester(c)
+    with AxiTestSupport {
   for (port <- Seq(c.io.rom, c.io.ram)) {
     poke(port.en, false)
     poke(port.wen, 0)
@@ -33,7 +34,7 @@ private class ConfiguredRoutingTester(c: CoreBus) extends PeekPokeTester(c) with
     BigInt("10000000", 16) -> false,
     BigInt("effffffc", 16) -> false,
     BigInt("f0000000", 16) -> true,
-    BigInt("fffffffc", 16) -> true
+    BigInt("fffffffc", 16) -> true,
   )) {
     val selected = if (uncached) c.io.uncached else c.io.data
     val other = if (uncached) c.io.data else c.io.uncached

@@ -8,9 +8,13 @@ object CoreTestOptionsTest extends App {
   val input = Files.createFile(directory.resolve("input image.txt")).toFile
   val trace = Files.createFile(directory.resolve("expected trace.txt")).toFile
   val output = directory.resolve("output trace.txt").toFile
+
   def parse(args: String*) = CoreTestOptions.parse(args)
-  def accepted(args: String*) = parse(args: _*).fold(e => throw new AssertionError(e.message), identity)
-  def rejected(args: String*): Unit = assert(parse(args: _*).left.exists(_.status != 0), args.mkString(" "))
+  def accepted(args: String*) =
+    parse(args: _*).fold(e => throw new AssertionError(e.message), identity)
+  def rejected(args: String*): Unit =
+    assert(parse(args: _*).left.exists(_.status != 0), args.mkString(" "))
+
   try {
     val short = accepted("-if", input.toString, "-tf", trace.toString, "-gt", "0")
     val long = accepted(s"--init-file=$input", s"--trace-file=$trace", "--gen-trace=false")

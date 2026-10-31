@@ -72,7 +72,7 @@ class MduUnitTester(c: MDU) extends PeekPokeTester(c) {
     (MDU_DIVU, BigInt(100), BigInt(14)),
     (MDU_REMU, BigInt(100), BigInt(2)),
     (MDU_DIV, mask - 99, mask - 13), // -100 / 7 = -14
-    (MDU_REM, mask - 99, mask - 1)   // -100 % 7 = -2
+    (MDU_REM, mask - 99, mask - 1),  // -100 % 7 = -2
   )) {
     checkMdu(op, dividend, 7, answer)
     poke(c.io.flush, true)
@@ -105,8 +105,11 @@ class MduUnitTester(c: MDU) extends PeekPokeTester(c) {
 
 object MduTest extends App {
   for (latency <- Seq(0, 1, 3)) {
-    if (!TestDriver.execute(args, () => new MDU()(new configs.WithMulLatency(latency) ++ p)) {
-      c => new MduUnitTester(c)
-    }) sys.exit(1)
+    if (!TestDriver.execute(args, () =>
+        new MDU()(new configs.WithMulLatency(latency) ++ p)) { c =>
+          new MduUnitTester(c)
+        }) {
+      sys.exit(1)
+    }
   }
 }

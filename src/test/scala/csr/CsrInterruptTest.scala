@@ -64,5 +64,8 @@ class CsrInterruptTester(c: CsrFile) extends CsrRegressionTester(c) {
 }
 
 object CsrInterruptTest extends App {
-  if (!TestDriver.execute(args, () => new CsrFile(p(CoreParamsKey).hpmCounters))(c => new CsrInterruptTester(c))) sys.exit(1)
+  if (!TestDriver.execute(args, () =>
+      new CsrFile(p(CoreParamsKey).hpmCounters))(c => new CsrInterruptTester(c))) {
+    sys.exit(1)
+  }
 }

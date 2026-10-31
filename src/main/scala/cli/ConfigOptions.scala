@@ -20,24 +20,32 @@ case class ConfigOptions(
   mulLatency: Option[Int] = None,
   hpmCounters: Option[Int] = None,
   resetVector: Option[BigInt] = None,
-  hartId: Option[BigInt] = None
+  hartId: Option[BigInt] = None,
 ) {
   def resolve(): Either[String, Parameters] = ConfigLoader.load(preset).flatMap { base =>
     try {
       val fragments: Seq[Option[Config]] = Seq(
         fetchQueueDepth.map(new WithFetchQueueDepth(_)),
         fetchBufferEntries.map(new WithFetchBufferEntries(_)),
-        ghrBits.map(new WithGhrBits(_)), btbEntries.map(new WithBtbEntries(_)),
-        rasEntries.map(new WithRasEntries(_)), icacheLines.map(new WithICacheLines(_)),
-        dcacheLines.map(new WithDCacheLines(_)), cacheLineBytes.map(new WithCacheLineBytes(_)),
-        itlbEntries.map(new WithITlbEntries(_)), dtlbEntries.map(new WithDTlbEntries(_)),
-        mulLatency.map(new WithMulLatency(_)), hpmCounters.map(new WithHpmCounters(_)),
-        resetVector.map(new WithResetVector(_)), hartId.map(new WithHartId(_))
+        ghrBits.map(new WithGhrBits(_)),
+        btbEntries.map(new WithBtbEntries(_)),
+        rasEntries.map(new WithRasEntries(_)),
+        icacheLines.map(new WithICacheLines(_)),
+        dcacheLines.map(new WithDCacheLines(_)),
+        cacheLineBytes.map(new WithCacheLineBytes(_)),
+        itlbEntries.map(new WithITlbEntries(_)),
+        dtlbEntries.map(new WithDTlbEntries(_)),
+        mulLatency.map(new WithMulLatency(_)),
+        hpmCounters.map(new WithHpmCounters(_)),
+        resetVector.map(new WithResetVector(_)),
+        hartId.map(new WithHartId(_)),
       )
       val parameters = fragments.flatten.foldRight(base)((fragment, up) => fragment ++ up)
       ConfigValidation(parameters)
       Right(parameters)
-    } catch { case NonFatal(e) => Left(s"Invalid configuration: ${e.getMessage}") }
+    } catch {
+      case NonFatal(e) => Left(s"Invalid configuration: ${e.getMessage}")
+    }
   }
 }
 
@@ -46,9 +54,11 @@ object ConfigOptions {
   def parser[C](get: C => ConfigOptions, set: (C, ConfigOptions) => C): OParser[_, C] = {
     val builder = OParser.builder[C]
     import builder._
+
     def int(name: String, description: String)(update: (ConfigOptions, Int) => ConfigOptions) =
       opt[Int](name).maxOccurs(1).valueName("<n>").text(description)
         .action((value, options) => set(options, update(get(options), value)))
+
     OParser.sequence(
       opt[String]("config").maxOccurs(1).valueName("<class>")
         .text("Preset class (default: configs.DefaultConfig); short names use the configs package")
@@ -69,7 +79,7 @@ object ConfigOptions {
         .text("Word-aligned RV32 reset address, decimal or 0x hexadecimal")
         .action((n, c) => set(c, get(c).copy(resetVector = Some(n)))),
       opt[BigInt]("hart-id").maxOccurs(1).valueName("<id>").text("Unsigned 32-bit mhartid")
-        .action((n, c) => set(c, get(c).copy(hartId = Some(n))))
+        .action((n, c) => set(c, get(c).copy(hartId = Some(n)))),
     )
   }
 }

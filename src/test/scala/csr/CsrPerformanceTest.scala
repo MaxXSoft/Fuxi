@@ -204,9 +204,14 @@ class CsrPerformanceConfigurationTester(c: CsrFile) extends CsrRegressionTester(
 }
 
 object CsrPerformanceTest extends App {
-  if (!TestDriver.execute(args, () => new CsrFile(p(CoreParamsKey).hpmCounters))(c => new CsrPerformanceTester(c))) sys.exit(1)
+  if (!TestDriver.execute(args, () =>
+      new CsrFile(p(CoreParamsKey).hpmCounters))(c => new CsrPerformanceTester(c))) {
+    sys.exit(1)
+  }
   for (count <- Seq(0, 29)) {
-    if (!TestDriver.execute(args, () => new CsrFile(count))(
-      c => new CsrPerformanceConfigurationTester(c))) sys.exit(1)
+    if (!TestDriver.execute(args, () =>
+        new CsrFile(count))(c => new CsrPerformanceConfigurationTester(c))) {
+      sys.exit(1)
+    }
   }
 }

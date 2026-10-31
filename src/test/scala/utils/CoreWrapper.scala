@@ -8,7 +8,8 @@ import io.DebugIO
 import sim.{RAM, ROM}
 
 // The ROM-backed system can be driven cycle by cycle by specialized tests.
-class CoreMemoryHarness(init: ROM.Init, fenceFault: Boolean = false)(implicit val p: Parameters) extends Module {
+class CoreMemoryHarness(init: ROM.Init, fenceFault: Boolean = false)(implicit val p: Parameters)
+    extends Module {
   val io = IO(new Bundle {
     val observation = new CoreObservation
     val memoryStall = Input(Bool())
@@ -39,7 +40,8 @@ class CoreMemoryHarness(init: ROM.Init, fenceFault: Boolean = false)(implicit va
 }
 
 // Preserve the small DebugIO interface for simple programs and external traces.
-class CoreWrapper(init: ROM.Init, fenceFault: Boolean = false)(implicit val p: Parameters) extends Module {
+class CoreWrapper(init: ROM.Init, fenceFault: Boolean = false)(implicit val p: Parameters)
+    extends Module {
   def this(initFile: String)(implicit p: Parameters) = this(ROM.File(initFile), false)(p)
   def this(words: Seq[BigInt])(implicit p: Parameters) = this(ROM.Words(words), false)(p)
 

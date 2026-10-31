@@ -50,7 +50,7 @@ object Fuxi extends App {
     "--firtool-option", "-default-layer-specialization=enable",
     "--firtool-option", "-lowering-options=disallowLocalVariables,disallowPackedArrays," +
       "disallowPackedStructAssignments,disallowDeclAssignments,noAlwaysComb," +
-      "mitigateVivadoArrayIndexConstPropBug"
+      "mitigateVivadoArrayIndexConstPropBug",
   )
 
   GeneratorOptions.parse(args.toSeq) match {
@@ -58,8 +58,9 @@ object Fuxi extends App {
     case Right(options) => options.config.resolve() match {
       case Left(error) => CliExit(1, s"Fuxi: $error").report()
       case Right(parameters) =>
-        if (options.dumpConfig) println(ConfigDump(parameters))
-        else {
+        if (options.dumpConfig) {
+          println(ConfigDump(parameters))
+        } else {
           val target = options.targetDir.toSeq.flatMap(dir => Seq("--target-dir", dir))
           (new ChiselStage).execute(
             Array("--target", "verilog") ++ firtoolOptions ++ target ++ options.stageArgs,

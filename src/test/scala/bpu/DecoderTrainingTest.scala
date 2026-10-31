@@ -10,7 +10,8 @@ import core.Decoder
 import io.FetchIO
 import utils.{PeekPokeTester, TestDriver}
 
-class DecoderTrainingHarness(implicit val p: Parameters) extends Module with HasCoreParams {
+class DecoderTrainingHarness(implicit val p: Parameters) extends Module
+    with HasCoreParams {
   val io = IO(new Bundle {
     val valid = Input(Bool())
     val stalled = Input(Bool())

@@ -6,21 +6,23 @@ import consts.Instructions.NOP
 import utils.{PeekPokeTester, TestDriver}
 
 class RomUnitTester(c: ROM) extends PeekPokeTester(c) {
+  val resetVector = p(PlatformParamsKey).resetVector
+
   poke(c.io.en, true)
   poke(c.io.wen, 0)
   poke(c.io.wdata, 0)
-  poke(c.io.addr, p(PlatformParamsKey).resetVector)
+  poke(c.io.addr, resetVector)
   expect(c.io.rdata, NOP)
   step(1)
   expect(c.io.rdata, BigInt("89abcdef", 16))
 
-  poke(c.io.addr, p(PlatformParamsKey).resetVector + 4)
+  poke(c.io.addr, resetVector + 4)
   expect(c.io.rdata, BigInt("89abcdef", 16)) // address changes must not bypass the register
   step(1)
   expect(c.io.rdata, BigInt("01234567", 16))
 
   for (index <- Seq(2, ROM.DEPTH - 1)) {
-    poke(c.io.addr, p(PlatformParamsKey).resetVector + 4 * index)
+    poke(c.io.addr, resetVector + 4 * index)
     step(1)
     expect(c.io.rdata, NOP)
   }
@@ -29,7 +31,7 @@ class RomUnitTester(c: ROM) extends PeekPokeTester(c) {
   step(1)
   expect(c.io.rdata, 0)
   poke(c.io.en, true)
-  poke(c.io.addr, p(PlatformParamsKey).resetVector)
+  poke(c.io.addr, resetVector)
   step(1)
   expect(c.io.rdata, BigInt("89abcdef", 16))
   poke(c.reset, 1)
@@ -45,5 +47,7 @@ class RomUnitTester(c: ROM) extends PeekPokeTester(c) {
 
 object RomTest extends App {
   val words = Seq(BigInt("89abcdef", 16), BigInt("01234567", 16))
-  if (!TestDriver.execute(args, () => new ROM(words))(c => new RomUnitTester(c))) sys.exit(1)
+  if (!TestDriver.execute(args, () => new ROM(words))(c => new RomUnitTester(c))) {
+    sys.exit(1)
+  }
 }
