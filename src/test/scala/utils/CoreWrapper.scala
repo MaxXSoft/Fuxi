@@ -1,15 +1,15 @@
 package utils
 
+import org.chipsalliance.cde.config.Parameters
 import chisel3._
 import core.Core
 import chisel3.util.experimental.BoringUtils
-import consts.Parameters.{FETCH_QUEUE_DEPTH, HPM_COUNT}
 import io.DebugIO
 import sim.{RAM, ROM}
 
 // The ROM-backed system can be driven cycle by cycle by specialized tests.
-class CoreMemoryHarness(init: ROM.Init, depth: Int = FETCH_QUEUE_DEPTH,
-                        fenceFault: Boolean = false) extends Module {
+class CoreMemoryHarness(init: ROM.Init, fenceFault: Boolean = false)(implicit val p: Parameters)
+    extends Module {
   val io = IO(new Bundle {
     val observation = new CoreObservation
     val memoryStall = Input(Bool())
@@ -18,7 +18,7 @@ class CoreMemoryHarness(init: ROM.Init, depth: Int = FETCH_QUEUE_DEPTH,
     val fenceRequest = Output(Bool())
     val queueCount = Output(UInt(32.W))
   })
-  val core = Module(new Core(depth, HPM_COUNT))
+  val core = Module(new Core)
   core.io.pmu := 0.U.asTypeOf(core.io.pmu)
   val rom = Module(new ROM(init))
   val ram = Module(new RAM)
@@ -40,9 +40,10 @@ class CoreMemoryHarness(init: ROM.Init, depth: Int = FETCH_QUEUE_DEPTH,
 }
 
 // Preserve the small DebugIO interface for simple programs and external traces.
-class CoreWrapper(init: ROM.Init, fenceFault: Boolean = false) extends Module {
-  def this(initFile: String) = this(ROM.File(initFile))
-  def this(words: Seq[BigInt]) = this(ROM.Words(words))
+class CoreWrapper(init: ROM.Init, fenceFault: Boolean = false)(implicit val p: Parameters)
+    extends Module {
+  def this(initFile: String)(implicit p: Parameters) = this(ROM.File(initFile), false)
+  def this(words: Seq[BigInt])(implicit p: Parameters) = this(ROM.Words(words), false)
 
   val io = IO(new DebugIO)
   val system = Module(new CoreMemoryHarness(init, fenceFault = fenceFault))

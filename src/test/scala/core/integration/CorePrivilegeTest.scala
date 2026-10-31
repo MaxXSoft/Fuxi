@@ -1,5 +1,8 @@
 package core.integration
 
+import org.scalatest.funsuite.AnyFunSuite
+
+import utils.DefaultTestConfig._
 import utils.{AxiTestSupport, CoreTester, ExpectedTrap, ExpectedWriteback,
               InstEncoding, InstructionImage, TestDriver, TrapChecker, WritebackChecker}
 
@@ -69,17 +72,20 @@ private[core] class CorePrivilegeTester(c: CoreFetchFaultWrapper, scenario: Data
   }
 }
 
-object CorePrivilegeTest extends App {
-  val cases = Seq(
-    DataPrivilegeCase("supervisor"),
-    DataPrivilegeCase("user-mxr", mpp = 0, user = true, readable = false, mxr = true),
-    DataPrivilegeCase("supervisor-sum-mxr", user = true, readable = false, mxr = true, sum = true),
-    DataPrivilegeCase("sum-denied", user = true, fault = true),
-    DataPrivilegeCase("mxr-denied", readable = false, fault = true),
-    DataPrivilegeCase("mprv-off", mprv = false),
-    DataPrivilegeCase("machine-effective", mpp = 3))
-  for (scenario <- cases) {
-    if (!TestDriver.execute(args, () => new CoreFetchFaultWrapper)(
-      c => new CorePrivilegeTester(c, scenario))) sys.exit(1)
+class CorePrivilegeTest extends AnyFunSuite {
+  test("enforce effective privilege and page permissions") {
+    val cases = Seq(
+      DataPrivilegeCase("supervisor"),
+      DataPrivilegeCase("user-mxr", mpp = 0, user = true, readable = false, mxr = true),
+      DataPrivilegeCase("supervisor-sum-mxr", user = true, readable = false, mxr = true, sum = true),
+      DataPrivilegeCase("sum-denied", user = true, fault = true),
+      DataPrivilegeCase("mxr-denied", readable = false, fault = true),
+      DataPrivilegeCase("mprv-off", mprv = false),
+      DataPrivilegeCase("machine-effective", mpp = 3))
+    for (scenario <- cases) {
+      TestDriver.run(new CoreFetchFaultWrapper) { c =>
+        new CorePrivilegeTester(c, scenario)
+      }
+    }
   }
 }

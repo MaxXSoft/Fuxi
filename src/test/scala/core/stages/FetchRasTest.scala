@@ -1,5 +1,8 @@
 package core.stages
 
+import org.scalatest.funsuite.AnyFunSuite
+
+import utils.DefaultTestConfig._
 import utils.{InstructionImage, PeekPokeTester, TestDriver}
 import utils.InstEncoding._
 
@@ -115,8 +118,10 @@ class FetchRasTester(c: FetchHarness) extends PeekPokeTester(c) {
   }
 }
 
-object FetchRasTest extends App {
-  if (!TestDriver.execute(args, () => new FetchHarness(4)) {
-    c => new FetchRasTester(c)
-  }) sys.exit(1)
+class FetchRasTest extends AnyFunSuite {
+  test("update return prediction during instruction fetch") {
+    TestDriver.run(new FetchHarness(4)) {
+      c => new FetchRasTester(c)
+    }
+  }
 }

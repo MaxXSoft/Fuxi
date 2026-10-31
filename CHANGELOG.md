@@ -18,6 +18,10 @@ All notable changes to the Fuxi will be documented in this file.
 - Added MPRV and MXR data-access privilege control.
 - Added platform `time`/`timeh` CSR reads and a separate supervisor external interrupt input.
 - Added RV32 `mstatush` as a writable WARL-zero CSR.
+- Added composable CDE configuration presets with shared `--config`, parameter
+  overrides and `--dump-config` options for RTL generation and simulation.
+- Added `make CONFIG=...` preset selection with automatic RTL regeneration when
+  switching presets.
 
 ### Changed
 
@@ -27,6 +31,11 @@ All notable changes to the Fuxi will be documented in this file.
 - Extended `FuxiWrapper` with `rtc_time[63:0]` and `irq_sextern` inputs that platforms must drive.
 - Made `mip.STIP` and `mip.SSIP` independent of machine timer/software inputs,
   requiring explicit forwarding by machine firmware.
+- Changed `Fuxi` and configurable modules and bundles to receive implicit CDE
+  `Parameters` supplied by their callers.
+- Migrated Scala regression suites to ScalaTest, run directly with `sbt test`.
+- Moved the command-line trace runner from `core.integration.CoreTest` to
+  `sim.CoreRunner`, with bundled trace regressions in `CoreTraceTest`.
 
 ### Fixed
 

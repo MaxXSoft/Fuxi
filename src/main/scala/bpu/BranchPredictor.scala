@@ -1,12 +1,14 @@
 package bpu
 
 import chisel3._
+import org.chipsalliance.cde.config.Parameters
+import configs.HasCoreParams
 
 import io.{BranchInfoIO, BpuPerformanceIO}
 import consts.Instructions.{JAL, JALR}
-import consts.Parameters._
+import consts.Architecture._
 
-class BranchPredictor extends Module {
+class BranchPredictor(implicit val p: Parameters) extends Module with HasCoreParams {
   val io = IO(new Bundle {
     // branch information (from decoder)
     val branchInfo  = Input(new BranchInfoIO)
@@ -18,7 +20,7 @@ class BranchPredictor extends Module {
     val flush       = Input(Bool()) // backend flush, not a predicted redirect
     val predTaken   = Output(Bool())
     val predTarget  = Output(UInt(ADDR_WIDTH.W))
-    val predIndex   = Output(UInt(GHR_WIDTH.W))
+    val predIndex   = Output(UInt(GHR_BITS.W))
     // performance monitoring
     val pmu = Output(new BpuPerformanceIO)
   })
@@ -27,14 +29,14 @@ class BranchPredictor extends Module {
   val ghr = Module(new GHR)
   val pht = Module(new PHT)
   val btb = Module(new BTB)
-  val ras = Module(new ReturnAddressStack(RAS_SIZE))
+  val ras = Module(new ReturnAddressStack(RAS_ENTRIES))
 
   // wire GHR
   ghr.io.branch := io.branchInfo.branch
   ghr.io.taken  := io.branchInfo.taken
 
   // wire PHT
-  val index = io.lookupPc(GHR_WIDTH + INST_ALIGN_WIDTH - 1,
+  val index = io.lookupPc(GHR_BITS + INST_ALIGN_WIDTH - 1,
                           INST_ALIGN_WIDTH) ^ ghr.io.ghr    // G-share
   pht.io.lastBranch := io.branchInfo.branch
   pht.io.lastTaken  := io.branchInfo.taken

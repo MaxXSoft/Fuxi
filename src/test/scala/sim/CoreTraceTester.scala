@@ -1,16 +1,14 @@
-package core.integration
+package sim
 
-import scala.io.Source
 import java.io.{File, PrintWriter}
+import scala.io.Source
+import utils.{CoreChecks, CoreTester, CoreWrapper, ExpectedWriteback}
 
-import utils.{ArgParser, CoreChecks, CoreTester, CoreWrapper, ExpectedWriteback, TestDriver}
-
-class CoreUnitTester(c: CoreWrapper, traceFile: String, genTrace: Boolean)
-      extends CoreTester(c) {
-  val endFlag = BigInt("deadc0de", 16)
+class CoreTraceTester(c: CoreWrapper) extends CoreTester(c) {
+  private val endFlag = BigInt("deadc0de", 16)
 
   // perform trace comparison
-  def runTrace(source: Source) = {
+  private def runTrace(source: Source): Unit = {
     for (line <- source.getLines()) {
       val pc :: addr :: data :: Nil = line.split(' ').toList
       runUntil(10000, s"waiting for trace PC $pc") {
@@ -53,33 +51,8 @@ class CoreUnitTester(c: CoreWrapper, traceFile: String, genTrace: Boolean)
     } while (peek(c.io.regWen) == 0 || peek(c.io.regWdata) != endFlag)
   }
 
-  if (traceFile.isEmpty) {
-    printTrace()
-  } else if (!genTrace) {
-    val source = Source.fromFile(traceFile)
+  def compareTrace(file: File): Unit = {
+    val source = Source.fromFile(file)
     try runTrace(source) finally source.close()
-  } else {
-    generateTrace(new File(traceFile))
   }
-}
-
-object CoreTest extends App {
-  var initFile = ""
-  var traceFile = ""
-  var genTrace = false
-
-  ArgParser(args, (o, v) => {
-    o match {
-      case Some("--init-file") | Some("-if") =>
-        initFile = new File(v).getAbsolutePath
-        true
-      case Some("--trace-file") | Some("-tf") => traceFile = v; true
-      case Some("--gen-trace") | Some("-gt") => genTrace = v != "0"; true
-      case _ => false
-    }
-  })
-
-  if (!TestDriver.execute(args, () => new CoreWrapper(initFile)) {
-    (c) => new CoreUnitTester(c, traceFile, genTrace)
-  }) sys.exit(1)
 }

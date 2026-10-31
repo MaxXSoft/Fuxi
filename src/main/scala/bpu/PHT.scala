@@ -1,24 +1,25 @@
 package bpu
 
 import chisel3._
+import org.chipsalliance.cde.config.Parameters
+import configs.HasCoreParams
 
-import consts.Parameters.{GHR_WIDTH, PHT_SIZE}
 
 // pattern history table
-class PHT extends Module {
+class PHT(implicit val p: Parameters) extends Module with HasCoreParams {
   val io = IO(new Bundle {
     // branch information (from decoder)
     val lastBranch  = Input(Bool())
     val lastTaken   = Input(Bool())
-    val lastIndex   = Input(UInt(GHR_WIDTH.W))
+    val lastIndex   = Input(UInt(GHR_BITS.W))
     // index for looking up counter table
-    val index       = Input(UInt(GHR_WIDTH.W))
+    val index       = Input(UInt(GHR_BITS.W))
     // prediction result
     val taken       = Output(Bool())
   })
 
   // 2-bit saturation counters
-  val init      = Seq.fill(PHT_SIZE) { "b10".U(2.W) }
+  val init      = Seq.fill(PHT_ENTRIES) { "b10".U(2.W) }
   val counters  = RegInit(VecInit(init))
 
   // update counter

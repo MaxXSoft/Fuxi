@@ -1,9 +1,13 @@
 package bus
 
-import consts.Parameters._
+import org.scalatest.funsuite.AnyFunSuite
+
+import utils.DefaultTestConfig._
+import consts.Architecture._
 import utils.{AxiTestSupport, PeekPokeTester, TestDriver}
 
-class InstCachePerformanceTester(c: InstCache) extends PeekPokeTester(c) with AxiTestSupport {
+class InstCachePerformanceTester(c: InstCache) extends PeekPokeTester(c)
+    with AxiTestSupport {
   poke(c.io.sram.en, false)
   poke(c.io.sram.wen, 0)
   poke(c.io.sram.addr, BigInt("80000000", 16))
@@ -24,15 +28,16 @@ class InstCachePerformanceTester(c: InstCache) extends PeekPokeTester(c) with Ax
     expect(c.io.pmu.busy, true)
     step(1)
   }
+  expect(c.io.axi.readAddr.bits.len, c.ICACHE_LINE_BYTES / 4 - 1)
   poke(c.io.axi.readAddr.ready, true)
   step(1)
   poke(c.io.axi.readAddr.ready, false)
-  for (i <- 0 until ICACHE_LINE_SIZE / 4) {
+  for (i <- 0 until c.ICACHE_LINE_BYTES / 4) {
     expect(c.io.pmu.miss, false)
     expect(c.io.pmu.access, false)
     expect(c.io.pmu.busy, true)
     if (i == 4) step(3)
-    driveAxiRead(c.io.axi, 0x100 + i, last = i == ICACHE_LINE_SIZE / 4 - 1)
+    driveAxiRead(c.io.axi, 0x100 + i, last = i == c.ICACHE_LINE_BYTES / 4 - 1)
     step(1)
     poke(c.io.axi.readData.valid, false)
   }
@@ -44,6 +49,7 @@ class InstCachePerformanceTester(c: InstCache) extends PeekPokeTester(c) with Ax
   expect(c.io.pmu.busy, false)
   step(1)
   poke(c.io.sram.en, false)
+  expect(c.io.sram.rdata, 0x100)
   expect(c.io.pmu.access, false)
   poke(c.io.flush, true)
   expect(c.io.pmu.miss, false)
@@ -54,9 +60,10 @@ class InstCachePerformanceTester(c: InstCache) extends PeekPokeTester(c) with Ax
   expect(c.io.pmu.miss, true)
 }
 
-class DataCachePerformanceTester(c: DataCache) extends PeekPokeTester(c) with AxiTestSupport {
+class DataCachePerformanceTester(c: DataCache) extends PeekPokeTester(c)
+    with AxiTestSupport {
   val base = BigInt("80000000", 16)
-  val beats = DCACHE_LINE_SIZE / 4
+  val beats = c.DCACHE_LINE_BYTES / 4
   poke(c.io.sram.en, false)
   poke(c.io.sram.wen, 0)
   poke(c.io.sram.addr, base)
@@ -75,6 +82,7 @@ class DataCachePerformanceTester(c: DataCache) extends PeekPokeTester(c) with Ax
   }
   def refill(): Unit = {
     waitFor(c.io.axi.readAddr.valid)
+    expect(c.io.axi.readAddr.bits.len, beats - 1)
     for (_ <- 0 until 4) {
       expect(c.io.pmu.miss, false)
       expect(c.io.pmu.access, false)
@@ -100,6 +108,7 @@ class DataCachePerformanceTester(c: DataCache) extends PeekPokeTester(c) with Ax
   }
   def writeback(): Unit = {
     waitFor(c.io.axi.writeAddr.valid)
+    expect(c.io.axi.writeAddr.bits.len, beats - 1)
     for (_ <- 0 until 4) {
       expect(c.io.pmu.writeback, false)
       expect(c.io.pmu.miss, false)
@@ -116,6 +125,7 @@ class DataCachePerformanceTester(c: DataCache) extends PeekPokeTester(c) with Ax
     for (i <- 0 until beats) {
       expect(c.io.axi.writeData.valid, true)
       expect(c.io.axi.writeData.bits.last, i == beats - 1)
+      expect(c.io.axi.writeData.bits.data, if (i == 0) 0x12345678 else 0x200 + i)
       expect(c.io.pmu.writeback, false)
       expect(c.io.pmu.miss, false)
       step(1)
@@ -138,7 +148,7 @@ class DataCachePerformanceTester(c: DataCache) extends PeekPokeTester(c) with Ax
   expect(c.io.pmu.miss, false)
   step(1)
   poke(c.io.sram.wen, 0)
-  poke(c.io.sram.addr, base + DCACHE_SIZE * DCACHE_LINE_SIZE)
+  poke(c.io.sram.addr, base + c.DCACHE_CAPACITY_BYTES)
   expect(c.io.pmu.miss, true)
   step(1)
   writeback()
@@ -212,7 +222,8 @@ class MmuPerformanceTester(c: MMU) extends PeekPokeTester(c) {
   expect(c.io.pmu.miss, false) // Bare mode never starts a page walk
 }
 
-class CoreBusPerformanceTester(c: CoreBus) extends PeekPokeTester(c) with AxiTestSupport {
+class CoreBusPerformanceTester(c: CoreBus) extends PeekPokeTester(c)
+    with AxiTestSupport {
   // Exercise both actual SRAM demuxes: one page-table transfer and one
   // translated program transfer, each cold, with AXI backpressure.
   for (isInst <- Seq(true, false)) {
@@ -246,7 +257,7 @@ class CoreBusPerformanceTester(c: CoreBus) extends PeekPokeTester(c) with AxiTes
     val walkMiss = if (isInst) c.io.pmu.icacheWalkMiss else c.io.pmu.dcacheWalkMiss
     val tlbMiss = if (isInst) c.io.pmu.itlb.miss else c.io.pmu.dtlb.miss
     val signals = Seq(access, miss, walkAccess, walkMiss, tlbMiss)
-    val counts = Array.fill(5)(0)
+    val counts = Array.fill(5) { 0 }
     def tick(): Unit = {
       for (i <- signals.indices) counts(i) += peek(signals(i)).toInt
       step(1)
@@ -283,17 +294,19 @@ class CoreBusPerformanceTester(c: CoreBus) extends PeekPokeTester(c) with AxiTes
   }
 }
 
-object PerformanceEventsTest extends App {
-  if (!TestDriver.execute(args, () => new InstCache) {
-    c => new InstCachePerformanceTester(c)
-  }) sys.exit(1)
-  if (!TestDriver.execute(args, () => new DataCache) {
-    c => new DataCachePerformanceTester(c)
-  }) sys.exit(1)
-  if (!TestDriver.execute(args, () => new MMU(16, false)) {
-    c => new MmuPerformanceTester(c)
-  }) sys.exit(1)
-  if (!TestDriver.execute(args, () => new CoreBus) {
-    c => new CoreBusPerformanceTester(c)
-  }) sys.exit(1)
+class PerformanceEventsTest extends AnyFunSuite {
+  test("report cache, MMU and core bus performance events") {
+    TestDriver.run(new InstCache) {
+      c => new InstCachePerformanceTester(c)
+    }
+    TestDriver.run(new DataCache) {
+      c => new DataCachePerformanceTester(c)
+    }
+    TestDriver.run(new MMU(16, false)) {
+      c => new MmuPerformanceTester(c)
+    }
+    TestDriver.run(new CoreBus) {
+      c => new CoreBusPerformanceTester(c)
+    }
+  }
 }

@@ -1,5 +1,8 @@
 package core.integration
 
+import org.scalatest.funsuite.AnyFunSuite
+
+import utils.DefaultTestConfig._
 import utils.InstEncoding._
 import chisel3._
 import consts.CSR._
@@ -33,7 +36,10 @@ object CsrAliasProgram extends CoreProgram {
   val donePc = finish()
 }
 
-object CoreCsrAliasTest extends App {
-  if (!TestDriver.execute(args, () => new CoreWrapper(CsrAliasProgram.words))(
-    c => new CoreProgramTester(c, CsrAliasProgram, CsrAliasProgram.donePc, 600))) sys.exit(1)
+class CoreCsrAliasTest extends AnyFunSuite {
+  test("read and write aliased CSRs") {
+    TestDriver.run(new CoreWrapper(CsrAliasProgram.words)) { c =>
+      new CoreProgramTester(c, CsrAliasProgram, CsrAliasProgram.donePc, 600)
+    }
+  }
 }

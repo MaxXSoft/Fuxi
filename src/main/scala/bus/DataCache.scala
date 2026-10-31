@@ -1,15 +1,17 @@
 package bus
 
 import chisel3._
+import org.chipsalliance.cde.config.Parameters
+import configs.HasCoreParams
 import chisel3.util._
 
 import io._
-import consts.Parameters._
+import consts.Architecture._
 import axi.AxiMaster
 import utils.BlockMem
 
 // direct mapped data cache
-class DataCache extends Module {
+class DataCache(implicit val p: Parameters) extends Module with HasCoreParams {
   val io = IO(new Bundle {
     // SRAM interface
     val sram  = Flipped(new SramIO(ADDR_WIDTH, DATA_WIDTH))
@@ -24,8 +26,8 @@ class DataCache extends Module {
   })
 
   // some constants
-  val dataMemSize = DCACHE_LINE_SIZE / (DATA_WIDTH / 8)
-  val tagWidth    = ADDR_WIDTH - DCACHE_LINE_WIDTH - DCACHE_WIDTH
+  val dataMemSize = DCACHE_LINE_BYTES / (DATA_WIDTH / 8)
+  val tagWidth    = ADDR_WIDTH - DCACHE_OFFSET_BITS - DCACHE_INDEX_BITS
   val burstSize   = log2Ceil(DATA_WIDTH / 8)
   val burstLen    = dataMemSize - 1
   val wordWriteEn = (1 << (DATA_WIDTH / 8)) - 1
@@ -41,10 +43,10 @@ class DataCache extends Module {
   val state = RegInit(sIdle)
 
   // all cache lines
-  val valid = RegInit(VecInit(Seq.fill(DCACHE_SIZE) { false.B }))
-  val dirty = Reg(Vec(DCACHE_SIZE, Bool()))
-  val tag   = Mem(DCACHE_SIZE, UInt(tagWidth.W))
-  val lines = Module(new BlockMem(DCACHE_SIZE * dataMemSize, DATA_WIDTH))
+  val valid = RegInit(VecInit(Seq.fill(DCACHE_LINES) { false.B }))
+  val dirty = Reg(Vec(DCACHE_LINES, Bool()))
+  val tag   = Mem(DCACHE_LINES, UInt(tagWidth.W))
+  val lines = Module(new BlockMem(DCACHE_LINES * dataMemSize, DATA_WIDTH))
 
   // AXI control
   val dataOffset  = Reg(UInt(log2Ceil(dataMemSize + 1).W))
@@ -61,10 +63,10 @@ class DataCache extends Module {
   val sramAddr    = Reg(UInt(ADDR_WIDTH.W))
   val selAddr     = Mux(state === sIdle, io.sram.addr, sramAddr)
   val tagSel      = selAddr(ADDR_WIDTH - 1,
-                            DCACHE_WIDTH + DCACHE_LINE_WIDTH)
-  val lineSel     = selAddr(DCACHE_WIDTH + DCACHE_LINE_WIDTH - 1,
-                            DCACHE_LINE_WIDTH)
-  val lineDataSel = selAddr(DCACHE_WIDTH + DCACHE_LINE_WIDTH - 1,
+                            DCACHE_INDEX_BITS + DCACHE_OFFSET_BITS)
+  val lineSel     = selAddr(DCACHE_INDEX_BITS + DCACHE_OFFSET_BITS - 1,
+                            DCACHE_OFFSET_BITS)
+  val lineDataSel = selAddr(DCACHE_INDEX_BITS + DCACHE_OFFSET_BITS - 1,
                             burstSize)
   val dataSel     = Cat(lineSel, dataOfsRef)
   // BlockMem has a one-cycle read latency.  While a W beat is accepted,
@@ -75,15 +77,15 @@ class DataCache extends Module {
                         dataOffset + 1.U, dataOffset)
   val writeOfsRef = writeOffset(log2Ceil(dataMemSize) - 1, 0)
   val writeSel    = Cat(lineSel, writeOfsRef)
-  val startRaddr  = Cat(tagSel, lineSel, 0.U(DCACHE_LINE_WIDTH.W))
-  val startWaddr  = Cat(tag(lineSel), lineSel, 0.U(DCACHE_LINE_WIDTH.W))
+  val startRaddr  = Cat(tagSel, lineSel, 0.U(DCACHE_OFFSET_BITS.W))
+  val startWaddr  = Cat(tag(lineSel), lineSel, 0.U(DCACHE_OFFSET_BITS.W))
 
   // cache state & flush selector
   val cacheHit  = valid(lineSel) && tag(lineSel) === tagSel
-  val realDirty = 0 until DCACHE_SIZE map { i => valid(i) && dirty(i) }
+  val realDirty = 0 until DCACHE_LINES map { i => valid(i) && dirty(i) }
   val isDirty   = realDirty.reduce(_||_)
-  val nextDirty = PriorityEncoder(realDirty)(DCACHE_WIDTH - 1, 0)
-  val flushAddr = Cat(tag(nextDirty), nextDirty, 0.U(DCACHE_LINE_WIDTH.W))
+  val nextDirty = PriorityEncoder(realDirty)(DCACHE_INDEX_BITS - 1, 0)
+  val flushAddr = Cat(tag(nextDirty), nextDirty, 0.U(DCACHE_OFFSET_BITS.W))
   val flushSel  = Cat(nextDirty, writeOfsRef)
 
   // read from / write to cache line

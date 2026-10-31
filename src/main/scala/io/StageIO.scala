@@ -1,8 +1,10 @@
 package io
 
 import chisel3._
+import org.chipsalliance.cde.config.Parameters
+import configs.HasCoreParams
 
-import consts.Parameters._
+import consts.Architecture._
 import consts.AluOp
 import consts.MduOp
 import consts.LsuOp
@@ -18,22 +20,22 @@ class StageIO extends Bundle {
 }
 
 // IF stage
-class FetchIO extends StageIO {
+class FetchIO(implicit val p: Parameters) extends StageIO with HasCoreParams {
   // instruction info
-  val valid     = Bool()
-  val pc        = UInt(ADDR_WIDTH.W)
-  val inst      = UInt(INST_WIDTH.W)
+  val valid       = Bool()
+  val pc          = UInt(ADDR_WIDTH.W)
+  val inst        = UInt(INST_WIDTH.W)
   // branch prediction result
-  val taken     = Bool()
-  val target    = UInt(ADDR_WIDTH.W)
-  val predIndex = UInt(GHR_WIDTH.W)
+  val taken       = Bool()
+  val target      = UInt(ADDR_WIDTH.W)
+  val predIndex   = UInt(GHR_BITS.W)
   // instruction fetch page fault
-  val pageFault = Bool()
+  val pageFault   = Bool()
   // instruction fetch physical access fault
   val accessFault = Bool()
-  val faultAddr = UInt(ADDR_WIDTH.W)
+  val faultAddr   = UInt(ADDR_WIDTH.W)
   // performance monitoring
-  val pmu       = new PredictionPerformanceIO
+  val pmu         = new PredictionPerformanceIO
 }
 
 // ID stage

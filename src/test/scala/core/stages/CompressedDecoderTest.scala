@@ -1,11 +1,13 @@
 package core.stages
 
+import org.scalatest.funsuite.AnyFunSuite
+
 import core.CompressedDecoder
 import utils.{PeekPokeTester, TestDriver}
 
 class CompressedDecoderTester(c: CompressedDecoder) extends PeekPokeTester(c) {
   val nop = 0x13L
-  val expected = Array.fill[Option[Long]](1 << 16)(None)
+  val expected = Array.fill[Option[Long]](1 << 16) { None }
   var hints = 0
 
   def unsigned(value: Long): Long = value & 0xffffffffL
@@ -172,8 +174,10 @@ class CompressedDecoderTester(c: CompressedDecoder) extends PeekPokeTester(c) {
   println("CompressedDecoder: all 65536 encodings checked (28823 legal C, 362 HINTs).")
 }
 
-object CompressedDecoderTest extends App {
-  if (!TestDriver.execute(args, () => new CompressedDecoder) {
-    c => new CompressedDecoderTester(c)
-  }) sys.exit(1)
+class CompressedDecoderTest extends AnyFunSuite {
+  test("decode compressed instruction encodings") {
+    TestDriver.run(new CompressedDecoder) {
+      c => new CompressedDecoderTester(c)
+    }
+  }
 }

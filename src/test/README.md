@@ -1,25 +1,37 @@
 # Scala tests and shared support
 
-Tests are executable `App`s, run with `sbt 'Test / runMain package.TestName'`.
-`utils.TestDriver` runs the Chisel simulation and reports failures through the
-process exit code. Shared fixtures live only in test sources. Reusable helpers
-and their own tests are colocated in `utils`, including the Core harnesses and
-CSR regression helpers.
+Tests are ScalaTest `AnyFunSuite` classes. Run every suite with `sbt test`, or
+select suites with `sbt 'testOnly package.TestName'` and `sbt 'testOnly csr.*'`.
+Sbt discovers suites automatically; adding a suite or a named `test(...)` case
+does not require registration in the build or CI. `Test / parallelExecution` is
+false so the simulation workload retains serial execution.
+
+`utils.TestDriver.run` runs a fresh Chisel simulation for each call and lets
+failures propagate to ScalaTest. Test bodies use assertions or exceptions instead
+of exiting the JVM. Allocate mutable fixtures inside `test(...)` so discovery
+only registers tests and repeated runs start with fresh state.
+
+Shared fixtures live only in test sources. Reusable helpers and their own tests
+are colocated in `utils`, including the Core harnesses and CSR regression helpers.
+Simulation RAM/ROM models and the manual `sim.CoreRunner` tool live in
+`src/test/scala/sim`; they are not part of the main compilation or JAR.
 Harnesses and reference models used by a single test stay in that test file.
-The CI `Test Utilities` step runs the support tests, including
-`utils.CoreWritebackLoopTest`, which validates writeback selection with a real Core.
+The CI `Test Scala` step runs all suites, including `utils.CoreWritebackLoopTest`,
+which validates writeback selection with a real Core.
 
 ## Test layout
 
 Directory names match Scala packages. Group tests by their primary verification
 subject; using a simulator alone does not make a test a Core integration test.
 
-| Directory / package | Contents | CI step |
-| --- | --- | --- |
-| `utils` | Shared helpers and their regression tests | Test Utilities |
-| `core/stages` / `core.stages` | Fetch, compressed decoder, decoder, ALU, memory and writeback stage tests | Test Core Stages |
-| `core/integration` / `core.integration` | Full-core instruction streams, traps, retirement and LR/SC sequences | Test Core Integration |
-| `bpu`, `bus`, `csr`, `lsu`, `mdu`, `sim` | Subsystem tests, including focused combinations of modules | Corresponding subsystem step |
+| Directory / package | Contents |
+| --- | --- |
+| `utils` | Shared helpers and their regression tests |
+| `configs`, `cli` | Parameter composition, validation, preset loading and command-line parsing |
+| `core/stages` / `core.stages` | Fetch, compressed decoder, decoder, ALU, memory and writeback stage tests |
+| `core/integration` / `core.integration` | Full-core instruction streams, traps, retirement, LR/SC sequences and bundled trace comparisons |
+| `bpu`, `bus`, `csr`, `lsu`, `mdu` | Subsystem tests, including focused combinations of modules |
+| `sim` | Simulation memories, the manual core runner and their tests |
 
 `core.integration.ScSequenceTest` runs a complete Core program to check LR/SC
 reservation and forwarding behavior. Focused combinations such as
@@ -28,9 +40,10 @@ reservation and forwarding behavior. Focused combinations such as
 For example:
 
 ```sh
-sbt 'Test / runMain utils.CoreTestSupportTest'
-sbt 'Test / runMain core.stages.DecoderTest'
-sbt 'Test / runMain core.integration.CoreTest -if src/test/resources/fib.txt -tf src/test/resources/fib_trace.txt'
+sbt 'testOnly utils.CoreTestSupportTest'
+sbt 'testOnly core.stages.DecoderTest'
+sbt 'testOnly core.integration.CoreTraceTest -- -z fib'
+sbt 'Test / runMain sim.CoreRunner -if src/test/resources/fib.txt -tf src/test/resources/fib_trace.txt'
 ```
 
 ## Programs and instruction images
@@ -43,23 +56,51 @@ current PC, before the following instruction is emitted. `finish()` appends an
 
 ```scala
 import utils.{CoreProgram, InstEncoding}
+import utils.DefaultTestConfig._
 
 val program = new CoreProgram(utils.InstructionImage.CompressedNops)
 program.emit16(InstEncoding.c_nop())
 program.expectWriteback(10, 42)
-program.emit32(InstEncoding.addi(10, 0, 42)) // starts at RESET_PC + 2
+program.emit32(InstEncoding.addi(10, 0, 42)) // starts at resetVector + 2
 val donePc = program.finish()
 // new CoreWrapper(program.words), then CoreProgramTester(..., donePc, maxCycles)
 ```
 
-`seekWord(wordIndex)` and `pcAtWord(wordIndex)` use word indices relative to RESET_PC.
-`seekAddress` uses an absolute, halfword-aligned address. Both seek methods only
-move the cursor forward; gaps use the image fill pattern once code is placed
-beyond them. Neither seek method emits instructions or updates reference counters. `place16` and
-`place32` place out-of-line code without changing the cursor. Overlaps, invalid
-widths and ROM overflow are rejected; illegal instruction *encodings* are
-allowed so that trap tests can construct them. `emit32` remains overridable for
-instruction-specific reference models such as the instret-write tests.
+`CoreProgram`, `CoreWrapper` and `CoreMemoryHarness` require an implicit CDE
+`Parameters` environment. For a customized test, define one locally instead of
+importing `DefaultTestConfig`, and use it for both the program and its hardware:
+
+```scala
+import configs._
+import org.chipsalliance.cde.config.Parameters
+implicit val p: Parameters = new WithResetVector(0x1000) ++
+  new WithFetchQueueDepth(2) ++ new SmallConfig
+```
+
+`core.integration.CoreConfigTest` executes programs under all three presets and
+custom reset/hart/frontend/multiplier settings in the same JVM.
+`bus.CacheConfigTest` checks refill, dirty eviction and flush at different cache
+geometries, including 2-beat and 256-beat AXI bursts. It also exercises small TLBs
+through CoreBus and the uncached range ending at $2^{32}$. The pure Scala
+`cli.GeneratorOptionsTest` and `sim.CoreRunnerOptionsTest` cover reflection,
+override precedence, aliases, paths containing spaces and malformed input.
+`core.integration.CoreTraceTest` runs the four bundled programs as independent
+ScalaTest cases. `sim.CoreRunner` provides manual program execution and trace
+generation, sharing the generator's configuration options, while `-if/-tf/-gt`
+remain available for ROM images and traces. Use `--help` for the full schema;
+test-only flags are not forwarded to ChiselSim.
+`mdu.MduTest` checks signed/unsigned arithmetic and cancellation at multiplier
+latencies 0, 1 and 3.
+
+`seekWord(wordIndex)` and `pcAtWord(wordIndex)` use word indices relative to
+the configured reset vector. `seekAddress` uses an absolute, halfword-aligned
+address. Both seek methods only move the cursor forward; gaps use the image
+fill pattern once code is placed beyond them. Neither seek method emits
+instructions or updates reference counters. `place16` and `place32` place
+out-of-line code without changing the cursor. Overlaps, invalid widths and ROM
+overflow are rejected; illegal instruction *encodings* are allowed so that trap
+tests can construct them. `emit32` remains overridable for instruction-specific
+reference models such as the instret-write tests.
 
 `utils.InstructionImage` provides the same little-endian packing without ROM
 size or reset-PC constraints. It supports explicit `replace16`/`replace32` for
@@ -73,7 +114,7 @@ register/immediate/alignment validation. Compressed mnemonics use the `c_`
 prefix; U-type immediates are unsigned 20-bit fields. HINT operands are preserved.
 Illegal encodings, packed-byte expectations and independent decoder reference
 vectors deliberately remain literal. `utils.InstEncodingTest` checks fixed
-encoding vectors and invalid operands and is included in CI.
+encoding vectors and invalid operands and is discovered by `sbt test`.
 
 ## Execution expectations and clock ownership
 
@@ -132,4 +173,4 @@ in each test. The atomic-memory read/write model remains test-specific.
 
 `utils.CoreTestSupportTest` covers image boundaries and checker failure behavior;
 `utils.AxiTestSupportTest` checks read-response ownership and backpressure. Both
-are included in the existing CI test entry points.
+are discovered and run by `sbt test`.

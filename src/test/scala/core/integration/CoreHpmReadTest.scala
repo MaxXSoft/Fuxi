@@ -1,5 +1,8 @@
 package core.integration
 
+import org.scalatest.funsuite.AnyFunSuite
+
+import utils.DefaultTestConfig._
 import chisel3._
 import consts.CSR._
 import consts.PerfEvent._
@@ -83,11 +86,15 @@ object HpmReadProgram extends CoreProgram {
   val donePc = finish()
 }
 
-object CoreHpmReadTest extends App {
-  if (!TestDriver.execute(args, () => new CoreWrapper(HpmReadProgram.words))(
-    c => new CoreProgramTester(c, HpmReadProgram, HpmReadProgram.donePc, 2000))) sys.exit(1)
-  if (!TestDriver.execute(args, () => new CoreMemoryHarness(ROM.Words(CycleRmwProgram.words)))(
-    c => new CycleRmwTester(c))) sys.exit(1)
+class CoreHpmReadTest extends AnyFunSuite {
+  test("read HPM counters and update cycle counters") {
+    TestDriver.run(new CoreWrapper(HpmReadProgram.words)) { c =>
+      new CoreProgramTester(c, HpmReadProgram, HpmReadProgram.donePc, 2000)
+    }
+    TestDriver.run(new CoreMemoryHarness(ROM.Words(CycleRmwProgram.words))) { c =>
+      new CycleRmwTester(c)
+    }
+  }
 }
 
 // A zero-valued source register other than x0 requests a real set/clear write.

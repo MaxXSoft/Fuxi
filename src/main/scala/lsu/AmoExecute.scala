@@ -4,7 +4,7 @@ import chisel3._
 import chisel3.util._
 
 import AmoOp._
-import consts.Parameters._
+import consts.Architecture._
 
 class AmoExecute extends Module {
   val io = IO(new Bundle {

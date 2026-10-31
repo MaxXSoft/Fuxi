@@ -49,88 +49,25 @@ jobs:
           --top-module FuxiWrapper \
           verilog/build/Fuxi.v verilog/FuxiWrapper.v
 
-    - name: Test Utilities
-      run: >-
-        sbt "Test / runMain utils.InstEncodingTest"
-        "Test / runMain utils.CoreTestSupportTest"
-        "Test / runMain utils.AxiTestSupportTest"
-        "Test / runMain utils.CoreWritebackLoopTest"
-        "Test / runMain utils.HazardResolverTest"
+    - name: Generate and lint alternative configurations
+      run: |
+        sbt "runMain Fuxi --config SmallConfig --target-dir verilog/small/build" \
+          "runMain Fuxi --config ProfilingConfig --target-dir verilog/profiling/build" \
+          "runMain Fuxi --config SmallConfig \
+            --icache-lines 2 --dcache-lines 2 --cache-line-bytes 8 \
+            --itlb-entries 2 --dtlb-entries 2 --ghr-bits 2 \
+            --btb-entries 2 --ras-entries 1 --fetch-queue-depth 1 \
+            --fetch-buffer-entries 2 --mul-latency 0 \
+            --reset-vector 0x80000000 --hart-id 7 \
+            --target-dir verilog/minimum/build"
+        for variant in small profiling minimum; do
+          verilator --lint-only -Wno-fatal --language 1364-2005 \
+            --top-module FuxiWrapper \
+            "verilog/$variant/build/Fuxi.v" verilog/FuxiWrapper.v
+        done
 
-    - name: Test BPU
-      run: >-
-        sbt "Test / runMain bpu.BranchPredictorTest"
-        "Test / runMain bpu.DecoderTrainingTest"
-        "Test / runMain bpu.ReturnAddressStackTest"
-        "Test / runMain bpu.RasPredictionTest"
-
-    - name: Test CSR
-      run: >-
-        sbt "Test / runMain csr.CsrFileTest"
-        "Test / runMain csr.CsrInterruptTest"
-        "Test / runMain csr.CsrPendingTest"
-        "Test / runMain csr.CsrDelegationTest"
-        "Test / runMain csr.CsrCounterAccessTest"
-        "Test / runMain csr.CsrTimeTest"
-        "Test / runMain csr.CsrPrivilegeTest"
-        "Test / runMain csr.CsrPerformanceTest"
-
-    - name: Test LSU
-      run: >-
-        sbt "Test / runMain lsu.AmoExecuteTest"
-        "Test / runMain lsu.ExclusiveMonitorTest"
-        "Test / runMain lsu.AtomicMemoryTest"
-        "Test / runMain lsu.AtomicFaultTest"
-        "Test / runMain lsu.AtomicPermissionTest"
-
-    - name: Test MDU
-      run: >-
-        sbt "Test / runMain mdu.DividerTest"
-        "Test / runMain mdu.MultiplierTest"
-        "Test / runMain mdu.MduTest"
-
-    - name: Test Sim
-      run: sbt "Test / runMain sim.RamTest" "Test / runMain sim.RomTest"
-
-    - name: Test Core Stages
-      run: >-
-        sbt "Test / runMain core.stages.FetchTest"
-        "Test / runMain core.stages.FetchRasTest"
-        "Test / runMain core.stages.CompressedDecoderTest"
-        "Test / runMain core.stages.DecoderTest"
-        "Test / runMain core.stages.AluTest"
-        "Test / runMain core.stages.MemTest"
-        "Test / runMain core.stages.WriteBackTest"
-
-    - name: Test Bus
-      run: >-
-        sbt "Test / runMain bus.TlbTest"
-        "Test / runMain bus.MmuTest"
-        "Test / runMain bus.UncachedTest"
-        "Test / runMain bus.CoreBusTest"
-        "Test / runMain bus.InstCacheTest"
-        "Test / runMain bus.PerformanceEventsTest"
+    - name: Test Scala
+      run: sbt test
 
     - name: Test peripheral AXI handshakes
       run: soc/tests/run.sh
-
-    - name: Test Core Integration
-      run: >-
-        sbt "Test / runMain core.integration.ScSequenceTest"
-        "Test / runMain core.integration.CoreCsrAliasTest"
-        "Test / runMain core.integration.CoreCsrInterruptTest"
-        "Test / runMain core.integration.CoreRetirementTest"
-        "Test / runMain core.integration.CoreInstretReadTest"
-        "Test / runMain core.integration.CoreCompressedTest"
-        "Test / runMain core.integration.CoreRasTest"
-        "Test / runMain core.integration.CorePerformanceTest"
-        "Test / runMain core.integration.CoreHpmReadTest"
-        "Test / runMain core.integration.CoreTimeTest"
-        "Test / runMain core.integration.CoreFetchFaultTest"
-        "Test / runMain core.integration.CorePrivilegeTest"
-        "Test / runMain core.integration.CoreSatpTest"
-        "Test / runMain core.integration.CoreMmioWidthTest"
-        "Test / runMain core.integration.CoreTest -if src/test/resources/fib.txt -tf src/test/resources/fib_trace.txt"
-        "Test / runMain core.integration.CoreTest -if src/test/resources/mdu.txt -tf src/test/resources/mdu_trace.txt"
-        "Test / runMain core.integration.CoreTest -if src/test/resources/mecall.txt -tf src/test/resources/mecall_trace.txt"
-        "Test / runMain core.integration.CoreTest -if src/test/resources/secall.txt -tf src/test/resources/secall_trace.txt"

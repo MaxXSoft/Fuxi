@@ -1,7 +1,10 @@
 package csr
 
+import org.scalatest.funsuite.AnyFunSuite
+
+import utils.DefaultTestConfig._
+import configs.{CoreParamsKey, PlatformParamsKey}
 import chisel3._
-import consts.Parameters.HPM_COUNT
 import consts.CSR._
 import consts.CsrOp._
 import utils.{CsrRegressionTester, TestDriver}
@@ -79,6 +82,10 @@ class CsrCounterAccessTester(c: CsrFile) extends CsrRegressionTester(c) {
   }
 }
 
-object CsrCounterAccessTest extends App {
-  if (!TestDriver.execute(args, () => new CsrFile(HPM_COUNT))(c => new CsrCounterAccessTester(c))) sys.exit(1)
+class CsrCounterAccessTest extends AnyFunSuite {
+  test("enforce counter access permissions") {
+    TestDriver.run(new CsrFile(p(CoreParamsKey).hpmCounters, p(PlatformParamsKey).hartId)) { c =>
+      new CsrCounterAccessTester(c)
+    }
+  }
 }

@@ -1,5 +1,8 @@
 package core.integration
 
+import org.scalatest.funsuite.AnyFunSuite
+
+import utils.DefaultTestConfig._
 import utils.{AxiTestSupport, CoreTester, ExpectedWriteback, InstEncoding,
               InstructionImage, TestDriver, TrapChecker, WritebackChecker}
 
@@ -93,7 +96,10 @@ private[core] class CoreMmioWidthTester(c: CoreFetchFaultWrapper)
   assert(cached(1).requests.size == 1, "Cached narrow loads should share one cache-line refill")
 }
 
-object CoreMmioWidthTest extends App {
-  if (!TestDriver.execute(args, () => new CoreFetchFaultWrapper)(
-    c => new CoreMmioWidthTester(c))) sys.exit(1)
+class CoreMmioWidthTest extends AnyFunSuite {
+  test("preserve MMIO access widths") {
+    TestDriver.run(new CoreFetchFaultWrapper) { c =>
+      new CoreMmioWidthTester(c)
+    }
+  }
 }

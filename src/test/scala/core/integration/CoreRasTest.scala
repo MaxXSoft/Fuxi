@@ -1,5 +1,9 @@
 package core.integration
 
+import org.scalatest.funsuite.AnyFunSuite
+
+import org.chipsalliance.cde.config.Parameters
+import utils.DefaultTestConfig._
 import chisel3._
 import chisel3.util.experimental.BoringUtils
 import sim.ROM
@@ -46,8 +50,8 @@ private[core] object RasProgram extends CoreTraceProgram {
   place16(0x344, c_jr(5))
 }
 
-private[core] class CoreRasHarness(depth: Int)
-    extends CoreMemoryHarness(ROM.Words(RasProgram.words), depth) {
+private[core] class CoreRasHarness(depth: Int)(implicit parameters: Parameters)
+    extends CoreMemoryHarness(ROM.Words(RasProgram.words))(new configs.WithFetchQueueDepth(depth) ++ parameters) {
   val prediction = IO(new Bundle {
     val returnAccepted = Output(Bool())
     val pc = Output(UInt(32.W))
@@ -110,10 +114,12 @@ private[core] class CoreRasTester(c: CoreRasHarness, depth: Int) extends CoreTes
   assert(maxQueueCount == depth, "Memory stalls did not fill the IF/ID FIFO")
 }
 
-object CoreRasTest extends App {
-  for (depth <- Seq(1, 4)) {
-    if (!TestDriver.execute(args, () => new CoreRasHarness(depth)) {
-      c => new CoreRasTester(c, depth)
-    }) sys.exit(1)
+class CoreRasTest extends AnyFunSuite {
+  test("execute return prediction and recovery scenarios") {
+    for (depth <- Seq(1, 4)) {
+      TestDriver.run(new CoreRasHarness(depth)) {
+        c => new CoreRasTester(c, depth)
+      }
+    }
   }
 }

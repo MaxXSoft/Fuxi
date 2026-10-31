@@ -1,12 +1,14 @@
 package mdu
 
 import chisel3._
+import org.chipsalliance.cde.config.Parameters
+import configs.HasCoreParams
 import chisel3.util._
 
-import consts.Parameters._
+import consts.Architecture._
 import consts.MduOp
 
-class MDU extends Module {
+class MDU(implicit val p: Parameters) extends Module with HasCoreParams {
   val io = IO(new Bundle {
     // control signals
     val flush   = Input(Bool())
@@ -30,7 +32,7 @@ class MDU extends Module {
   val opr2      = Mux(isOpr2Neg, -io.opr2, io.opr2)
 
   // multiplier
-  val mul       = Module(new Multiplier(DATA_WIDTH, 1))
+  val mul       = Module(new Multiplier(DATA_WIDTH, MUL_LATENCY))
   val mulOut    = Mux(isAnsNeg, -mul.io.result, mul.io.result)
   val mulAns    = Mux(hiRem, mulOut(DATA_WIDTH * 2 - 1, DATA_WIDTH),
                              mulOut(DATA_WIDTH - 1, 0))

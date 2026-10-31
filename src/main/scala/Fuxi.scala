@@ -1,15 +1,18 @@
 import chisel3._
+import org.chipsalliance.cde.config.Parameters
+import configs.ConfigDump
+import cli.{CliExit, GeneratorOptions}
 import chisel3.stage.ChiselGeneratorAnnotation
 import circt.stage.ChiselStage
 
 import io._
 import axi.AxiMaster
-import consts.Parameters._
+import consts.Architecture._
 
 import core.Core
 import bus.CoreBus
 
-class Fuxi(hpmCount: Int) extends Module {
+class Fuxi(implicit val p: Parameters) extends Module {
   val io = IO(new Bundle {
     // interrupt request
     val irq       = new InterruptIO
@@ -23,7 +26,7 @@ class Fuxi(hpmCount: Int) extends Module {
     val uncached  = new AxiMaster(ADDR_WIDTH, DATA_WIDTH)
   })
 
-  val core    = Module(new Core(FETCH_QUEUE_DEPTH, hpmCount))
+  val core    = Module(new Core)
   val coreBus = Module(new CoreBus)
 
   core.io.irq     <> io.irq
@@ -41,39 +44,29 @@ class Fuxi(hpmCount: Int) extends Module {
 }
 
 object Fuxi extends App {
-  private val HPM_COUNTERS = "--hpm-counters"
-
-  private def invalidOption(message: String): Nothing = {
-    Console.err.println(s"Fuxi: $message")
-    sys.exit(1)
-  }
-
   private val firtoolOptions = Array(
     "--firtool-option", "-disable-all-randomization",
     "--firtool-option", "-strip-debug-info",
     "--firtool-option", "-default-layer-specialization=enable",
     "--firtool-option", "-lowering-options=disallowLocalVariables,disallowPackedArrays," +
       "disallowPackedStructAssignments,disallowDeclAssignments,noAlwaysComb," +
-      "mitigateVivadoArrayIndexConstPropBug"
+      "mitigateVivadoArrayIndexConstPropBug",
   )
 
-  // Keep the default build small; zero is useful for synthesis comparisons.
-  if (args.count(_ == HPM_COUNTERS) > 1) {
-    invalidOption(s"$HPM_COUNTERS may be given at most once")
-  }
-  private val hpmOption = args.indexOf(HPM_COUNTERS)
-  private val hpmCount = if (hpmOption < 0) HPM_COUNT else {
-    if (hpmOption + 1 == args.length) {
-      invalidOption(s"$HPM_COUNTERS requires a count from 0 to 29")
+  GeneratorOptions.parse(args.toSeq) match {
+    case Left(exit) => exit.report()
+    case Right(options) => options.config.resolve() match {
+      case Left(error) => CliExit(1, s"Fuxi: $error").report()
+      case Right(parameters) =>
+        if (options.dumpConfig) {
+          println(ConfigDump(parameters))
+        } else {
+          val target = options.targetDir.toSeq.flatMap(dir => Seq("--target-dir", dir))
+          (new ChiselStage).execute(
+            Array("--target", "verilog") ++ firtoolOptions ++ target ++ options.stageArgs,
+            Seq(ChiselGeneratorAnnotation(() => new Fuxi()(parameters)))
+          )
+        }
     }
-    val raw = args(hpmOption + 1)
-    raw.toIntOption.filter(n => n >= 0 && n <= 29).getOrElse(
-      invalidOption(s"$HPM_COUNTERS expects an integer from 0 to 29, got '$raw'"))
   }
-  private val stageArgs = if (hpmOption < 0) args else args.patch(hpmOption, Nil, 2)
-
-  (new ChiselStage).execute(
-    Array("--target", "verilog") ++ firtoolOptions ++ stageArgs,
-    Seq(ChiselGeneratorAnnotation(() => new Fuxi(hpmCount)))
-  )
 }

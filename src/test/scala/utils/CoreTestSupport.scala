@@ -1,8 +1,9 @@
 package utils
 
+import org.chipsalliance.cde.config.Parameters
+import configs.HasPlatformParams
 import chisel3._
 import consts.Instructions.NOP
-import consts.Parameters.RESET_PC
 import sim.ROM
 import io.DebugIO
 
@@ -11,21 +12,22 @@ case class ExpectedWriteback(pc: BigInt, rd: Int, data: BigInt, occurrence: Int 
 }
 
 // Program layout is separate from its dynamic execution expectations.
-class CoreProgram(fillWord: BigInt = NOP.litValue) {
+class CoreProgram(fillWord: BigInt = NOP.litValue)(implicit val p: Parameters)
+    extends HasPlatformParams {
   private val image = new utils.InstructionImage(fillWord)
   private val checks = scala.collection.mutable.ArrayBuffer.empty[ExpectedWriteback]
-  private var cursor = RESET_PC.litValue
+  private var cursor = RESET_VECTOR
 
   def words: Seq[BigInt] = {
     val end = image.endAddress.getOrElse(throw new IllegalArgumentException("Empty program"))
-    image.words(RESET_PC.litValue, ((end - RESET_PC.litValue + 3) / 4).toInt)
+    image.words(RESET_VECTOR, ((end - RESET_VECTOR + 3) / 4).toInt)
   }
   def expected: Seq[ExpectedWriteback] = checks.toVector
   def pc: BigInt = cursor
-  def pcAtWord(wordIndex: Int): BigInt = RESET_PC.litValue + 4 * wordIndex
+  def pcAtWord(wordIndex: Int): BigInt = RESET_VECTOR + 4 * wordIndex
 
   private def checkAddress(address: BigInt, size: Int): Unit =
-    require(address >= RESET_PC.litValue && address + size <= pcAtWord(ROM.DEPTH),
+    require(address >= RESET_VECTOR && address + size <= pcAtWord(ROM.DEPTH),
       "Program exceeds ROM capacity")
 
   def place16(address: BigInt, instruction: Int): Unit = {
@@ -41,7 +43,7 @@ class CoreProgram(fillWord: BigInt = NOP.litValue) {
   def emit32(word: Long): Unit = { place32(pc, word); cursor += 4 }
   def emit32All(words: Seq[Long]): Unit = words.foreach(emit32)
 
-  // Word indices are relative to RESET_PC; both seek methods only move the cursor.
+  // Word indices are relative to resetVector; both seek methods only move the cursor.
   def seekWord(wordIndex: Int): Unit = seekAddress(pcAtWord(wordIndex))
   // Sparse placement uses the image's fill pattern and adds no execution events.
   def seekAddress(address: BigInt): Unit = {
@@ -70,7 +72,7 @@ case class ExpectedTrap(pc: BigInt, cause: BigInt, value: BigInt)
 
 // Convenience builder for explicit execution traces. Placing out-of-line code
 // never adds events; callers describe branches, repeated calls and traps.
-class CoreTraceProgram extends CoreProgram(utils.InstructionImage.CompressedNops) {
+class CoreTraceProgram(implicit parameters: Parameters) extends CoreProgram(utils.InstructionImage.CompressedNops)(parameters) {
   val retired = scala.collection.mutable.ArrayBuffer.empty[ExpectedRetirement]
   val traps = scala.collection.mutable.ArrayBuffer.empty[ExpectedTrap]
   var donePc: BigInt = 0

@@ -1,9 +1,11 @@
 package bus
 
 import chisel3._
+import org.chipsalliance.cde.config.Parameters
+import configs.{HasCoreParams, HasPlatformParams}
 
 import io._
-import consts.Parameters._
+import consts.Architecture._
 import consts.Paging.PPN_WIDTH
 import axi.AxiMaster
 
@@ -39,7 +41,8 @@ Structure of core bus:
 
 */
 
-class CoreBus extends Module {
+class CoreBus(implicit val p: Parameters) extends Module
+    with HasCoreParams with HasPlatformParams {
   val io = IO(new Bundle {
     // SRAM interface for core
     val rom       = Flipped(new SramIO(ADDR_WIDTH, INST_WIDTH))
@@ -63,7 +66,7 @@ class CoreBus extends Module {
   require(INST_WIDTH == DATA_WIDTH)
 
   // instruction MMU
-  val immu = Module(new MMU(ITLB_SIZE, true))
+  val immu = Module(new MMU(ITLB_ENTRIES, true))
   immu.io.en      := io.tlb.en
   immu.io.flush   := io.tlb.flushInst
   immu.io.basePpn := io.tlb.basePpn
@@ -94,7 +97,7 @@ class CoreBus extends Module {
   io.rom.accessFault := immu.io.accessFault || idemux.io.in2.accessFault
 
   // data MMU
-  val dmmu = Module(new MMU(DTLB_SIZE, false))
+  val dmmu = Module(new MMU(DTLB_ENTRIES, false))
   dmmu.io.en      := io.tlb.dataEn
   dmmu.io.flush   := io.tlb.flushData
   dmmu.io.basePpn := io.tlb.basePpn
@@ -114,8 +117,8 @@ class CoreBus extends Module {
 
   // mux to D-cache & uncached
   val mux = Module(new SramMux2(ADDR_WIDTH, DATA_WIDTH))
-  mux.io.sel2 := dmmu.io.paddr >= UNCACHED_ADDR_START &&
-                 dmmu.io.paddr < UNCACHED_ADDR_END
+  mux.io.sel2 := dmmu.io.paddr >= DATA_UNCACHED_START.U &&
+                 dmmu.io.paddr < DATA_UNCACHED_END.U
   mux.io.in   <> ddemux.io.out
 
   // data cache

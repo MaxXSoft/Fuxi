@@ -1,5 +1,8 @@
 package core.integration
 
+import org.scalatest.funsuite.AnyFunSuite
+
+import utils.DefaultTestConfig._
 import chisel3._
 import chisel3.util.experimental.BoringUtils
 import consts.PerfEvent
@@ -7,11 +10,12 @@ import consts.PerfEvent._
 import consts.PerfEvent.{Retired => R, Microarchitecture => U}
 import io.PerformanceEventsIO
 import sim.ROM
+import org.chipsalliance.cde.config.Parameters
 import utils.{CoreMemoryHarness, CoreTester, ExpectedRetirement, RetirementChecker, TestDriver}
 
-private class PerformanceHarness(ras: Boolean, depth: Int, fenceFault: Boolean)
+private class PerformanceHarness(ras: Boolean, depth: Int, fenceFault: Boolean)(implicit parameters: Parameters)
     extends CoreMemoryHarness(ROM.Words(if (ras) RasProgram.words else RetirementProgram.words),
-                              depth, fenceFault) {
+                              fenceFault)(new configs.WithFetchQueueDepth(depth) ++ parameters) {
   val pmu = IO(Output(new PerformanceEventsIO))
   pmu := BoringUtils.bore(core.csrfile.io.perfEvents)
 }
@@ -26,7 +30,7 @@ private class PerformanceTester(c: PerformanceHarness, ras: Boolean, fenceFault:
   val checker = new RetirementChecker(expected)
   val donePc = if (ras) RasProgram.donePc else RetirementProgram.donePc
   val totals = PerfEvent.groups.map { case (group, events) =>
-    group -> Array.fill[Long](events.values.size)(0)
+    group -> Array.fill[Long](events.values.size) { 0 }
   }.toMap
   var memoryWait = 0
   var memoryArmed = true
@@ -97,11 +101,13 @@ private class PerformanceTester(c: PerformanceHarness, ras: Boolean, fenceFault:
   }
 }
 
-object CorePerformanceTest extends App {
-  for ((ras, depth, fenceFault) <- Seq((true, 1, false), (true, 4, false),
-                                      (false, 4, false), (false, 4, true))) {
-    if (!TestDriver.execute(args, () => new PerformanceHarness(ras, depth, fenceFault)) {
-      c => new PerformanceTester(c, ras, fenceFault)
-    }) sys.exit(1)
+class CorePerformanceTest extends AnyFunSuite {
+  test("count pipeline, prediction and fence events") {
+    for ((ras, depth, fenceFault) <- Seq((true, 1, false), (true, 4, false),
+                                        (false, 4, false), (false, 4, true))) {
+      TestDriver.run(new PerformanceHarness(ras, depth, fenceFault)) {
+        c => new PerformanceTester(c, ras, fenceFault)
+      }
+    }
   }
 }

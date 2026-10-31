@@ -1,6 +1,6 @@
 package utils
 
-import consts.Parameters.DATA_WIDTH
+import consts.Architecture.DATA_WIDTH
 
 case class ObservedInstruction(pc: BigInt, write: Option[(Int, BigInt)])
 case class ObservedTrap(pc: BigInt, cause: BigInt, value: BigInt)

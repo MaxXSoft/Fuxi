@@ -1,5 +1,7 @@
 package bus
 
+import org.scalatest.funsuite.AnyFunSuite
+
 import utils.{PeekPokeTester, TestDriver}
 
 class TlbTester(c: TLB) extends PeekPokeTester(c) {
@@ -103,8 +105,10 @@ class TlbTester(c: TLB) extends PeekPokeTester(c) {
   expectTlbEntry(0x67890)
 }
 
-object TlbTest extends App {
-  if (!TestDriver.execute(args, () => new TLB(16)) {
-    (c) => new TlbTester(c)
-  }) sys.exit(1)
+class TlbTest extends AnyFunSuite {
+  test("look up translations and invalidate entries") {
+    TestDriver.run(new TLB(16)) {
+      (c) => new TlbTester(c)
+    }
+  }
 }

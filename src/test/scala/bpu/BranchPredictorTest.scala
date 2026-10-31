@@ -1,5 +1,8 @@
 package bpu
 
+import org.scalatest.funsuite.AnyFunSuite
+
+import utils.DefaultTestConfig._
 import utils.{PeekPokeTester, TestDriver}
 
 object InstType extends Enumeration {
@@ -66,8 +69,10 @@ class BpUnitTester(c: BranchPredictor) extends PeekPokeTester(c) {
   }
 }
 
-object BranchPredictorTest extends App {
-  if (!TestDriver.execute(args, () => new BranchPredictor) {
-    (c) => new BpUnitTester(c)
-  }) sys.exit(1)
+class BranchPredictorTest extends AnyFunSuite {
+  test("predict branches and train the predictor") {
+    TestDriver.run(new BranchPredictor) {
+      (c) => new BpUnitTester(c)
+    }
+  }
 }

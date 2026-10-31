@@ -1,7 +1,10 @@
 package csr
 
+import org.scalatest.funsuite.AnyFunSuite
+
+import utils.DefaultTestConfig._
+import configs.{CoreParamsKey, PlatformParamsKey}
 import chisel3._
-import consts.Parameters.HPM_COUNT
 import consts.CSR._
 import utils.{CsrRegressionTester, TestDriver}
 
@@ -62,6 +65,10 @@ class CsrInterruptTester(c: CsrFile) extends CsrRegressionTester(c) {
   expect(c.io.trapVec, 0x11c)
 }
 
-object CsrInterruptTest extends App {
-  if (!TestDriver.execute(args, () => new CsrFile(HPM_COUNT))(c => new CsrInterruptTester(c))) sys.exit(1)
+class CsrInterruptTest extends AnyFunSuite {
+  test("prioritize and deliver enabled interrupts") {
+    TestDriver.run(new CsrFile(p(CoreParamsKey).hpmCounters, p(PlatformParamsKey).hartId)) { c =>
+      new CsrInterruptTester(c)
+    }
+  }
 }

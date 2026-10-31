@@ -1,5 +1,8 @@
 package bus
 
+import org.scalatest.funsuite.AnyFunSuite
+
+import utils.DefaultTestConfig._
 import utils.InstEncoding
 import utils.{AxiTestSupport, PeekPokeTester, TestDriver}
 
@@ -202,11 +205,13 @@ class CoreBusFenceTester(c: CoreBus) extends PeekPokeTester(c) with AxiTestSuppo
   }
 }
 
-object CoreBusTest extends App {
-  if (!TestDriver.execute(args, () => new CoreBus) {
-    (c) => new CoreBusUnitTester(c)
-  }) sys.exit(1)
-  if (!TestDriver.execute(args, () => new CoreBus) {
-    (c) => new CoreBusFenceTester(c)
-  }) sys.exit(1)
+class CoreBusTest extends AnyFunSuite {
+  test("route memory accesses and complete cache fences") {
+    TestDriver.run(new CoreBus) {
+      (c) => new CoreBusUnitTester(c)
+    }
+    TestDriver.run(new CoreBus) {
+      (c) => new CoreBusFenceTester(c)
+    }
+  }
 }

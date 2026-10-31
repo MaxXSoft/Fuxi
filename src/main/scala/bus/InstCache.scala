@@ -1,14 +1,16 @@
 package bus
 
 import chisel3._
+import org.chipsalliance.cde.config.Parameters
+import configs.HasCoreParams
 import chisel3.util._
 
 import io._
-import consts.Parameters._
+import consts.Architecture._
 import axi.AxiMaster
 
 // direct mapped instruction cache
-class InstCache extends Module {
+class InstCache(implicit val p: Parameters) extends Module with HasCoreParams {
   val io = IO(new Bundle {
     // SRAM interface
     val sram  = Flipped(new SramIO(ADDR_WIDTH, INST_WIDTH))
@@ -21,8 +23,8 @@ class InstCache extends Module {
   })
 
   // some constants
-  val dataMemSize = ICACHE_LINE_SIZE / (INST_WIDTH / 8)
-  val tagWidth    = ADDR_WIDTH - ICACHE_LINE_WIDTH - ICACHE_WIDTH
+  val dataMemSize = ICACHE_LINE_BYTES / (INST_WIDTH / 8)
+  val tagWidth    = ADDR_WIDTH - ICACHE_OFFSET_BITS - ICACHE_INDEX_BITS
   val burstSize   = log2Ceil(INST_WIDTH / 8)
   val burstLen    = dataMemSize - 1
   require(log2Ceil(burstLen) <= io.axi.readAddr.bits.len.getWidth)
@@ -35,9 +37,9 @@ class InstCache extends Module {
   val state = RegInit(sIdle)
 
   // all cache lines
-  val valid = RegInit(VecInit(Seq.fill(ICACHE_SIZE) { false.B }))
-  val tag   = Mem(ICACHE_SIZE, UInt(tagWidth.W))
-  val lines = SyncReadMem(ICACHE_SIZE * dataMemSize, UInt(INST_WIDTH.W))
+  val valid = RegInit(VecInit(Seq.fill(ICACHE_LINES) { false.B }))
+  val tag   = Mem(ICACHE_LINES, UInt(tagWidth.W))
+  val lines = SyncReadMem(ICACHE_LINES * dataMemSize, UInt(INST_WIDTH.W))
 
   // AXI control
   val ren         = RegInit(false.B)
@@ -50,13 +52,13 @@ class InstCache extends Module {
   val sramAddr    = Reg(UInt(ADDR_WIDTH.W))
   val selAddr     = Mux(state === sIdle, io.sram.addr, sramAddr)
   val tagSel      = selAddr(ADDR_WIDTH - 1,
-                            ICACHE_WIDTH + ICACHE_LINE_WIDTH)
-  val lineSel     = selAddr(ICACHE_WIDTH + ICACHE_LINE_WIDTH - 1,
-                            ICACHE_LINE_WIDTH)
-  val lineDataSel = selAddr(ICACHE_WIDTH + ICACHE_LINE_WIDTH - 1,
+                            ICACHE_INDEX_BITS + ICACHE_OFFSET_BITS)
+  val lineSel     = selAddr(ICACHE_INDEX_BITS + ICACHE_OFFSET_BITS - 1,
+                            ICACHE_OFFSET_BITS)
+  val lineDataSel = selAddr(ICACHE_INDEX_BITS + ICACHE_OFFSET_BITS - 1,
                             burstSize)
   val dataSel     = Cat(lineSel, dataOffset)
-  val startAddr   = Cat(tagSel, lineSel, 0.U(ICACHE_LINE_WIDTH.W))
+  val startAddr   = Cat(tagSel, lineSel, 0.U(ICACHE_OFFSET_BITS.W))
   val cacheHit    = valid(lineSel) && tag(lineSel) === tagSel
 
   // main finite state machine

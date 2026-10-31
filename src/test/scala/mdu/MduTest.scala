@@ -1,5 +1,8 @@
 package mdu
 
+import org.scalatest.funsuite.AnyFunSuite
+
+import utils.DefaultTestConfig._
 import chisel3.UInt
 import utils.{PeekPokeTester, TestDriver}
 
@@ -54,6 +57,7 @@ class MduUnitTester(c: MDU) extends PeekPokeTester(c) {
     }
     assert(peek(c.io.valid) != 0, s"MDU operation $op ($opr1, $opr2) timed out")
     expect(c.io.result, ans)
+    step(1) // accept completion, including clearing a pipelined multiply
     poke(c.io.op, MDU_NOP)
     step(1)
   }
@@ -70,7 +74,7 @@ class MduUnitTester(c: MDU) extends PeekPokeTester(c) {
     (MDU_DIVU, BigInt(100), BigInt(14)),
     (MDU_REMU, BigInt(100), BigInt(2)),
     (MDU_DIV, mask - 99, mask - 13), // -100 / 7 = -14
-    (MDU_REM, mask - 99, mask - 1)   // -100 % 7 = -2
+    (MDU_REM, mask - 99, mask - 1),  // -100 % 7 = -2
   )) {
     checkMdu(op, dividend, 7, answer)
     poke(c.io.flush, true)
@@ -90,10 +94,23 @@ class MduUnitTester(c: MDU) extends PeekPokeTester(c) {
     testMdu(MDU_REM)
     testMdu(MDU_REMU)
   }
+
+  // A canceled multiply must not leak a result/done into its replacement.
+  poke(c.io.op, MDU_MUL)
+  poke(c.io.opr1, 13)
+  poke(c.io.opr2, 17)
+  step(1)
+  poke(c.io.flush, true)
+  step(1)
+  checkMdu(MDU_MULH, mask, 7, mask) // signed -1 * 7
 }
 
-object MduTest extends App {
-  if (!TestDriver.execute(args, () => new MDU) {
-    (c) => new MduUnitTester(c)
-  }) sys.exit(1)
+class MduTest extends AnyFunSuite {
+  test("execute and cancel operations at different multiplier latencies") {
+    for (latency <- Seq(0, 1, 3)) {
+      TestDriver.run(new MDU()(new configs.WithMulLatency(latency) ++ p)) { c =>
+        new MduUnitTester(c)
+      }
+    }
+  }
 }

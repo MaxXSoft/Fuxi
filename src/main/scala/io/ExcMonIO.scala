@@ -2,7 +2,7 @@ package io
 
 import chisel3._
 
-import consts.Parameters._
+import consts.Architecture._
 
 class ExcMonCheckIO extends Bundle {
   val addr  = Output(UInt(ADDR_WIDTH.W))

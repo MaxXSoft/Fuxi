@@ -1,17 +1,20 @@
 package core
 
 import chisel3._
+import org.chipsalliance.cde.config.Parameters
+import configs.{HasCoreParams, HasPlatformParams}
 import chisel3.util.Queue
 
 import io._
-import consts.Parameters._
+import consts.Architecture._
 import utils._
 import csr.CsrFile
 import lsu.ExclusiveMonitor
 import consts.Paging.PPN_WIDTH
 import consts.CSR.CSR_MODE_S
 
-class Core(val fetchQueueDepth: Int, val hpmCount: Int) extends Module {
+class Core(implicit val p: Parameters) extends Module
+    with HasCoreParams with HasPlatformParams {
   val io = IO(new Bundle {
     // interrupt request
     val irq     = new InterruptIO
@@ -31,7 +34,7 @@ class Core(val fetchQueueDepth: Int, val hpmCount: Int) extends Module {
 
   // all stages
   val fetch   = Module(new Fetch)
-  val ifid    = Module(new Queue(new FetchIO, fetchQueueDepth,
+  val ifid    = Module(new Queue(new FetchIO, FETCH_QUEUE_DEPTH,
                                  pipe = true, flow = true, hasFlush = true))
   val decoder = Module(new Decoder)
   val idex    = Module(new MidStage(new DecoderIO))
@@ -45,7 +48,7 @@ class Core(val fetchQueueDepth: Int, val hpmCount: Int) extends Module {
   val regfile = Module(new RegFile)
 
   // CSR file
-  val csrfile = Module(new CsrFile(hpmCount))
+  val csrfile = Module(new CsrFile(HPM_COUNTERS, HART_ID))
 
   // exclusive monitor
   val excMon  = Module(new ExclusiveMonitor)
@@ -55,7 +58,7 @@ class Core(val fetchQueueDepth: Int, val hpmCount: Int) extends Module {
   val control = Module(new PipelineController)
 
   // performance event collection
-  val perf    = Module(new CorePerformanceEvents)
+  val perf    = Module(new PerformanceEvents)
 
   // fetch stage
   fetch.io.flush    := control.io.flushIf

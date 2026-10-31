@@ -1,5 +1,8 @@
 package core.integration
 
+import org.scalatest.funsuite.AnyFunSuite
+
+import utils.DefaultTestConfig._
 import sim.ROM
 import utils.{Checker, CoreMemoryHarness, CoreTester, CoreTraceProgram, ExpectedTrap,
               InstEncoding, RetirementChecker, TestDriver, TrapChecker}
@@ -136,14 +139,17 @@ private[core] class CoreCompressedTester(c: CoreMemoryHarness, program: CoreTrac
   if (stall) assert(maxQueueCount == depth, s"FIFO did not fill under forced stalls: $maxQueueCount/$depth")
 }
 
-object CoreCompressedTest extends App {
-  for ((program, depth, stall) <- Seq(
-    (CompressedFlowProgram, 1, true),
-    (CompressedFlowProgram, 4, true),
-    (CompressedTrapProgram, 4, false),
-  )) {
-    if (!TestDriver.execute(args, () => new CoreMemoryHarness(ROM.Words(program.words), depth)) {
-      c => new CoreCompressedTester(c, program, depth, stall)
-    }) sys.exit(1)
+class CoreCompressedTest extends AnyFunSuite {
+  test("execute compressed control flow and traps with fetch stalls") {
+    for ((program, depth, stall) <- Seq(
+      (CompressedFlowProgram, 1, true),
+      (CompressedFlowProgram, 4, true),
+      (CompressedTrapProgram, 4, false),
+    )) {
+      TestDriver.run(new CoreMemoryHarness(ROM.Words(program.words))
+          (new configs.WithFetchQueueDepth(depth) ++ p)) { c =>
+        new CoreCompressedTester(c, program, depth, stall)
+      }
+    }
   }
 }

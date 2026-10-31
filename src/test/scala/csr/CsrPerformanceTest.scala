@@ -1,7 +1,10 @@
 package csr
 
+import org.scalatest.funsuite.AnyFunSuite
+
+import utils.DefaultTestConfig._
+import configs.{CoreParamsKey, PlatformParamsKey}
 import chisel3._
-import consts.Parameters.HPM_COUNT
 import consts.CSR._
 import consts.CsrOp._
 import consts.PerfEvent
@@ -202,10 +205,15 @@ class CsrPerformanceConfigurationTester(c: CsrFile) extends CsrRegressionTester(
   read(mhpmCounterHighAddr(last), 0)
 }
 
-object CsrPerformanceTest extends App {
-  if (!TestDriver.execute(args, () => new CsrFile(HPM_COUNT))(c => new CsrPerformanceTester(c))) sys.exit(1)
-  for (count <- Seq(0, 29)) {
-    if (!TestDriver.execute(args, () => new CsrFile(count))(
-      c => new CsrPerformanceConfigurationTester(c))) sys.exit(1)
+class CsrPerformanceTest extends AnyFunSuite {
+  test("count events and support boundary HPM configurations") {
+    TestDriver.run(new CsrFile(p(CoreParamsKey).hpmCounters, p(PlatformParamsKey).hartId)) { c =>
+      new CsrPerformanceTester(c)
+    }
+    for (count <- Seq(0, 29)) {
+      TestDriver.run(new CsrFile(count, p(PlatformParamsKey).hartId)) { c =>
+        new CsrPerformanceConfigurationTester(c)
+      }
+    }
   }
 }
