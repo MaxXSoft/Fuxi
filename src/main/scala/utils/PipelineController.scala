@@ -3,7 +3,7 @@ package utils
 import chisel3._
 
 import io._
-import consts.Parameters._
+import consts.Architecture._
 
 class PipelineController extends Module {
   val io = IO(new Bundle {

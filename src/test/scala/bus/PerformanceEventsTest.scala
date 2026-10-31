@@ -1,6 +1,8 @@
 package bus
 
-import consts.Parameters._
+import utils.DefaultTestConfig._
+import configs.CoreParamsKey
+import consts.Architecture._
 import utils.{AxiTestSupport, PeekPokeTester, TestDriver}
 
 class InstCachePerformanceTester(c: InstCache) extends PeekPokeTester(c) with AxiTestSupport {
@@ -27,12 +29,12 @@ class InstCachePerformanceTester(c: InstCache) extends PeekPokeTester(c) with Ax
   poke(c.io.axi.readAddr.ready, true)
   step(1)
   poke(c.io.axi.readAddr.ready, false)
-  for (i <- 0 until ICACHE_LINE_SIZE / 4) {
+  for (i <- 0 until p(CoreParamsKey).icache.lineBytes / 4) {
     expect(c.io.pmu.miss, false)
     expect(c.io.pmu.access, false)
     expect(c.io.pmu.busy, true)
     if (i == 4) step(3)
-    driveAxiRead(c.io.axi, 0x100 + i, last = i == ICACHE_LINE_SIZE / 4 - 1)
+    driveAxiRead(c.io.axi, 0x100 + i, last = i == p(CoreParamsKey).icache.lineBytes / 4 - 1)
     step(1)
     poke(c.io.axi.readData.valid, false)
   }
@@ -56,7 +58,7 @@ class InstCachePerformanceTester(c: InstCache) extends PeekPokeTester(c) with Ax
 
 class DataCachePerformanceTester(c: DataCache) extends PeekPokeTester(c) with AxiTestSupport {
   val base = BigInt("80000000", 16)
-  val beats = DCACHE_LINE_SIZE / 4
+  val beats = p(CoreParamsKey).dcache.lineBytes / 4
   poke(c.io.sram.en, false)
   poke(c.io.sram.wen, 0)
   poke(c.io.sram.addr, base)
@@ -138,7 +140,7 @@ class DataCachePerformanceTester(c: DataCache) extends PeekPokeTester(c) with Ax
   expect(c.io.pmu.miss, false)
   step(1)
   poke(c.io.sram.wen, 0)
-  poke(c.io.sram.addr, base + DCACHE_SIZE * DCACHE_LINE_SIZE)
+  poke(c.io.sram.addr, base + p(CoreParamsKey).dcache.lines * p(CoreParamsKey).dcache.lineBytes)
   expect(c.io.pmu.miss, true)
   step(1)
   writeback()

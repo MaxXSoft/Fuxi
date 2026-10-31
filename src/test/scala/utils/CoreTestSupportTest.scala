@@ -1,6 +1,7 @@
 package utils
 
-import consts.Parameters.RESET_PC
+import utils.DefaultTestConfig._
+import configs.PlatformParamsKey
 import sim.ROM
 
 // Pure Scala regressions for layout contracts that RTL tests otherwise obscure.
@@ -11,7 +12,7 @@ object CoreTestSupportTest extends App {
     assert(rejected, "Expected invalid layout to be rejected")
   }
 
-  val base = RESET_PC.litValue
+  val base = p(PlatformParamsKey).resetVector
   val mixed = new CoreProgram(InstructionImage.CompressedNops)
   mixed.emit16(InstEncoding.c_nop())
   mixed.expectWriteback(10, 42)

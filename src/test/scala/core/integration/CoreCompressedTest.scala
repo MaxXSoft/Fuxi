@@ -1,5 +1,6 @@
 package core.integration
 
+import utils.DefaultTestConfig._
 import sim.ROM
 import utils.{Checker, CoreMemoryHarness, CoreTester, CoreTraceProgram, ExpectedTrap,
               InstEncoding, RetirementChecker, TestDriver, TrapChecker}
@@ -142,7 +143,7 @@ object CoreCompressedTest extends App {
     (CompressedFlowProgram, 4, true),
     (CompressedTrapProgram, 4, false),
   )) {
-    if (!TestDriver.execute(args, () => new CoreMemoryHarness(ROM.Words(program.words), depth)) {
+    if (!TestDriver.execute(args, () => new CoreMemoryHarness(ROM.Words(program.words))(new configs.WithFetchQueueDepth(depth).orElse(p))) {
       c => new CoreCompressedTester(c, program, depth, stall)
     }) sys.exit(1)
   }

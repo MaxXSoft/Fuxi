@@ -1,5 +1,6 @@
 package bpu
 
+import utils.DefaultTestConfig._
 import utils.{PeekPokeTester, TestDriver}
 import utils.InstEncoding._
 

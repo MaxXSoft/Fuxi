@@ -5,7 +5,7 @@ import chisel3.util._
 
 import io._
 import csr._
-import consts.Parameters._
+import consts.Architecture._
 import consts.ExceptCause._
 import consts.CSR._
 import consts.CsrOp._
@@ -13,8 +13,9 @@ import consts.Control.{Y, N}
 import consts.Paging.PPN_WIDTH
 import consts.PerfEvent
 
-class CsrFile(val hpmCount: Int) extends Module {
+class CsrFile(val hpmCount: Int, val hartId: BigInt = BigInt(0)) extends Module {
   require(hpmCount >= 0 && hpmCount <= 29)
+  require(hartId >= 0 && hartId < (BigInt(1) << 32))
 
   val io = IO(new Bundle {
     // read channel
@@ -107,7 +108,7 @@ class CsrFile(val hpmCount: Int) extends Module {
     BitPat(CSR_MVENDERID)     -> List(0.U,                  Y, N),
     BitPat(CSR_MARCHID)       -> List(0.U,                  Y, N),
     BitPat(CSR_MIMPID)        -> List(0.U,                  Y, N),
-    BitPat(CSR_MHARTID)       -> List(0.U,                  Y, N),
+    BitPat(CSR_MHARTID)       -> List(hartId.U,                  Y, N),
     BitPat(CSR_MSTATUS)       -> List(mstatus.asUInt,       Y, Y),
     // RV32 high status: fixed little-endian, without H or double-trap state.
     BitPat(CSR_MSTATUSH)      -> List(0.U,                  Y, Y),

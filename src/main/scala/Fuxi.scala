@@ -1,15 +1,17 @@
 import chisel3._
+import org.chipsalliance.cde.config.Parameters
+import configs.{DefaultConfig, WithHpmCounters, CoreParamsKey}
 import chisel3.stage.ChiselGeneratorAnnotation
 import circt.stage.ChiselStage
 
 import io._
 import axi.AxiMaster
-import consts.Parameters._
+import consts.Architecture._
 
 import core.Core
 import bus.CoreBus
 
-class Fuxi(hpmCount: Int) extends Module {
+class Fuxi(implicit val p: Parameters) extends Module {
   val io = IO(new Bundle {
     // interrupt request
     val irq       = new InterruptIO
@@ -23,7 +25,7 @@ class Fuxi(hpmCount: Int) extends Module {
     val uncached  = new AxiMaster(ADDR_WIDTH, DATA_WIDTH)
   })
 
-  val core    = Module(new Core(FETCH_QUEUE_DEPTH, hpmCount))
+  val core    = Module(new Core)
   val coreBus = Module(new CoreBus)
 
   core.io.irq     <> io.irq
@@ -62,7 +64,7 @@ object Fuxi extends App {
     invalidOption(s"$HPM_COUNTERS may be given at most once")
   }
   private val hpmOption = args.indexOf(HPM_COUNTERS)
-  private val hpmCount = if (hpmOption < 0) HPM_COUNT else {
+  private val hpmCount = if (hpmOption < 0) (new DefaultConfig)(CoreParamsKey).hpmCounters else {
     if (hpmOption + 1 == args.length) {
       invalidOption(s"$HPM_COUNTERS requires a count from 0 to 29")
     }
@@ -74,6 +76,6 @@ object Fuxi extends App {
 
   (new ChiselStage).execute(
     Array("--target", "verilog") ++ firtoolOptions ++ stageArgs,
-    Seq(ChiselGeneratorAnnotation(() => new Fuxi(hpmCount)))
+    Seq(ChiselGeneratorAnnotation(() => new Fuxi()(new WithHpmCounters(hpmCount).orElse(new DefaultConfig))))
   )
 }

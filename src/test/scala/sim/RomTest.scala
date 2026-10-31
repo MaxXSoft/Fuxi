@@ -1,25 +1,26 @@
 package sim
 
+import utils.DefaultTestConfig._
+import configs.PlatformParamsKey
 import consts.Instructions.NOP
-import consts.Parameters.RESET_PC
 import utils.{PeekPokeTester, TestDriver}
 
 class RomUnitTester(c: ROM) extends PeekPokeTester(c) {
   poke(c.io.en, true)
   poke(c.io.wen, 0)
   poke(c.io.wdata, 0)
-  poke(c.io.addr, RESET_PC.litValue)
+  poke(c.io.addr, p(PlatformParamsKey).resetVector)
   expect(c.io.rdata, NOP)
   step(1)
   expect(c.io.rdata, BigInt("89abcdef", 16))
 
-  poke(c.io.addr, RESET_PC.litValue + 4)
+  poke(c.io.addr, p(PlatformParamsKey).resetVector + 4)
   expect(c.io.rdata, BigInt("89abcdef", 16)) // address changes must not bypass the register
   step(1)
   expect(c.io.rdata, BigInt("01234567", 16))
 
   for (index <- Seq(2, ROM.DEPTH - 1)) {
-    poke(c.io.addr, RESET_PC.litValue + 4 * index)
+    poke(c.io.addr, p(PlatformParamsKey).resetVector + 4 * index)
     step(1)
     expect(c.io.rdata, NOP)
   }
@@ -28,7 +29,7 @@ class RomUnitTester(c: ROM) extends PeekPokeTester(c) {
   step(1)
   expect(c.io.rdata, 0)
   poke(c.io.en, true)
-  poke(c.io.addr, RESET_PC.litValue)
+  poke(c.io.addr, p(PlatformParamsKey).resetVector)
   step(1)
   expect(c.io.rdata, BigInt("89abcdef", 16))
   poke(c.reset, 1)

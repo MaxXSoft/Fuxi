@@ -4,7 +4,7 @@ import chisel3._
 import chisel3.util._
 
 import io._
-import consts.Parameters._
+import consts.Architecture._
 import axi.AxiMaster
 
 // uncached memory accessing

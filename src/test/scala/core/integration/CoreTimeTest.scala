@@ -1,8 +1,9 @@
 package core.integration
 
+import utils.DefaultTestConfig._
 import chisel3._
 import consts.CSR._
-import consts.Parameters.RTC_WIDTH
+import consts.Architecture.RTC_WIDTH
 import sim.ROM
 import utils.InstEncoding._
 import utils.{CoreMemoryHarness, CoreProgram, CoreTester, TestDriver, TrapChecker, WritebackChecker}

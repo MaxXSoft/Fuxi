@@ -1,5 +1,6 @@
 package core.stages
 
+import utils.DefaultTestConfig._
 import core.Decoder
 import utils.InstEncoding._
 import chisel3.{Bool, UInt}

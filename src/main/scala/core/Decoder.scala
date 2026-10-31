@@ -1,6 +1,7 @@
 package core
 
 import chisel3._
+import org.chipsalliance.cde.config.Parameters
 import chisel3.util._
 
 import io._
@@ -12,11 +13,11 @@ import consts.ExceptType._
 import consts.CsrOp._
 import consts.Instructions.NOP
 import consts.Opcode
-import consts.Parameters.{ADDR_WIDTH, INST_ALIGN_WIDTH}
+import consts.Architecture.{ADDR_WIDTH, INST_ALIGN_WIDTH}
 import consts.MduOp.MDU_NOP
 import consts.LsuOp.LSU_NOP
 
-class Decoder extends Module {
+class Decoder(implicit val p: Parameters) extends Module {
   val io = IO(new Bundle {
     // from fetch stage
     val fetch   = Input(new FetchIO)

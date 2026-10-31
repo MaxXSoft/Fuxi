@@ -1,7 +1,8 @@
 package csr
 
+import utils.DefaultTestConfig._
+import configs.CoreParamsKey
 import chisel3._
-import consts.Parameters.HPM_COUNT
 import consts.CSR._
 import consts.CsrOp._
 import utils.{CsrRegressionTester, TestDriver}
@@ -80,5 +81,5 @@ class CsrCounterAccessTester(c: CsrFile) extends CsrRegressionTester(c) {
 }
 
 object CsrCounterAccessTest extends App {
-  if (!TestDriver.execute(args, () => new CsrFile(HPM_COUNT))(c => new CsrCounterAccessTester(c))) sys.exit(1)
+  if (!TestDriver.execute(args, () => new CsrFile(p(CoreParamsKey).hpmCounters))(c => new CsrCounterAccessTester(c))) sys.exit(1)
 }

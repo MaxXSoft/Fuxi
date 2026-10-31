@@ -3,7 +3,7 @@ package bpu
 import chisel3._
 import chisel3.util._
 
-import consts.Parameters.ADDR_WIDTH
+import consts.Architecture.ADDR_WIDTH
 import io.RasPerformanceIO
 
 // A bounded speculative stack. Overflow discards the oldest return address;

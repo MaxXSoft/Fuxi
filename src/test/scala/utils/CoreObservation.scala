@@ -3,7 +3,7 @@ package utils
 import chisel3._
 import core.Core
 import chisel3.util.experimental.BoringUtils
-import consts.Parameters._
+import consts.Architecture._
 import io.DebugIO
 
 // Test-only observation of retirement and trap boundaries. Architectural return

@@ -1,5 +1,7 @@
 package core.stages
 
+import org.chipsalliance.cde.config.Parameters
+import utils.DefaultTestConfig._
 import core.Fetch
 import utils.InstEncoding._
 import chisel3._
@@ -7,7 +9,7 @@ import chisel3.util.Queue
 import io._
 import utils.{InstructionImage, PeekPokeTester, TestDriver}
 
-class FetchHarness(depth: Int) extends Module {
+class FetchHarness(depth: Int)(implicit val p: Parameters) extends Module {
   val io = IO(new Bundle {
     val flush = Input(Bool())
     val contextFlush = Input(Bool())

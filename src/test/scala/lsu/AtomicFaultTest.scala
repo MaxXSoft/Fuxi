@@ -1,15 +1,17 @@
 package lsu
 
+import org.chipsalliance.cde.config.Parameters
+import utils.DefaultTestConfig._
 import utils.InstEncoding._
 import chisel3._
 import chisel3.util._
 import core._
 import io._
-import consts.Parameters._
+import consts.Architecture._
 import consts.CSR.CSR_MODE_M
 import utils.{PeekPokeTester, TestDriver}
 
-class AtomicFaultHarness extends Module {
+class AtomicFaultHarness(implicit val p: Parameters) extends Module {
   val io = IO(new Bundle {
     val instruction = Input(UInt(32.W))
     val address = Input(UInt(32.W))

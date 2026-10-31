@@ -1,10 +1,12 @@
 package core
 
 import chisel3._
+import org.chipsalliance.cde.config.Parameters
+import configs.{CoreParamsKey, PlatformParamsKey}
 import chisel3.util._
 
 import io._
-import consts.Parameters._
+import consts.Architecture._
 import bpu.BranchPredictor
 
 class FetchWord extends Bundle {
@@ -13,7 +15,9 @@ class FetchWord extends Bundle {
   val accessFault = Bool()
 }
 
-class Fetch extends Module {
+class Fetch(implicit val p: Parameters) extends Module {
+  val params = p(CoreParamsKey).frontend
+
   val io = IO(new Bundle {
     // pipeline control signals
     val flush     = Input(Bool())
@@ -30,7 +34,7 @@ class Fetch extends Module {
     val pmu = Output(new RasPerformanceIO)
   })
 
-  val pc = RegInit(RESET_PC)
+  val pc = RegInit(p(PlatformParamsKey).resetVector.U(ADDR_WIDTH.W))
   val faultBlocked = RegInit(false.B)
   val bpu = Module(new BranchPredictor)
   bpu.io.branchInfo <> io.branch
@@ -38,16 +42,16 @@ class Fetch extends Module {
 
   // SRAM valid accepts a word now; its synchronous data arrives next cycle.
   // Keep an unaccepted request stable even when its instruction stream dies.
-  val requestAddr = RegInit(RESET_PC)
+  val requestAddr = RegInit(p(PlatformParamsKey).resetVector.U(ADDR_WIDTH.W))
   val requestActive = RegInit(false.B)
   val requestKilled = RegInit(false.B)
-  val restartAddr = RegInit(RESET_PC)
+  val restartAddr = RegInit(p(PlatformParamsKey).resetVector.U(ADDR_WIDTH.W))
   val pending = RegInit(false.B)
   val pendingKilled = RegInit(false.B)
   val pendingPageFault = Reg(Bool())
   val pendingAccessFault = Reg(Bool())
 
-  val depth = 4
+  val depth = params.fetchBufferEntries
   val words = Reg(Vec(depth, new FetchWord))
   val head = RegInit(0.U(log2Ceil(depth).W))
   val tail = RegInit(0.U(log2Ceil(depth).W))

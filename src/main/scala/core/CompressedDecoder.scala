@@ -5,7 +5,7 @@ import chisel3.util._
 
 import consts.Opcode
 import consts.Instructions.{EBREAK_INST, NOP}
-import consts.Parameters.INST_WIDTH
+import consts.Architecture.INST_WIDTH
 
 class CompressedDecoder extends Module {
   val io = IO(new Bundle {

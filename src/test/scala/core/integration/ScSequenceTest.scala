@@ -1,5 +1,6 @@
 package core.integration
 
+import utils.DefaultTestConfig._
 import utils.InstEncoding._
 import utils.{CoreProgram, CoreProgramTester, CoreWrapper, TestDriver}
 

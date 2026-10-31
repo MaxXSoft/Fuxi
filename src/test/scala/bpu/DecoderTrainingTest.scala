@@ -1,14 +1,16 @@
 package bpu
 
+import org.chipsalliance.cde.config.Parameters
+import utils.DefaultTestConfig._
+import configs.CoreParamsKey
 import utils.InstEncoding._
 import chisel3._
 
 import core.Decoder
 import io.FetchIO
-import consts.Parameters.GHR_WIDTH
 import utils.{PeekPokeTester, TestDriver}
 
-class DecoderTrainingHarness extends Module {
+class DecoderTrainingHarness(implicit val p: Parameters) extends Module {
   val io = IO(new Bundle {
     val valid = Input(Bool())
     val stalled = Input(Bool())
@@ -17,7 +19,7 @@ class DecoderTrainingHarness extends Module {
     val branch = Output(Bool())
     val jump = Output(Bool())
     val taken = Output(Bool())
-    val predictionIndex = Output(UInt(GHR_WIDTH.W))
+    val predictionIndex = Output(UInt(p(CoreParamsKey).bpu.ghrBits.W))
     val predictionTarget = Output(UInt(32.W))
     val predictionTaken = Output(Bool())
   })
@@ -52,7 +54,7 @@ class DecoderTrainingTester(c: DecoderTrainingHarness) extends PeekPokeTester(c)
   poke(c.io.stalled, false)
   poke(c.io.inst, bne(1, 0, 8)) // bne x1, x0, +8
   poke(c.io.operand, 0)
-  step(GHR_WIDTH + 1) // known history and strongly not-taken PHT entry
+  step(p(CoreParamsKey).bpu.ghrBits + 1) // known history and strongly not-taken PHT entry
   expect(c.io.predictionIndex, 0)
   expect(c.io.predictionTarget, 0x208)
   expect(c.io.predictionTaken, false)

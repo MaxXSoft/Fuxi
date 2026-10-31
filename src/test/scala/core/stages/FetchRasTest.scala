@@ -1,5 +1,6 @@
 package core.stages
 
+import utils.DefaultTestConfig._
 import utils.{InstructionImage, PeekPokeTester, TestDriver}
 import utils.InstEncoding._
 
