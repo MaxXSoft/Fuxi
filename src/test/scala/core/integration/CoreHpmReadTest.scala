@@ -85,10 +85,12 @@ object HpmReadProgram extends CoreProgram {
 }
 
 object CoreHpmReadTest extends App {
-  if (!TestDriver.execute(args, () => new CoreWrapper(HpmReadProgram.words))(
-    c => new CoreProgramTester(c, HpmReadProgram, HpmReadProgram.donePc, 2000))) sys.exit(1)
-  if (!TestDriver.execute(args, () => new CoreMemoryHarness(ROM.Words(CycleRmwProgram.words)))(
-    c => new CycleRmwTester(c))) sys.exit(1)
+  if (!TestDriver.execute(args, () => new CoreWrapper(HpmReadProgram.words)) { c =>
+    new CoreProgramTester(c, HpmReadProgram, HpmReadProgram.donePc, 2000)
+  }) sys.exit(1)
+  if (!TestDriver.execute(args, () => new CoreMemoryHarness(ROM.Words(CycleRmwProgram.words))) { c =>
+    new CycleRmwTester(c)
+  }) sys.exit(1)
 }
 
 // A zero-valued source register other than x0 requests a real set/clear write.

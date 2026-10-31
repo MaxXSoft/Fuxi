@@ -59,6 +59,7 @@ private[core] class CoreSatpTester(c: CoreFetchFaultWrapper)
 }
 
 object CoreSatpTest extends App {
-  if (!TestDriver.execute(args, () => new CoreFetchFaultWrapper)(
-    c => new CoreSatpTester(c))) sys.exit(1)
+  if (!TestDriver.execute(args, () => new CoreFetchFaultWrapper) { c =>
+    new CoreSatpTester(c)
+  }) sys.exit(1)
 }

@@ -3,7 +3,7 @@ package cli
 import configs._
 import org.chipsalliance.cde.config.{Config, Parameters}
 import scala.util.control.NonFatal
-import scopt.OParser
+import scopt.{OParser, Read}
 
 case class ConfigOptions(
   preset: String = "DefaultConfig",
@@ -40,7 +40,9 @@ case class ConfigOptions(
         resetVector.map(new WithResetVector(_)),
         hartId.map(new WithHartId(_)),
       )
-      val parameters = fragments.flatten.foldRight(base)((fragment, up) => fragment ++ up)
+      val parameters = fragments.flatten.foldRight(base) { (fragment, up) =>
+        fragment ++ up
+      }
       ConfigValidation(parameters)
       Right(parameters)
     } catch {
@@ -55,31 +57,67 @@ object ConfigOptions {
     val builder = OParser.builder[C]
     import builder._
 
-    def int(name: String, description: String)(update: (ConfigOptions, Int) => ConfigOptions) =
-      opt[Int](name).maxOccurs(1).valueName("<n>").text(description)
-        .action((value, options) => set(options, update(get(options), value)))
+    def overrideOpt[A: Read](
+      name: String,
+      description: String,
+      valueName: String = "<n>",
+    )(update: (ConfigOptions, Option[A]) => ConfigOptions): OParser[A, C] =
+      opt[A](name).maxOccurs(1).valueName(valueName).text(description)
+        .action { (value, options) =>
+          set(options, update(get(options), Some(value)))
+        }
+
+    def int(n: String, d: String)(u: (ConfigOptions, Option[Int]) => ConfigOptions) =
+      overrideOpt[Int](n, d)(u)
+    def bigInt = overrideOpt[BigInt] _
 
     OParser.sequence(
       opt[String]("config").maxOccurs(1).valueName("<class>")
         .text("Preset class (default: configs.DefaultConfig); short names use the configs package")
-        .action((value, options) => set(options, get(options).copy(preset = value))),
-      int("fetch-queue-depth", "IF/ID instruction queue entries")((c, n) => c.copy(fetchQueueDepth = Some(n))),
-      int("fetch-buffer-entries", "Fetch word buffer entries (power of two, >= 2)")((c, n) => c.copy(fetchBufferEntries = Some(n))),
-      int("ghr-bits", "Global branch history bits (PHT has 2^n entries)")((c, n) => c.copy(ghrBits = Some(n))),
-      int("btb-entries", "BTB entries (power of two, >= 2)")((c, n) => c.copy(btbEntries = Some(n))),
-      int("ras-entries", "Return address stack entries")((c, n) => c.copy(rasEntries = Some(n))),
-      int("icache-lines", "Instruction cache line count")((c, n) => c.copy(icacheLines = Some(n))),
-      int("dcache-lines", "Data cache line count")((c, n) => c.copy(dcacheLines = Some(n))),
-      int("cache-line-bytes", "Bytes per line in both caches (power of two, 8..1024)")((c, n) => c.copy(cacheLineBytes = Some(n))),
-      int("itlb-entries", "Instruction TLB entries")((c, n) => c.copy(itlbEntries = Some(n))),
-      int("dtlb-entries", "Data TLB entries")((c, n) => c.copy(dtlbEntries = Some(n))),
-      int("mul-latency", "Multiplier pipeline latency (>= 0)")((c, n) => c.copy(mulLatency = Some(n))),
-      int("hpm-counters", "HPM counter count, excluding cycle/instret (0..29)")((c, n) => c.copy(hpmCounters = Some(n))),
-      opt[BigInt]("reset-vector").maxOccurs(1).valueName("<address>")
-        .text("Word-aligned RV32 reset address, decimal or 0x hexadecimal")
-        .action((n, c) => set(c, get(c).copy(resetVector = Some(n)))),
-      opt[BigInt]("hart-id").maxOccurs(1).valueName("<id>").text("Unsigned 32-bit mhartid")
-        .action((n, c) => set(c, get(c).copy(hartId = Some(n)))),
+        .action { (value, options) => set(options, get(options).copy(preset = value)) },
+      int("fetch-queue-depth", "IF/ID instruction queue entries") { (c, n) =>
+        c.copy(fetchQueueDepth = n)
+      },
+      int("fetch-buffer-entries", "Fetch word buffer entries (power of two, >= 2)") { (c, n) =>
+        c.copy(fetchBufferEntries = n)
+      },
+      int("ghr-bits", "Global branch history bits (PHT has 2^n entries)") { (c, n) =>
+        c.copy(ghrBits = n)
+      },
+      int("btb-entries", "BTB entries (power of two, >= 2)") { (c, n) =>
+        c.copy(btbEntries = n)
+      },
+      int("ras-entries", "Return address stack entries") { (c, n) =>
+        c.copy(rasEntries = n)
+      },
+      int("icache-lines", "Instruction cache line count") { (c, n) =>
+        c.copy(icacheLines = n)
+      },
+      int("dcache-lines", "Data cache line count") { (c, n) =>
+        c.copy(dcacheLines = n)
+      },
+      int("cache-line-bytes", "Bytes per line in both caches (power of two, 8..1024)") { (c, n) =>
+        c.copy(cacheLineBytes = n)
+      },
+      int("itlb-entries", "Instruction TLB entries") { (c, n) =>
+        c.copy(itlbEntries = n)
+      },
+      int("dtlb-entries", "Data TLB entries") { (c, n) =>
+        c.copy(dtlbEntries = n)
+      },
+      int("mul-latency", "Multiplier pipeline latency (>= 0)") { (c, n) =>
+        c.copy(mulLatency = n)
+      },
+      int("hpm-counters", "HPM counter count, excluding cycle/instret (0..29)") { (c, n) =>
+        c.copy(hpmCounters = n)
+      },
+      bigInt("reset-vector", "Word-aligned RV32 reset address, decimal or 0x hexadecimal",
+             "<address>") { (c, n) =>
+        c.copy(resetVector = n)
+      },
+      bigInt("hart-id", "Unsigned 32-bit mhartid", "<id>") { (c, n) =>
+        c.copy(hartId = n)
+      },
     )
   }
 }

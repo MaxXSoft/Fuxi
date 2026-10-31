@@ -37,7 +37,9 @@ class CsrPendingTester(c: CsrFile) extends CsrRegressionTester(c) {
 
 object CsrPendingTest extends App {
   if (!TestDriver.execute(args, () =>
-      new CsrFile(p(CoreParamsKey).hpmCounters))(c => new CsrPendingTester(c))) {
+      new CsrFile(p(CoreParamsKey).hpmCounters)) { c =>
+    new CsrPendingTester(c)
+  }) {
     sys.exit(1)
   }
 }

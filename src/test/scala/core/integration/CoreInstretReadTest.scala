@@ -74,6 +74,7 @@ object InstretReadProgram extends CoreProgram {
 }
 
 object CoreInstretReadTest extends App {
-  if (!TestDriver.execute(args, () => new CoreWrapper(InstretReadProgram.words))(
-    c => new CoreProgramTester(c, InstretReadProgram, InstretReadProgram.donePc, 1000))) sys.exit(1)
+  if (!TestDriver.execute(args, () => new CoreWrapper(InstretReadProgram.words)) { c =>
+    new CoreProgramTester(c, InstretReadProgram, InstretReadProgram.donePc, 1000)
+  }) sys.exit(1)
 }

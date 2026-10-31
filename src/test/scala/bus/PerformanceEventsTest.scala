@@ -255,7 +255,7 @@ class CoreBusPerformanceTester(c: CoreBus) extends PeekPokeTester(c)
     val walkMiss = if (isInst) c.io.pmu.icacheWalkMiss else c.io.pmu.dcacheWalkMiss
     val tlbMiss = if (isInst) c.io.pmu.itlb.miss else c.io.pmu.dtlb.miss
     val signals = Seq(access, miss, walkAccess, walkMiss, tlbMiss)
-    val counts = Array.fill(5)(0)
+    val counts = Array.fill(5) { 0 }
     def tick(): Unit = {
       for (i <- signals.indices) counts(i) += peek(signals(i)).toInt
       step(1)

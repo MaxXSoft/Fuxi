@@ -82,7 +82,9 @@ class CsrCounterAccessTester(c: CsrFile) extends CsrRegressionTester(c) {
 
 object CsrCounterAccessTest extends App {
   if (!TestDriver.execute(args, () =>
-      new CsrFile(p(CoreParamsKey).hpmCounters))(c => new CsrCounterAccessTester(c))) {
+      new CsrFile(p(CoreParamsKey).hpmCounters)) { c =>
+    new CsrCounterAccessTester(c)
+  }) {
     sys.exit(1)
   }
 }

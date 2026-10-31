@@ -32,7 +32,7 @@ object CoreTestSupportTest extends App {
   assert(legacy.pc == legacy.pcAtWord(3))
   assert(legacy.words == Seq(BigInt(0x13))) // Seeking does not emit padding instructions.
   val marker = legacy.finish()
-  assert(legacy.words.take(3) == Seq.fill(3)(BigInt(0x13)))
+  assert(legacy.words.take(3) == Seq.fill(3) { BigInt(0x13) })
   assert(legacy.pc == marker + 6)
   assert((legacy.words.last & 0xffff) == 0xa001)
   legacy.seekWord(8) // A compressed tail leaves a halfword-aligned cursor.
@@ -98,7 +98,7 @@ object CoreTestSupportTest extends App {
   writes.observe(ObservedInstruction(base + 4, Some(7 -> BigInt(2))))
   fails(writes.checkOccurrences(base + 4, 1))
   writes.checkOccurrences(base + 4, 2)
-  rejects(new WritebackChecker(Seq.fill(2)(ExpectedWriteback(base, 6, 1))))
+  rejects(new WritebackChecker(Seq.fill(2) { ExpectedWriteback(base, 6, 1) }))
 
   rejects(ExpectedWriteback(base, 6, 1, occurrence = 0))
   rejects(new WritebackChecker(Seq(ExpectedWriteback(base, 6, 2, 2), ExpectedWriteback(base, 6, 1, 1))))

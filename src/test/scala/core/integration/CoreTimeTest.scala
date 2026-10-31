@@ -81,5 +81,7 @@ private class TimeTester(c: TimeHarness) extends CoreTester(c) {
 }
 
 object CoreTimeTest extends App {
-  if (!TestDriver.execute(args, () => new TimeHarness)(c => new TimeTester(c))) sys.exit(1)
+  if (!TestDriver.execute(args, () => new TimeHarness) { c =>
+    new TimeTester(c)
+  }) sys.exit(1)
 }

@@ -51,7 +51,9 @@ class CsrTimeTester(c: CsrFile) extends CsrRegressionTester(c) {
 
 object CsrTimeTest extends App {
   if (!TestDriver.execute(args, () =>
-      new CsrFile(p(CoreParamsKey).hpmCounters))(c => new CsrTimeTester(c))) {
+      new CsrFile(p(CoreParamsKey).hpmCounters)) { c =>
+    new CsrTimeTester(c)
+  }) {
     sys.exit(1)
   }
 }

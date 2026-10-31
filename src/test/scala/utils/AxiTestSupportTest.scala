@@ -82,5 +82,7 @@ class AxiReadSupportTester(c: AxiReadTestHarness) extends PeekPokeTester(c) with
 }
 
 object AxiTestSupportTest extends App {
-  if (!TestDriver.execute(args, () => new AxiReadTestHarness)(c => new AxiReadSupportTester(c))) sys.exit(1)
+  if (!TestDriver.execute(args, () => new AxiReadTestHarness) { c =>
+    new AxiReadSupportTester(c)
+  }) sys.exit(1)
 }

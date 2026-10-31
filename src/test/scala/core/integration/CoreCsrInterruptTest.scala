@@ -66,7 +66,8 @@ private class CsrInterruptTester(c: CsrInterruptHarness, program: CsrInterruptPr
 object CoreCsrInterruptTest extends App {
   for (enableGlobal <- Seq(true, false)) {
     val program = new CsrInterruptProgram(enableGlobal)
-    if (!TestDriver.execute(args, () => new CsrInterruptHarness(program))(
-      c => new CsrInterruptTester(c, program))) sys.exit(1)
+    if (!TestDriver.execute(args, () => new CsrInterruptHarness(program)) { c =>
+      new CsrInterruptTester(c, program)
+    }) sys.exit(1)
   }
 }

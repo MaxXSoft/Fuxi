@@ -11,7 +11,7 @@ class ScSequenceProgram(gap: Int, interveningSc: Boolean) extends CoreProgram {
     expectWriteback(5, 1)
     emit32(sc_w(5, 3, 2))
   } else emit32(sw(3, 2, 0))
-  emit32All(Seq.fill(gap)(nop()))
+  emit32All(Seq.fill(gap) { nop() })
   expectWriteback(6, if (interveningSc) 1 else 0)
   emit32(sc_w(6, 3, 1))
   expectWriteback(7, if (interveningSc) 0 else 7)
