@@ -1,10 +1,10 @@
-package utils
+package sim
 
 import java.io.File
 import cli.{CliExit, CommandLine, ConfigOptions}
 import scopt.OParser
 
-case class CoreTestOptions(
+case class CoreRunnerOptions(
   config: ConfigOptions = ConfigOptions(),
   initFile: Option[File] = None,
   traceFile: Option[File] = None,
@@ -12,8 +12,8 @@ case class CoreTestOptions(
   dumpConfig: Boolean = false,
 )
 
-object CoreTestOptions {
-  private val builder = OParser.builder[CoreTestOptions]
+object CoreRunnerOptions {
+  private val builder = OParser.builder[CoreRunnerOptions]
   import builder._
 
   private def validPath(file: File): Boolean =
@@ -24,8 +24,8 @@ object CoreTestOptions {
     else Option(file.getAbsoluteFile.getParentFile).exists(p => p.isDirectory && p.canWrite)
 
   private val parser = OParser.sequence(
-    programName("core.integration.CoreTest"),
-    ConfigOptions.parser[CoreTestOptions](_.config, (c, config) => c.copy(config = config)),
+    programName("sim.CoreRunner"),
+    ConfigOptions.parser[CoreRunnerOptions](_.config, (c, config) => c.copy(config = config)),
     opt[File]("init-file").abbr("if").maxOccurs(1).valueName("<file>")
       .text("ROM image (required unless --dump-config)")
       .validate { f =>
@@ -63,6 +63,6 @@ object CoreTestOptions {
     }
   )
 
-  def parse(args: Seq[String]): Either[CliExit, CoreTestOptions] =
-    CommandLine.parse(parser, args, CoreTestOptions())
+  def parse(args: Seq[String]): Either[CliExit, CoreRunnerOptions] =
+    CommandLine.parse(parser, args, CoreRunnerOptions())
 }

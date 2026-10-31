@@ -69,12 +69,15 @@ abstract class PeekPokeTester[T <: Module](val dut: T) extends PeekPokeAPI {
 }
 
 object TestDriver extends ChiselSim {
+  def run[T <: Module](generator: => T)(tester: T => Unit): Unit =
+    simulate(generator)(tester)
+
   def execute[T <: Module](
     _args: Array[String],
     generator: () => T
   )(tester: T => PeekPokeTester[T]): Boolean = {
     try {
-      simulate(generator()) { dut =>
+      run(generator()) { dut =>
         tester(dut)
         ()
       }

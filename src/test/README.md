@@ -31,7 +31,7 @@ For example:
 ```sh
 sbt 'Test / runMain utils.CoreTestSupportTest'
 sbt 'Test / runMain core.stages.DecoderTest'
-sbt 'Test / runMain core.integration.CoreTest -if src/test/resources/fib.txt -tf src/test/resources/fib_trace.txt'
+sbt 'Test / runMain sim.CoreRunner -if src/test/resources/fib.txt -tf src/test/resources/fib_trace.txt'
 ```
 
 ## Programs and instruction images
@@ -70,9 +70,11 @@ custom reset/hart/frontend/multiplier settings in the same JVM.
 `bus.CacheConfigTest` checks refill, dirty eviction and flush at different cache
 geometries, including 2-beat and 256-beat AXI bursts. It also exercises small TLBs
 through CoreBus and the uncached range ending at 2^32. The pure Scala
-`cli.GeneratorOptionsTest` and `utils.CoreTestOptionsTest` cover reflection,
+`cli.GeneratorOptionsTest` and `sim.CoreRunnerOptionsTest` cover reflection,
 override precedence, aliases, paths containing spaces and malformed input.
-`CoreTest` shares the generator's configuration options, while `-if/-tf/-gt`
+`core.integration.CoreTraceTest` runs the four bundled programs as independent
+ScalaTest cases. `sim.CoreRunner` provides manual program execution and trace
+generation, sharing the generator's configuration options, while `-if/-tf/-gt`
 remain available for ROM images and traces. Use `--help` for the full schema;
 test-only flags are not forwarded to ChiselSim.
 `mdu.MduTest` checks signed/unsigned arithmetic and cancellation at multiplier
