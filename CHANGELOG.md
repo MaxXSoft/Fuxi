@@ -46,6 +46,8 @@ All notable changes to the Fuxi will be documented in this file.
 - Fixed CSR-blocked memory operations incorrectly delaying newly enabled interrupts.
 - Fixed SATP commits to refetch younger instructions under the new address space.
 - Fixed uncached MMIO accesses to preserve byte addresses and byte/halfword/word transfer sizes.
+- Reject uncached region boundaries not aligned to the configured D-cache line
+  size, preventing cached refills and writebacks from crossing into the region.
 
 ## 0.0.2 - 2026-09-25
 
