@@ -58,11 +58,11 @@ private class PerformanceTester(c: PerformanceHarness, ras: Boolean, fenceFault:
     val pc = peek(c.io.observation.debug.pc)
     val branch = retired && pc == (if (ras) RasProgram.branch else RetirementProgram.pcAtWord(9))
     val jal = retired && ras && Set(RasProgram.firstCall, RasProgram.secondCall, BigInt(0x304))(pc)
-    val jalr = retired && ras && Set(BigInt(0x308), BigInt(0x344))(pc)
+    val jalr = retired && ras && Set(BigInt(0x308), BigInt(0x34c))(pc)
     val load = retired && pc == (if (ras) RasProgram.loopPc else RetirementProgram.pcAtWord(4))
     val store = retired && pc == (if (ras) BigInt(0x204) else RetirementProgram.pcAtWord(3))
     val compressed = retired && ras && Set(RasProgram.decrement, BigInt(0x302),
-                                            BigInt(0x308), BigInt(0x342), BigInt(0x344))(pc)
+                                            BigInt(0x308), BigInt(0x34a), BigInt(0x34c))(pc)
     for ((id, wanted) <- Seq(R.BRANCH -> branch, R.JAL -> jal, R.JALR -> jalr,
                              R.RAS_CANDIDATE -> jalr, R.COMPRESSED -> compressed,
                              R.LOAD -> load, R.STORE -> store)) {

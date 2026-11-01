@@ -46,7 +46,7 @@ class ParametersTest extends AnyFunSuite {
     val c = defaults(CoreParamsKey)
     val platform = defaults(PlatformParamsKey)
     assert(c.frontend == FrontendParams(4, 4))
-    assert(c.bpu == BpuParams(5, 64, 16) && c.bpu.phtEntries == 32)
+    assert(c.bpu == BpuParams(5, 16, 4) && c.bpu.phtEntries == 32)
     assert(c.icache == CacheParams(64, 64) && c.dcache == CacheParams(128, 64))
     assert(c.icache.capacityBytes == 4096 && c.dcache.capacityBytes == 8192)
     assert(c.mmu == MmuParams(16, 16) && c.mulLatency == 1 && c.hpmCounters == 8)
@@ -59,7 +59,7 @@ class ParametersTest extends AnyFunSuite {
       new WithCacheLineBytes(32) ++
       new WithResetVector(BigInt("80000000", 16)) ++
       defaults
-    assert(combined(CoreParamsKey).bpu == BpuParams(3, 16, 16))
+    assert(combined(CoreParamsKey).bpu == BpuParams(3, 16, 4))
     assert(combined(CoreParamsKey).icache == CacheParams(64, 32))
     assert(combined(CoreParamsKey).dcache == CacheParams(128, 32))
     assert(combined(PlatformParamsKey).resetVector == BigInt("80000000", 16))
@@ -101,7 +101,7 @@ class ParametersTest extends AnyFunSuite {
     assert(customized.resetAtConstruction == BigInt("80000000", 16))
     assert(customized.HART_ID == 7 && customized.DATA_UNCACHED_END == (BigInt(1) << 32))
     val baseline = new Consumer()(defaults)
-    assert(baseline.widthsAtConstruction == (5, 25, 6, 6))
+    assert(baseline.widthsAtConstruction == (5, 27, 6, 6))
     assert(baseline.RESET_VECTOR == 0x200 && baseline.HART_ID == 0)
     assert(customized.GHR_BITS == 3 && customized.HART_ID == 7, "Instances must keep their own configuration")
 

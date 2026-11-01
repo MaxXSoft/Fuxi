@@ -14,8 +14,6 @@ class SmallConfig extends Config(
     new WithITlbEntries(8) ++
     new WithDTlbEntries(8) ++
     new WithGhrBits(4) ++
-    new WithBtbEntries(32) ++
-    new WithRasEntries(8) ++
     new WithFetchQueueDepth(2) ++
     new WithHpmCounters(0) ++
     new DefaultConfig

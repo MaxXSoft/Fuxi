@@ -24,8 +24,8 @@ types, constructor failures and invalid parameter values are errors.
 | IF/ID instruction queue | 4 | 2 | 4 |
 | Fetch word buffer | 4 | 4 | 4 |
 | GHR bits / PHT entries | 5 / 32 | 4 / 16 | 5 / 32 |
-| BTB entries | 64 | 32 | 64 |
-| RAS entries | 16 | 8 | 16 |
+| BTB entries | 16 | 16 | 16 |
+| RAS entries | 4 | 4 | 4 |
 | I-cache lines / capacity | 64 / 4 KiB | 16 / 1 KiB | 64 / 4 KiB |
 | D-cache lines / capacity | 128 / 8 KiB | 32 / 2 KiB | 128 / 8 KiB |
 | Cache line bytes | 64 | 64 | 64 |

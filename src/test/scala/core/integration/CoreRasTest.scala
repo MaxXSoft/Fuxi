@@ -35,8 +35,8 @@ private[core] object RasProgram extends CoreTraceProgram {
       event(call, write(1, call + 4))
       event(0x302, write(10, iteration * 4 + index * 2 + 1))
       event(0x304, write(5, 0x308))
-      event(0x342, write(10, iteration * 4 + index * 2 + 2))
-      event(0x344)
+      event(0x34a, write(10, iteration * 4 + index * 2 + 2))
+      event(0x34c)
       event(0x308)
     }
     event(decrement, write(8, 7 - iteration))
@@ -44,10 +44,12 @@ private[core] object RasProgram extends CoreTraceProgram {
   }
   finish()
   place16(0x302, c_addi(10, 1))
-  place32(0x304, jal(5, 0x342 - 0x304))
+  // Keep the nested call and return in distinct BTB sets even at 16 entries;
+  // a conflict on every iteration would clear the RAS before its outer return.
+  place32(0x304, jal(5, 0x34a - 0x304))
   place16(0x308, c_jr(1))
-  place16(0x342, c_addi(10, 1))
-  place16(0x344, c_jr(5))
+  place16(0x34a, c_addi(10, 1))
+  place16(0x34c, c_jr(5))
 }
 
 private[core] class CoreRasHarness(depth: Int)(implicit parameters: Parameters)
@@ -90,7 +92,7 @@ private[core] class CoreRasTester(c: CoreRasHarness, depth: Int) extends CoreTes
       val pc = peek(c.prediction.pc)
       val target = peek(c.prediction.target)
       if (pc == 0x308) outerTargets += target
-      if (pc == 0x344 && target == 0x308) innerPredictions += 1
+      if (pc == 0x34c && target == 0x308) innerPredictions += 1
     }
     val flush = peek(c.prediction.flush) != 0
     if (flush) flushes += 1

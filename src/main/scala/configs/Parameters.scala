@@ -13,7 +13,7 @@ case class FrontendParams(fetchQueueDepth: Int = 4, fetchBufferEntries: Int = 4)
           "fetchBufferEntries must be a power of two, at least 2")
 }
 
-case class BpuParams(ghrBits: Int = 5, btbEntries: Int = 64, rasEntries: Int = 16) {
+case class BpuParams(ghrBits: Int = 5, btbEntries: Int = 16, rasEntries: Int = 4) {
   require(ghrBits >= 2 && ghrBits <= 30, "ghrBits must be in 2..30")
   require(btbEntries >= 2 && Geometry.powerOfTwo(btbEntries),
           "btbEntries must be a power of two, at least 2")
