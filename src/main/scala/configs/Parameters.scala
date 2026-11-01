@@ -7,7 +7,7 @@ private[configs] object Geometry {
   def indexBits(n: Int): Int = Integer.numberOfTrailingZeros(n)
 }
 
-case class FrontendParams(fetchQueueDepth: Int = 4, fetchBufferEntries: Int = 4) {
+case class FrontendParams(fetchQueueDepth: Int = 2, fetchBufferEntries: Int = 4) {
   require(fetchQueueDepth > 0, "fetchQueueDepth must be positive")
   require(fetchBufferEntries >= 2 && Geometry.powerOfTwo(fetchBufferEntries),
           "fetchBufferEntries must be a power of two, at least 2")

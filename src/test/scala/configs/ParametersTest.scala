@@ -45,7 +45,7 @@ class ParametersTest extends AnyFunSuite {
     ConfigValidation(defaults)
     val c = defaults(CoreParamsKey)
     val platform = defaults(PlatformParamsKey)
-    assert(c.frontend == FrontendParams(4, 4))
+    assert(c.frontend == FrontendParams(2, 4))
     assert(c.bpu == BpuParams(5, 16, 4) && c.bpu.phtEntries == 32)
     assert(c.icache == CacheParams(64, 64) && c.dcache == CacheParams(128, 64))
     assert(c.icache.capacityBytes == 4096 && c.dcache.capacityBytes == 8192)
@@ -110,7 +110,7 @@ class ParametersTest extends AnyFunSuite {
     class PlatformConsumer(implicit val p: Parameters) extends HasPlatformParams
     val coreOnly = new Config((site, here, up) => { case CoreParamsKey => CoreParams() })
     val platformOnly = new Config((site, here, up) => { case PlatformParamsKey => PlatformParams() })
-    assert((new CoreConsumer()(coreOnly)).FETCH_QUEUE_DEPTH == 4)
+    assert((new CoreConsumer()(coreOnly)).FETCH_QUEUE_DEPTH == 2)
     assert((new PlatformConsumer()(platformOnly)).RESET_VECTOR == 0x200)
   }
 }

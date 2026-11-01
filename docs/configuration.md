@@ -21,7 +21,7 @@ types, constructor failures and invalid parameter values are errors.
 
 | Parameter | DefaultConfig | SmallConfig | ProfilingConfig |
 | --- | ---: | ---: | ---: |
-| IF/ID instruction queue | 4 | 2 | 4 |
+| IF/ID instruction queue | 2 | 2 | 2 |
 | Fetch word buffer | 4 | 4 | 4 |
 | GHR bits / PHT entries | 5 / 32 | 4 / 16 | 5 / 32 |
 | BTB entries | 16 | 16 | 16 |
