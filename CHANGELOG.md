@@ -36,6 +36,7 @@ All notable changes to the Fuxi will be documented in this file.
 - Migrated Scala regression suites to ScalaTest, run directly with `sbt test`.
 - Moved the command-line trace runner from `core.integration.CoreTest` to
   `sim.CoreRunner`, with bundled trace regressions in `CoreTraceTest`.
+- Reduced default BTB entries, RAS depth and IF/ID queue depth.
 
 ### Fixed
 
