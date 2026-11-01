@@ -2,7 +2,7 @@ package bus
 
 import chisel3._
 import org.chipsalliance.cde.config.Parameters
-import configs.{ConfigValidation, HasCoreParams, HasPlatformParams}
+import configs.{ConfigValidation, HasCoreParams, HasPlatformParams, PlatformParamsKey}
 
 import io._
 import consts.Architecture._
@@ -43,8 +43,9 @@ Structure of core bus:
 
 class CoreBus(implicit val p: Parameters) extends Module
     with HasCoreParams with HasPlatformParams {
-  // Direct CDE callers may bypass the generator's configuration validation.
-  ConfigValidation(p)
+  // Cached and uncached routing must not split a D-cache line.
+  ConfigValidation.validateDataUncachedRange(
+    p(PlatformParamsKey).dataUncached, DCACHE_LINE_BYTES)
 
   val io = IO(new Bundle {
     // SRAM interface for core

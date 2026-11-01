@@ -91,10 +91,12 @@ object ConfigValidation {
     require(core != null, "CoreParamsKey must be defined")
     require(platform != null, "PlatformParamsKey must be defined")
 
-    // Cached refills and writebacks cover whole lines, so no line may straddle
-    // cached and uncached routing regions. Check the final composed parameters.
-    val lineBytes = core.dcache.lineBytes
-    val range = platform.dataUncached
+    validateDataUncachedRange(platform.dataUncached, core.dcache.lineBytes)
+  }
+
+  // Cached refills and writebacks cover whole lines, so no line may straddle
+  // cached and uncached routing regions.
+  def validateDataUncachedRange(range: AddressRange, lineBytes: Int): Unit = {
     require(range.start % lineBytes == 0,
       s"data uncached range start must align to the D-cache line size ($lineBytes bytes)")
     require(range.end % lineBytes == 0,
