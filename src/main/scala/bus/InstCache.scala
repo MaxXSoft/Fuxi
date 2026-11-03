@@ -48,18 +48,24 @@ class InstCache(implicit val p: Parameters) extends Module with HasCoreParams {
   val readFault   = RegInit(false.B)
   val discardRefill = RegInit(false.B)
 
-  // cache line selectors
+  // Lookup follows the current request directly. Refill selectors use only
+  // the saved miss address, so the FSM address mux is outside the tag path.
+  val lookupTag  = io.sram.addr(ADDR_WIDTH - 1,
+                                ICACHE_INDEX_BITS + ICACHE_OFFSET_BITS)
+  val lookupLine = io.sram.addr(ICACHE_INDEX_BITS + ICACHE_OFFSET_BITS - 1,
+                                ICACHE_OFFSET_BITS)
+  val cacheHit   = valid(lookupLine) && tag(lookupLine) === lookupTag
   val sramAddr    = Reg(UInt(ADDR_WIDTH.W))
-  val selAddr     = Mux(state === sIdle, io.sram.addr, sramAddr)
-  val tagSel      = selAddr(ADDR_WIDTH - 1,
+  val tagSel      = sramAddr(ADDR_WIDTH - 1,
                             ICACHE_INDEX_BITS + ICACHE_OFFSET_BITS)
-  val lineSel     = selAddr(ICACHE_INDEX_BITS + ICACHE_OFFSET_BITS - 1,
+  val lineSel     = sramAddr(ICACHE_INDEX_BITS + ICACHE_OFFSET_BITS - 1,
                             ICACHE_OFFSET_BITS)
-  val lineDataSel = selAddr(ICACHE_INDEX_BITS + ICACHE_OFFSET_BITS - 1,
-                            burstSize)
+  // Keep the synchronous data read and refill-completion priming unchanged.
+  val lineDataSel = Mux(state === sIdle,
+    io.sram.addr(ICACHE_INDEX_BITS + ICACHE_OFFSET_BITS - 1, burstSize),
+    sramAddr(ICACHE_INDEX_BITS + ICACHE_OFFSET_BITS - 1, burstSize))
   val dataSel     = Cat(lineSel, dataOffset)
-  val startAddr   = Cat(tagSel, lineSel, 0.U(ICACHE_OFFSET_BITS.W))
-  val cacheHit    = valid(lineSel) && tag(lineSel) === tagSel
+  val startAddr   = Cat(lookupTag, lookupLine, 0.U(ICACHE_OFFSET_BITS.W))
 
   // main finite state machine
   switch (state) {
@@ -69,7 +75,7 @@ class InstCache(implicit val p: Parameters) extends Module with HasCoreParams {
         state := sIdle
       } .elsewhen (io.sram.en && !cacheHit) {
         // cache miss, switch state
-        valid(lineSel) := false.B
+        valid(lookupLine) := false.B
         ren       := true.B
         discardRefill := false.B
         raddr     := startAddr

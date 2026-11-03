@@ -8,9 +8,10 @@ import utils.{AxiTestSupport, PeekPokeTester, TestDriver}
 
 class InstCachePerformanceTester(c: InstCache) extends PeekPokeTester(c)
     with AxiTestSupport {
+  val base = BigInt("80000000", 16)
   poke(c.io.sram.en, false)
   poke(c.io.sram.wen, 0)
-  poke(c.io.sram.addr, BigInt("80000000", 16))
+  poke(c.io.sram.addr, base)
   poke(c.io.sram.wdata, 0)
   poke(c.io.flush, false)
   idleAxi(c.io.axi)
@@ -22,7 +23,10 @@ class InstCachePerformanceTester(c: InstCache) extends PeekPokeTester(c)
   expect(c.io.pmu.miss, true)
   expect(c.io.pmu.access, false)
   step(1)
+  // A redirected lookup must not change the outstanding refill or its tag.
+  poke(c.io.sram.addr, base + c.ICACHE_CAPACITY_BYTES + c.ICACHE_LINE_BYTES + 4)
   for (_ <- 0 until 5) {
+    expect(c.io.axi.readAddr.bits.addr, base)
     expect(c.io.pmu.miss, false)
     expect(c.io.pmu.access, false)
     expect(c.io.pmu.busy, true)
@@ -44,10 +48,18 @@ class InstCachePerformanceTester(c: InstCache) extends PeekPokeTester(c)
   expect(c.io.pmu.busy, true) // cache tag installation
   expect(c.io.pmu.access, false)
   step(1)
+  poke(c.io.sram.addr, base)
   expect(c.io.pmu.access, true)
   expect(c.io.pmu.miss, false) // refill retry is a completion, not another miss
   expect(c.io.pmu.busy, false)
   step(1)
+  for (word <- Seq(0, c.ICACHE_LINE_BYTES / 4 - 1, 1, 0)) {
+    poke(c.io.sram.addr, base + word * 4)
+    expect(c.io.sram.valid, true)
+    expect(c.io.axi.readAddr.valid, false)
+    step(1)
+    expect(c.io.sram.rdata, 0x100 + word)
+  }
   poke(c.io.sram.en, false)
   expect(c.io.sram.rdata, 0x100)
   expect(c.io.pmu.access, false)
@@ -80,8 +92,10 @@ class DataCachePerformanceTester(c: DataCache) extends PeekPokeTester(c)
     }
     expect(signal, true)
   }
-  def refill(): Unit = {
+  def refill(address: BigInt): Unit = {
+    poke(c.io.sram.addr, base + 3 * c.DCACHE_CAPACITY_BYTES + c.DCACHE_LINE_BYTES + 4)
     waitFor(c.io.axi.readAddr.valid)
+    expect(c.io.axi.readAddr.bits.addr, address)
     expect(c.io.axi.readAddr.bits.len, beats - 1)
     for (_ <- 0 until 4) {
       expect(c.io.pmu.miss, false)
@@ -102,17 +116,21 @@ class DataCachePerformanceTester(c: DataCache) extends PeekPokeTester(c)
     expect(c.io.pmu.access, false)
     expect(c.io.pmu.busy, true)
     step(1)
+    poke(c.io.sram.addr, address)
     expect(c.io.pmu.access, true)
     expect(c.io.pmu.miss, false)
     expect(c.io.pmu.busy, false)
   }
-  def writeback(): Unit = {
+  def writeback(address: BigInt): Unit = {
+    poke(c.io.sram.addr, base + 2 * c.DCACHE_CAPACITY_BYTES + c.DCACHE_LINE_BYTES + 4)
     waitFor(c.io.axi.writeAddr.valid)
+    expect(c.io.axi.writeAddr.bits.addr, address)
     expect(c.io.axi.writeAddr.bits.len, beats - 1)
     for (_ <- 0 until 4) {
       expect(c.io.pmu.writeback, false)
       expect(c.io.pmu.miss, false)
       expect(c.io.pmu.busy, true)
+      expect(c.io.axi.writeAddr.bits.addr, address)
       step(1)
     }
     poke(c.io.axi.writeAddr.ready, true)
@@ -141,7 +159,15 @@ class DataCachePerformanceTester(c: DataCache) extends PeekPokeTester(c)
   poke(c.io.sram.en, true)
   expect(c.io.pmu.miss, true)
   step(1)
-  refill()
+  refill(base)
+  // Back-to-back hits retain one-cycle data latency and need no AXI request.
+  for (word <- Seq(0, beats - 1, 1, 0)) {
+    poke(c.io.sram.addr, base + word * 4)
+    expect(c.io.sram.valid, true)
+    expect(c.io.axi.readAddr.valid, false)
+    step(1)
+    expect(c.io.sram.rdata, 0x200 + word)
+  }
   // A write hit is one SRAM transfer and dirties the line.
   poke(c.io.sram.wen, 15)
   expect(c.io.pmu.access, true)
@@ -151,8 +177,8 @@ class DataCachePerformanceTester(c: DataCache) extends PeekPokeTester(c)
   poke(c.io.sram.addr, base + c.DCACHE_CAPACITY_BYTES)
   expect(c.io.pmu.miss, true)
   step(1)
-  writeback()
-  refill() // eviction-to-refill transition must not generate another miss
+  writeback(base)
+  refill(base + c.DCACHE_CAPACITY_BYTES) // no additional miss event
   poke(c.io.sram.wen, 15)
   step(1)
   poke(c.io.sram.en, false)
@@ -160,7 +186,7 @@ class DataCachePerformanceTester(c: DataCache) extends PeekPokeTester(c)
   expect(c.io.pmu.miss, false)
   expect(c.io.pmu.access, false)
   step(1)
-  writeback() // FENCE writebacks count too, independently of demand traffic
+  writeback(base + c.DCACHE_CAPACITY_BYTES) // FENCE ignores demand traffic
   waitFor(c.io.flushDone)
   expect(c.io.pmu.busy, false)
   expect(c.io.pmu.miss, false)
