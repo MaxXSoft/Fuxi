@@ -111,4 +111,63 @@ class TlbTest extends AnyFunSuite {
       (c) => new TlbTester(c)
     }
   }
+
+  test("preserve duplicate priority, replacement and flush across TLB sizes") {
+    for (size <- Seq(2, 4, 16)) {
+      TestDriver.run(new TLB(size)) { c => new TlbPriorityTester(c) }
+    }
+  }
+}
+
+class TlbPriorityTester(c: TLB) extends PeekPokeTester(c) {
+  case class Entry(vpn: Int, ppn: Int, flags: Int)
+  val entries = Array.fill[Option[Entry]](c.size)(None)
+  var pointer = 0
+  val writeFlags = Seq(c.io.went.r, c.io.went.w, c.io.went.x,
+                       c.io.went.u, c.io.went.a, c.io.went.d)
+  val readFlags = Seq(c.io.rent.r, c.io.rent.w, c.io.rent.x,
+                      c.io.rent.u, c.io.rent.a, c.io.rent.d)
+  poke(c.io.flush, false)
+  poke(c.io.wen, false)
+  poke(c.io.waddr, 0)
+  poke(c.io.went.ppn, 0)
+  writeFlags.foreach(poke(_, false))
+
+  def check(): Unit = {
+    for (vpn <- 0 to c.size + 1) {
+      poke(c.io.vaddr, (vpn << 12) | 0xabc)
+      val expected = entries.flatten.filter(_.vpn == vpn).lastOption
+      expect(c.io.valid, expected.nonEmpty)
+      expect(c.io.rent.ppn, expected.map(_.ppn).getOrElse(0))
+      for ((flag, bit) <- readFlags.zipWithIndex) {
+        expect(flag, expected.exists(e => ((e.flags >> bit) & 1) != 0))
+      }
+    }
+  }
+
+  def write(vpn: Int, ppn: Int, flags: Int, flush: Boolean = false): Unit = {
+    poke(c.io.wen, true)
+    poke(c.io.flush, flush)
+    poke(c.io.waddr, vpn << 12)
+    poke(c.io.went.ppn, ppn)
+    for ((flag, bit) <- writeFlags.zipWithIndex) poke(flag, ((flags >> bit) & 1) != 0)
+    step(1)
+    if (flush) {
+      for (i <- entries.indices) entries(i) = None
+    } else {
+      entries(pointer) = Some(Entry(vpn, ppn, flags))
+      pointer = (pointer + 1) % c.size
+    }
+    poke(c.io.flush, false)
+    poke(c.io.wen, false)
+    check()
+  }
+
+  check()
+  // Fill duplicates, then wrap: the most recent write is not necessarily
+  // the highest-index match. Exercise every permission bit independently.
+  for (i <- 0 until 2 * c.size) write(1, 0x100 + i, (i * 13) & 63)
+  for (i <- 0 until c.size) write(i + 2, 0x200 + i, (i * 7) & 63)
+  write(1, 0x300, 63, flush = true)
+  for (i <- 0 until c.size) write(1, 0x400 + i, (i * 11) & 63)
 }
