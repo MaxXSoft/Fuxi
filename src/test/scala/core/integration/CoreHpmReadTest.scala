@@ -25,6 +25,7 @@ object HpmReadProgram extends CoreProgram {
     emit32(csrr(6, addr.litValue.toInt))
   }
   def branch(): Unit = emit32(bne(0, 0, 4))
+  def settleEvents(): Unit = emit32(addi(0, 0, 0))
 
   write(CSR_MCOUNTINHIBIT, allInhibited)
   write(mhpmEventAddr(3), encode(Group.RETIRED, Retired.BRANCH).toInt)
@@ -35,26 +36,33 @@ object HpmReadProgram extends CoreProgram {
   read(hpmCounterAddr(3), 0xffffffffL)
   write(CSR_MCOUNTINHIBIT, allInhibited & ~24)
   branch()
-  // The immediately preceding branch must reach retirement before either
-  // counter half is sampled; this first event carries into the high half.
+  // Retirement is ordered before the read, but the HPM event has one more
+  // register stage. The immediate snapshot precedes the carry; a later read
+  // observes it. Subsequent exact-count checks leave time for this stage.
+  read(hpmCounterHighAddr(3), 0)
   read(hpmCounterHighAddr(3), 1)
   read(mhpmCounterAddr(3), 0)
   branch()
+  settleEvents()
   read(hpmCounterAddr(3), 1)
   for (_ <- 0 until 3) emit16(c_nop())
+  settleEvents()
   read(hpmCounterAddr(4), 3)
 
   branch()
+  settleEvents()
   emit32(csrrsi(0, CSR_MCOUNTINHIBIT.litValue.toInt, 8))
   branch()
   read(hpmCounterAddr(3), 2)
   emit16(c_nop())
+  settleEvents()
   read(hpmCounterAddr(4), 4)
   // Reprogram an active counter. Following compressed instructions no longer
   // count, and the subsequent retired conditional branch increments it once.
   write(mhpmEventAddr(4), encode(Group.RETIRED, Retired.BRANCH).toInt)
   emit16(c_nop())
   branch()
+  settleEvents()
   read(mhpmCounterAddr(4), 5)
   write(mhpmCounterHighAddr(4), 3)
   read(hpmCounterHighAddr(4), 3)
@@ -70,6 +78,7 @@ object HpmReadProgram extends CoreProgram {
   emit32(addi(5, 0, 8))
   emit32(csrrc(0, CSR_MCOUNTINHIBIT.litValue.toInt, 5))
   branch()
+  settleEvents()
   read(hpmCounterAddr(3), 3)
   read(hpmCounterAddr(4), 8)
   write(CSR_MCOUNTINHIBIT, allInhibited)
