@@ -57,17 +57,22 @@ class TLB(val size: Int) extends Module {
     pointer := pointer + 1.U
   }
 
-  // TLB lookup
-  val found = WireInit(false.B)
-  val entry = WireInit(0.U.asTypeOf(new TlbEntry))
-  for (i <- 0 until size) {
-    when (valid(i) && data(i).vpn === vpn) {
-      found := true.B
-      entry := data(i).entry
+  // A balanced priority tree keeps the highest-index match, including when
+  // duplicate VPNs exist, without a serial override chain across every slot.
+  def lookup(begin: Int, end: Int): (Bool, TlbEntry) = {
+    if (end - begin == 1) {
+      val line = data(begin)
+      (valid(begin) && line.vpn === vpn, line.entry)
+    } else {
+      val middle = (begin + end) / 2
+      val (leftHit, leftEntry) = lookup(begin, middle)
+      val (rightHit, rightEntry) = lookup(middle, end)
+      (leftHit || rightHit, Mux(rightHit, rightEntry, leftEntry))
     }
   }
+  val (found, entry) = lookup(0, size)
 
   // output signals
   io.valid  := found
-  io.rent   := entry
+  io.rent   := Mux(found, entry, 0.U.asTypeOf(new TlbEntry))
 }
