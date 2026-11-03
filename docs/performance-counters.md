@@ -154,6 +154,11 @@ and is not overflow. A clear has one cause: global recovery wins over Decode.
 Empty RAS is not itself a misprediction; BTB fallback may be correct.
 Decode recovery also includes stale taken predictions for ordinary instructions,
 so decode_redirect need not equal the sum of retired branch/JAL/JALR misses.
+`decode_redirect` observes acceptance of the correction request, before its
+redirect register. Fetch/RAS recovery occurs on the following cycle and may be
+superseded by an older global redirect. This is separate from the HPM event
+register stage described above; the recovery cycle does not count the request
+again.
 
 Group `0x03` counts cache and MMU activity.
 
