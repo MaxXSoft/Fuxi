@@ -3,7 +3,7 @@ package core
 import chisel3._
 import org.chipsalliance.cde.config.Parameters
 import configs.{HasCoreParams, HasPlatformParams}
-import chisel3.util.Queue
+import chisel3.util.{Queue, RegEnable}
 
 import io._
 import consts.Architecture._
@@ -60,6 +60,14 @@ class Core(implicit val p: Parameters) extends Module
   // performance event collection
   val perf    = Module(new PerformanceEvents)
 
+  // Break the decode-correction -> next fetch/MMU/cache path. The correcting
+  // instruction advances now; on the following cycle only younger Decode
+  // work is suppressed while Fetch and the FIFO receive the saved redirect.
+  // PipelineController still gives older exceptions/fences/SATP writes priority.
+  val decodeRedirect = RegNext(decoder.io.flushIf, false.B)
+  val decodeTarget = RegEnable(decoder.io.flushPc, decoder.io.flushIf)
+  val decodeValid = ifid.io.deq.valid && !decodeRedirect
+
   // fetch stage
   fetch.io.flush    := control.io.flushIf
   fetch.io.contextFlush := control.io.flush
@@ -70,17 +78,17 @@ class Core(implicit val p: Parameters) extends Module
   ifid.io.flush.get := control.io.flushIf
   ifid.io.enq.valid := fetch.io.fetch.valid
   ifid.io.enq.bits  := fetch.io.fetch
-  ifid.io.deq.ready := !control.io.stallId
+  ifid.io.deq.ready := !control.io.stallId && !decodeRedirect
 
   // decoder stage
   decoder.io.fetch    := ifid.io.deq.bits
-  decoder.io.fetch.valid := ifid.io.deq.valid
+  decoder.io.fetch.valid := decodeValid
   decoder.io.flush    := control.io.flush
   decoder.io.stallId  := control.io.stallId
   decoder.io.read1    <> resolve.io.regRead1
   decoder.io.read2    <> resolve.io.regRead2
   idex.io.flush       := control.io.flush
-  idex.io.stallPrev   := control.io.stallId || !ifid.io.deq.valid
+  idex.io.stallPrev   := control.io.stallId || !decodeValid
   idex.io.stallNext   := control.io.stallEx
   idex.io.prev        <> decoder.io.decoder
 
@@ -150,8 +158,8 @@ class Core(implicit val p: Parameters) extends Module
   // pipeline controller
   control.io.alu        := alu.io.stallReq
   control.io.mem        := mem.io.stallReq
-  control.io.decFlush   := decoder.io.flushIf
-  control.io.decTarget  := decoder.io.flushPc
+  control.io.decFlush   := decodeRedirect
+  control.io.decTarget  := decodeTarget
   control.io.memFlush   := mem.io.flushReq
   control.io.memTarget  := mem.io.flushPc
   control.io.wbFlush    := csrfile.io.satpWritten
@@ -185,7 +193,7 @@ class Core(implicit val p: Parameters) extends Module
   perf.io.stallId        := control.io.stallId
   perf.io.fetchValid     := fetch.io.fetch.valid
   perf.io.fetchReady     := ifid.io.enq.ready
-  perf.io.decodeValid    := ifid.io.deq.valid
+  perf.io.decodeValid    := decodeValid
   perf.io.decodeRedirect := decoder.io.flushIf
   perf.io.loadHazard     := resolve.io.loadFlag
   perf.io.csrHazard      := resolve.io.csrFlag
