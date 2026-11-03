@@ -46,7 +46,22 @@ carry), preserving the other half. Inhibit/selector writes use their old values
 for the committing edge and their new values thereafter. Thus the instruction
 that freezes `minstret` counts; the instruction that unfreezes it does not.
 Counter reads drain older writes to either half/alias and relevant control
-CSRs; instret/HPM reads also drain older retirements.
+CSRs; instret/HPM reads also drain older retirements. This is not a separate
+drain of the HPM event pipeline described below.
+
+All 44 HPM event signals pass through one register stage before event selection
+and counting. An event sampled at an edge can increment an HPM counter on the
+following edge. Pulses still count once and sustained events still count once
+per active cycle, but observed HPM values lag the source activity by one cycle.
+Reset clears the pending sample. `mcycle`, `minstret`, and TIME are not delayed.
+
+The delayed sample uses the selector and inhibit values in force at the
+**counting edge**, not values captured with the event. Thus a freeze can drop a
+pending event, an unfreeze can admit activity sampled on the preceding edge,
+and an event-selector change can reclassify that sample. There is no replay of
+events discarded while inhibited. An explicit counter write still overrides
+the increment on its edge. These one-cycle boundary effects are intentional;
+HPM counters are statistical measurements, not exact instruction-region markers.
 
 Writing counter CSRRS/CSRRC forms (including immediate forms) calculate the
 addressed 32-bit replacement from the same Execute snapshot returned to `rd`,
@@ -57,7 +72,9 @@ value. Freeze a counter before adjusting it when preserving counts matters.
 For one consistent snapshot, freeze all wanted counters with one
 `mcountinhibit` write, then read their halves. Set selectors and clear counters
 while frozen before unfreezing. Include a compiler memory barrier around the
-measurement region. Reading a running RV32 counter requires high-low-high reads
+measurement region. A compiler barrier does not drain the hardware event stage;
+allow for the one-cycle offset when interpreting short regions or changing
+selectors. Reading a running RV32 counter requires high-low-high reads
 and retry if the high half changes. Freezing does not prevent explicit writes.
 
 ## Event IDs

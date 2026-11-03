@@ -87,7 +87,7 @@ A four-entry return-address stack (RAS) complements the 32-entry gshare PHT and 
 
 ### Performance Counters
 
-The core provides eight programmable 64-bit performance counters by default, alongside cycle/instret, with 44 selectable events covering retired branches, RAS predictions, pipeline stalls, caches, and page walks. See the [PMU event and CSR guide](docs/performance-counters.md) for event definitions, measurement boundaries, and the configurable counter count.
+The core provides eight programmable 64-bit performance counters by default, alongside cycle/instret, with 44 selectable events covering retired branches, RAS predictions, pipeline stalls, caches, and page walks. HPM events are registered before selection and counting, so counts lag source activity by one cycle. See the [PMU event and CSR guide](docs/performance-counters.md) for event definitions, measurement boundaries, and the configurable counter count.
 
 ## Running Tests
 
