@@ -59,15 +59,22 @@ class DataCache(implicit val p: Parameters) extends Module with HasCoreParams {
   val wlast       = wen && dataOffset === burstLen.U
   val readFault   = RegInit(false.B)
 
-  // cache line selectors
+  // Query tags/valid/dirty directly with the current request. Maintenance
+  // uses the saved miss address and must not lengthen this lookup path.
+  val lookupTag  = io.sram.addr(ADDR_WIDTH - 1,
+                                DCACHE_INDEX_BITS + DCACHE_OFFSET_BITS)
+  val lookupLine = io.sram.addr(DCACHE_INDEX_BITS + DCACHE_OFFSET_BITS - 1,
+                                DCACHE_OFFSET_BITS)
+  val victimTag  = tag(lookupLine)
+  val cacheHit   = valid(lookupLine) && victimTag === lookupTag
   val sramAddr    = Reg(UInt(ADDR_WIDTH.W))
-  val selAddr     = Mux(state === sIdle, io.sram.addr, sramAddr)
-  val tagSel      = selAddr(ADDR_WIDTH - 1,
+  val tagSel      = sramAddr(ADDR_WIDTH - 1,
                             DCACHE_INDEX_BITS + DCACHE_OFFSET_BITS)
-  val lineSel     = selAddr(DCACHE_INDEX_BITS + DCACHE_OFFSET_BITS - 1,
+  val lineSel     = sramAddr(DCACHE_INDEX_BITS + DCACHE_OFFSET_BITS - 1,
                             DCACHE_OFFSET_BITS)
-  val lineDataSel = selAddr(DCACHE_INDEX_BITS + DCACHE_OFFSET_BITS - 1,
-                            burstSize)
+  val lineDataSel = Mux(state === sIdle,
+    io.sram.addr(DCACHE_INDEX_BITS + DCACHE_OFFSET_BITS - 1, burstSize),
+    sramAddr(DCACHE_INDEX_BITS + DCACHE_OFFSET_BITS - 1, burstSize))
   val dataSel     = Cat(lineSel, dataOfsRef)
   // BlockMem has a one-cycle read latency.  While a W beat is accepted,
   // request the following word so that the next beat remains available
@@ -78,10 +85,9 @@ class DataCache(implicit val p: Parameters) extends Module with HasCoreParams {
   val writeOfsRef = writeOffset(log2Ceil(dataMemSize) - 1, 0)
   val writeSel    = Cat(lineSel, writeOfsRef)
   val startRaddr  = Cat(tagSel, lineSel, 0.U(DCACHE_OFFSET_BITS.W))
-  val startWaddr  = Cat(tag(lineSel), lineSel, 0.U(DCACHE_OFFSET_BITS.W))
+  val startWaddr  = Cat(victimTag, lookupLine, 0.U(DCACHE_OFFSET_BITS.W))
 
   // cache state & flush selector
-  val cacheHit  = valid(lineSel) && tag(lineSel) === tagSel
   val realDirty = 0 until DCACHE_LINES map { i => valid(i) && dirty(i) }
   val isDirty   = realDirty.reduce(_||_)
   val nextDirty = PriorityEncoder(realDirty)(DCACHE_INDEX_BITS - 1, 0)
@@ -99,7 +105,9 @@ class DataCache(implicit val p: Parameters) extends Module with HasCoreParams {
   lines.io.addr   := Mux(lineEnRead, dataSel,
                      Mux(lineEnWrite, writeSel,
                      Mux(lineEnFlush, flushSel, lineDataSel)))
-  lines.io.wdata  := Mux(lineEnCpu, io.sram.wdata,
+  // Choose data using the registered FSM state. Hit/permission-dependent
+  // CPU enables still gate writes, but no longer feed the BRAM data mux.
+  lines.io.wdata  := Mux(state === sIdle, io.sram.wdata,
                                     io.axi.readData.bits.data)
 
   // main finite state machine
@@ -114,15 +122,16 @@ class DataCache(implicit val p: Parameters) extends Module with HasCoreParams {
           // write data to cache line
           when (io.sram.wen =/= 0.U) {
             // set dirty bit
-            dirty(lineSel) := true.B
+            dirty(lookupLine) := true.B
           }
-        } .elsewhen (valid(lineSel) && dirty(lineSel)) {
+        } .elsewhen (valid(lookupLine) && dirty(lookupLine)) {
           // write dirty to memory and invalidate
           sramAddr := io.sram.addr
+          waddr := startWaddr
           state := sWriteAddr
         } .otherwise {
           // read from memory
-          valid(lineSel) := false.B
+          valid(lookupLine) := false.B
           sramAddr := io.sram.addr
           state := sReadAddr
         }
@@ -166,7 +175,6 @@ class DataCache(implicit val p: Parameters) extends Module with HasCoreParams {
     is (sWriteAddr) {
       // send write address to bus
       awen := true.B
-      waddr := startWaddr
       // switch state
       when (awen && io.axi.writeAddr.ready) {
         awen := false.B
