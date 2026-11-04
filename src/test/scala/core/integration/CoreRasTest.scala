@@ -67,6 +67,20 @@ private[core] class CoreRasHarness(depth: Int)(implicit parameters: Parameters)
   prediction.target := BoringUtils.bore(core.fetch.io.fetch.target)
   prediction.flush := BoringUtils.bore(core.control.io.flushIf)
   prediction.rasValid := BoringUtils.bore(core.fetch.bpu.ras.io.valid)
+  val queue = IO(new Bundle {
+    val inputValid = Output(Bool())
+    val inputReady = Output(Bool())
+    val input = Output(UInt(core.ifid.io.enq.bits.getWidth.W))
+    val outputValid = Output(Bool())
+    val outputReady = Output(Bool())
+    val output = Output(UInt(core.ifid.io.deq.bits.getWidth.W))
+  })
+  queue.inputValid := BoringUtils.bore(core.ifid.io.enq.valid)
+  queue.inputReady := BoringUtils.bore(core.ifid.io.enq.ready)
+  queue.input := BoringUtils.bore(core.ifid.io.enq.bits).asUInt
+  queue.outputValid := BoringUtils.bore(core.ifid.io.deq.valid)
+  queue.outputReady := BoringUtils.bore(core.ifid.io.deq.ready)
+  queue.output := BoringUtils.bore(core.ifid.io.deq.bits).asUInt
 }
 
 private[core] class CoreRasTester(c: CoreRasHarness, depth: Int) extends CoreTester(c) {
@@ -77,6 +91,10 @@ private[core] class CoreRasTester(c: CoreRasHarness, depth: Int) extends CoreTes
   var maxQueueCount = 0
   var waitCycles = 0
   var armed = true
+  val packets = scala.collection.mutable.Queue.empty[BigInt]
+  var fullDrains = 0
+  var bypasses = 0
+  var occupiedFlushes = 0
   poke(c.io.memoryStall, false)
   poke(c.io.fenceStall, false)
 
@@ -96,6 +114,33 @@ private[core] class CoreRasTester(c: CoreRasHarness, depth: Int) extends CoreTes
     }
     val flush = peek(c.prediction.flush) != 0
     if (flush) flushes += 1
+    // Scoreboard complete packets, including prediction/fault metadata. The
+    // program supplies nested returns, mixed-width instructions and redirects
+    // while memory stalls repeatedly fill the real Core's FIFO.
+    expect(c.io.queueCount, packets.size)
+    expect(c.queue.inputReady, packets.size < depth)
+    val enqueue = peek(c.queue.inputValid) != 0 && peek(c.queue.inputReady) != 0
+    val dequeue = peek(c.queue.outputValid) != 0 && peek(c.queue.outputReady) != 0
+    if (!flush) {
+      if (packets.size == depth && dequeue) {
+        assert(!enqueue, "Full FIFO propagated Decode ready back into Fetch")
+        fullDrains += 1
+      }
+      if (packets.isEmpty && dequeue) {
+        assert(enqueue, "Empty FIFO produced an unaccepted packet")
+        expect(c.queue.output, peek(c.queue.input))
+        bypasses += 1
+      } else {
+        if (dequeue) {
+          assert(packets.nonEmpty, "FIFO produced a packet without an input")
+          expect(c.queue.output, packets.dequeue())
+        }
+        if (enqueue) packets.enqueue(peek(c.queue.input))
+      }
+    } else {
+      if (packets.nonEmpty) occupiedFlushes += 1
+      packets.clear()
+    }
     var done = false
     if (peek(c.io.observation.retired) != 0) {
       val actual = sampleDebug(c.io.observation.debug)
@@ -114,11 +159,15 @@ private[core] class CoreRasTester(c: CoreRasHarness, depth: Int) extends CoreTes
   assert(innerPredictions > 0, "No nested x5 return prediction")
   assert(flushes > 0, "No cold-target/branch recovery exercised")
   assert(maxQueueCount == depth, "Memory stalls did not fill the IF/ID FIFO")
+  assert(fullDrains > 0, "No full FIFO recovered while Decode accepted an instruction")
+  assert(bypasses > 0, "Empty-queue same-cycle bypass was not exercised")
+  if (depth == 4)
+    assert(occupiedFlushes > 0, "No buffered packets were discarded by recovery")
 }
 
 class CoreRasTest extends AnyFunSuite {
   test("execute return prediction and recovery scenarios") {
-    for (depth <- Seq(1, 4)) {
+    for (depth <- Seq(1, 2, 3, 4)) {
       TestDriver.run(new CoreRasHarness(depth)) {
         c => new CoreRasTester(c, depth)
       }

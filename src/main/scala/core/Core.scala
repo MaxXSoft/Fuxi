@@ -34,8 +34,10 @@ class Core(implicit val p: Parameters) extends Module
 
   // all stages
   val fetch   = Module(new Fetch)
+  // Preserve empty-queue instruction bypass, but do not propagate Decode's
+  // late ready/stall decision back into same-cycle predicted fetch steering.
   val ifid    = Module(new Queue(new FetchIO, FETCH_QUEUE_DEPTH,
-                                 pipe = true, flow = true, hasFlush = true))
+                                 pipe = false, flow = true, hasFlush = true))
   val decoder = Module(new Decoder)
   val idex    = Module(new MidStage(new DecoderIO))
   val alu     = Module(new ALU)
