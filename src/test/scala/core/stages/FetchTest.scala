@@ -16,6 +16,8 @@ class FetchHarness(depth: Int)(implicit val p: Parameters) extends Module {
     val flush = Input(Bool())
     val contextFlush = Input(Bool())
     val flushPc = Input(UInt(32.W))
+    val decodeRedirect = Input(Bool())
+    val decodeTarget = Input(UInt(32.W))
     val stall = Input(Bool())
     val branch = Input(new BranchInfoIO)
     val rom = new SramIO(32, 32)
@@ -28,6 +30,8 @@ class FetchHarness(depth: Int)(implicit val p: Parameters) extends Module {
   fetch.io.flush := io.flush
   fetch.io.contextFlush := io.contextFlush
   fetch.io.flushPc := io.flushPc
+  fetch.io.decodeRedirect := io.decodeRedirect
+  fetch.io.decodeTarget := io.decodeTarget
   fetch.io.stall := !queue.io.enq.ready
   fetch.io.branch := io.branch
   fetch.io.rom <> io.rom
@@ -60,11 +64,15 @@ class FetchUnitTester(c: FetchHarness, depth: Int) extends PeekPokeTester(c) {
   poke(c.io.branch.target, 0)
 
   def tick(stall: Boolean = false, ready: Boolean = true,
-           redirect: Option[BigInt] = None, contextChange: Boolean = true): Option[Packet] = {
+           redirect: Option[BigInt] = None, contextChange: Boolean = true,
+           pendingDecode: Option[BigInt] = None): Option[Packet] = {
     poke(c.io.stall, stall)
     poke(c.io.flush, redirect.nonEmpty)
     poke(c.io.contextFlush, redirect.nonEmpty && contextChange)
     poke(c.io.flushPc, redirect.getOrElse(BigInt(0)))
+    val correction = pendingDecode.orElse(if (contextChange) None else redirect)
+    poke(c.io.decodeRedirect, correction.nonEmpty)
+    poke(c.io.decodeTarget, correction.getOrElse(BigInt(0)))
     poke(c.io.rom.rdata, response)
     poke(c.io.rom.valid, ready)
     val addr = peek(c.io.rom.addr)
@@ -145,19 +153,24 @@ class FetchUnitTester(c: FetchHarness, depth: Int) extends PeekPokeTester(c) {
   assert(following.pc == 0x1000 && following.page && following.fault == 0x1000)
   faults.clear()
 
-  // Kill an unaccepted request, then return its access fault after redirect.
-  tick(redirect = Some(0x600))
-  tick(stall = true, ready = false)
-  val oldAddress = peek(c.io.rom.addr)
-  faults(oldAddress) = 2
-  tick(stall = true, ready = false, redirect = Some(0x704))
-  tick(stall = true, ready = false, redirect = Some(0x702))
-  for (_ <- 0 until 3) tick(stall = true, ready = false)
-  put(0x702, c_addi(1, 1), 2)
-  tick(stall = true)
-  faults.clear()
-  val redirected = nextPacket()
-  assert(redirected.pc == 0x702 && redirected.inst == c_addi(1, 1) && !redirected.access)
+  // Both Decode and global recovery must drain an unaccepted request without
+  // changing its address or exposing its eventual access fault. A global
+  // recovery must also supersede a simultaneous, different Decode target.
+  for (contextChange <- Seq(false, true)) {
+    tick(redirect = Some(0x600))
+    tick(stall = true, ready = false)
+    val oldAddress = peek(c.io.rom.addr)
+    faults(oldAddress) = 2
+    tick(stall = true, ready = false, redirect = Some(0x704), contextChange = contextChange)
+    tick(stall = true, ready = false, redirect = Some(0x702), contextChange = contextChange,
+         pendingDecode = if (contextChange) Some(0xbee2) else None)
+    for (_ <- 0 until 3) tick(stall = true, ready = false)
+    put(0x702, c_addi(1, 1), 2)
+    tick(stall = true)
+    faults.clear()
+    val redirected = nextPacket()
+    assert(redirected.pc == 0x702 && redirected.inst == c_addi(1, 1) && !redirected.access)
+  }
 
   // BTB steering keeps older FIFO entries, but skips sequential younger data.
   put(0x802, c_j(0), 2)
@@ -198,17 +211,25 @@ class FetchUnitTester(c: FetchHarness, depth: Int) extends PeekPokeTester(c) {
   for (_ <- 0 until 8) tick()
   expect(c.io.rom.en, false)
   faults.clear()
+  val idleAddress = peek(c.io.rom.addr)
   poke(c.io.flush, true)
   poke(c.io.contextFlush, true)
-  poke(c.io.flushPc, 0xd02)
-  expect(c.io.rom.en, false)
-  tick(redirect = Some(0xd02))
+  poke(c.io.decodeRedirect, true)
+  poke(c.io.decodeTarget, 0xbee2)
+  for (target <- Seq(0xd02, 0x12345672, 0xfffffff2L)) {
+    poke(c.io.flushPc, target)
+    expect(c.io.rom.en, false)
+    expect(c.io.rom.addr, idleAddress)
+  }
+  tick(redirect = Some(0xd02), pendingDecode = Some(0xbee2))
   assert(nextPacket().pc == 0xd02)
 
   // Decode branch recovery can still steer immediately without changing MMU state.
   poke(c.io.flush, true)
   poke(c.io.contextFlush, false)
   poke(c.io.flushPc, 0xe02)
+  poke(c.io.decodeRedirect, true)
+  poke(c.io.decodeTarget, 0xe02)
   expect(c.io.rom.addr, 0xe00)
   tick(redirect = Some(0xe02), contextChange = false)
   assert(tick().exists(_.pc == 0xe02), "Unnecessary decode-target fetch bubble")

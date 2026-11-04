@@ -23,6 +23,9 @@ class Fetch(implicit val p: Parameters) extends Module
     val contextFlush = Input(Bool())
     val stall     = Input(Bool())
     val flushPc   = Input(UInt(ADDR_WIDTH.W))
+    // Registered Decode correction, before global recovery target selection.
+    val decodeRedirect = Input(Bool())
+    val decodeTarget = Input(UInt(ADDR_WIDTH.W))
     // ROM interface
     val rom       = new SramIO(ADDR_WIDTH, INST_WIDTH)
     // branch information (from decoder)
@@ -85,8 +88,12 @@ class Fetch(implicit val p: Parameters) extends Module
   val predictedRedirect = emit && !instructionFault && bpu.io.predTaken &&
                           bpu.io.predTarget =/= sequentialPc
   val redirect = io.flush || predictedRedirect
-  val target = Mux(io.flush, io.flushPc, bpu.io.predTarget)
-  val alignedTarget = Cat(target(ADDR_WIDTH - 1, 2), 0.U(2.W))
+  val recoveryTarget = Mux(io.flush, io.flushPc, bpu.io.predTarget)
+  val alignedRecoveryTarget = Cat(recoveryTarget(ADDR_WIDTH - 1, 2), 0.U(2.W))
+  // Global recovery is applied at the edge. Keep its late trap-vector address
+  // out of the same-cycle MMU/cache lookup, even when Decode also redirects.
+  val issueTarget = Mux(io.decodeRedirect, io.decodeTarget, bpu.io.predTarget)
+  val alignedIssueTarget = Cat(issueTarget(ADDR_WIDTH - 1, 2), 0.U(2.W))
   val stopOnFault = emit && instructionFault
   val cancel = redirect || stopOnFault
 
@@ -118,7 +125,8 @@ class Fetch(implicit val p: Parameters) extends Module
 
   // A global flush may also change privilege or translation state at the edge.
   // Predictions and decode branch recovery retain the current MMU context.
-  val steerRequest = redirect && !io.contextFlush && !requestActive
+  val steerRequest = (io.decodeRedirect || predictedRedirect) &&
+                      !io.contextFlush && !requestActive
   val accepted = io.rom.en && io.rom.valid
   pending := accepted
   when (accepted) {
@@ -130,19 +138,19 @@ class Fetch(implicit val p: Parameters) extends Module
   // An idle request port can fetch the target in this cycle. Waiting an extra
   // cycle here would add a bubble to every predicted taken branch.
   when (steerRequest) {
-    restartAddr := alignedTarget
+    restartAddr := alignedIssueTarget
     requestActive := !accepted
     requestKilled := false.B
-    requestAddr := Mux(accepted, alignedTarget + 4.U, alignedTarget)
+    requestAddr := Mux(accepted, alignedIssueTarget + 4.U, alignedIssueTarget)
   } .elsewhen (cancel) {
-    restartAddr := alignedTarget
+    restartAddr := alignedRecoveryTarget
     when (io.rom.en && !accepted) {
       requestActive := true.B
       requestKilled := true.B
     } .otherwise {
       requestActive := false.B
       requestKilled := false.B
-      requestAddr := alignedTarget
+      requestAddr := alignedRecoveryTarget
     }
   } .elsewhen (accepted) {
     requestActive := false.B
@@ -156,7 +164,7 @@ class Fetch(implicit val p: Parameters) extends Module
   // neither their data nor their faults can join the redirected stream.
   val room = count +& responseValid.asUInt < FETCH_BUFFER_ENTRIES.U
   io.rom.en := requestActive || steerRequest || (room && !faultBlocked)
-  io.rom.addr := Mux(steerRequest, alignedTarget, requestAddr)
+  io.rom.addr := Mux(steerRequest, alignedIssueTarget, requestAddr)
   io.rom.wen := 0.U
   io.rom.size := log2Ceil(INST_WIDTH / 8).U
   io.rom.wdata := 0.U

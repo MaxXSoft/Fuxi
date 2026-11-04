@@ -73,6 +73,8 @@ class Core(implicit val p: Parameters) extends Module
   fetch.io.contextFlush := control.io.flush
   fetch.io.stall    := !ifid.io.enq.ready
   fetch.io.flushPc  := control.io.flushPc
+  fetch.io.decodeRedirect := decodeRedirect
+  fetch.io.decodeTarget := decodeTarget
   fetch.io.rom      <> io.rom
   fetch.io.branch   <> decoder.io.branch
   ifid.io.flush.get := control.io.flushIf

@@ -25,6 +25,8 @@ class FetchRasTester(c: FetchHarness) extends PeekPokeTester(c) {
     poke(c.io.flush, flush.nonEmpty)
     poke(c.io.contextFlush, flush.nonEmpty && contextChange)
     poke(c.io.flushPc, flush.getOrElse(0))
+    poke(c.io.decodeRedirect, flush.nonEmpty && !contextChange)
+    poke(c.io.decodeTarget, flush.getOrElse(0))
     poke(c.io.rom.valid, true)
     poke(c.io.rom.rdata, response)
     val fault = faults.getOrElse(peek(c.io.rom.addr), 0)
