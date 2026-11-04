@@ -94,8 +94,14 @@ class Decoder(implicit val p: Parameters) extends Module {
   ))
   val branchTarget  = Mux(branchFlag === BR_N, 0.U,
                       Mux(isJump, targetJ, targetB))
+  // Compare each candidate before selecting a one-bit result. The late JALR
+  // sum must not traverse the wide target mux before prediction validation.
+  // No-branch instructions have branchTaken=false, so no target can miss.
+  val targetMismatch = (isJump && regEn1 && io.fetch.target =/= targetJALR) ||
+                       (isJump && !regEn1 && io.fetch.target =/= targetJAL) ||
+                       (isBranch && !isJump && io.fetch.target =/= targetB)
   val branchMiss  = io.fetch.taken =/= branchTaken ||
-                    (branchTaken && io.fetch.target =/= branchTarget)
+                    (branchTaken && targetMismatch)
   val flushPc     = Mux(branchTaken, branchTarget, io.fetch.pc + instBytes)
   val addrFault   = branchTaken &&
                     branchTarget(INST_ALIGN_WIDTH - 1, 0) =/= 0.U
@@ -175,8 +181,7 @@ class Decoder(implicit val p: Parameters) extends Module {
   io.decoder.pmu.jalr := isJump && regEn1
   io.decoder.pmu.miss := branchMiss
   io.decoder.pmu.directionMiss := io.fetch.taken =/= branchTaken
-  io.decoder.pmu.targetMiss := io.fetch.taken && branchTaken &&
-                               io.fetch.target =/= branchTarget
+  io.decoder.pmu.targetMiss := io.fetch.taken && branchTaken && targetMismatch
   io.decoder.pmu.rasCandidate := io.fetch.pmu.rasCandidate
   io.decoder.pmu.rasUsed := io.fetch.pmu.rasUsed
   io.decoder.pmu.compressed := expand.io.isCompressed
