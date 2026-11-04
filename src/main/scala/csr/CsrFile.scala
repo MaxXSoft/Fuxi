@@ -209,12 +209,15 @@ class CsrFile(val hpmCount: Int, val hartId: BigInt) extends Module {
   val intCause  = Mux(handIntS, intCauseS, intCauseM)
   val cause     = Mux(takeInt, Cat(true.B, intCause),
                               Cat(false.B, io.except.excCause))
+  // Compute both interrupt vectors independently of the late trap decision.
+  // Synchronous exceptions use the base; takeInt/delegation only select the
+  // completed addresses rather than feeding the carry chain through cause.
+  val vectorS   = (stvec.base + intCauseS(29, 0)) << 2
+  val vectorM   = (mtvec.base + intCauseM(29, 0)) << 2
   val trapVecS  = Mux(stvec.mode(0) && takeInt,
-                      (stvec.base + cause(29, 0)),
-                      stvec.base) << 2
+                      vectorS, stvec.base << 2)
   val trapVecM  = Mux(mtvec.mode(0) && takeInt,
-                      (mtvec.base + cause(29, 0)),
-                      mtvec.base) << 2
+                      vectorM, mtvec.base << 2)
   val trapVec   = Mux(handIntS || handExcS, trapVecS, trapVecM)
 
   // interrupt info
