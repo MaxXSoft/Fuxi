@@ -85,6 +85,8 @@ The frontend fetches aligned 32-bit words, assembles mixed 16/32-bit instruction
 
 Decode correction requests and their targets are registered before redirecting Fetch. The correcting instruction advances normally; on the following cycle, younger Decode work is suppressed and the instruction FIFO is flushed. Older exceptions, fences and SATP writes take priority. Correctly predicted targets retain same-cycle request steering. An outstanding wrong-path request still drains under the existing fetch protocol, so recovery can also wait for that request to finish.
 
+Global trap/context recovery updates the fetch recovery registers at the clock edge. Only predictions and registered Decode corrections feed same-cycle target lookup, keeping global trap-vector address calculation out of the instruction MMU/cache path.
+
 A four-entry return-address stack (RAS) complements the 32-entry gshare PHT and 16-entry BTB. Fetch predecodes the RISC-V `x1`/`x5` call/return hints, including compressed forms, and updates the RAS once per accepted instruction. Returns use the old stack top even without a BTB hit; an empty RAS falls back to the BTB. Overflow discards the oldest entry. Backend flushes clear all RAS history, while normal predicted jumps preserve it. This simple recovery can lose valid outer return addresses after a misprediction or trap; Decode always checks the actual target.
 
 ### Performance Counters
