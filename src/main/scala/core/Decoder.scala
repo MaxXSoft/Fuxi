@@ -118,10 +118,13 @@ class Decoder(implicit val p: Parameters) extends Module {
                         io.fetch.faultAddr, Mux(addrFault, branchTarget, 0.U))
 
   // operation related signals
-  // cancel all unnecessary operations after fetching illegal instructions
-  val illegalFetch  = exceptType === EXC_ILLEG ||
-                      exceptType === EXC_IPAGE ||
-                      exceptType === EXC_IACCESS
+  // Gate operations/training directly, without decoding the prioritized
+  // exception code and therefore waiting for branch comparison/addrFault.
+  // Illegal expansions decode as BR_N, so they cannot also have addrFault;
+  // exceptType above retains the architectural exception priority.
+  val fetchFault    = io.fetch.pageFault || io.fetch.accessFault
+  val decodeIllegal = (io.fetch.valid && expand.io.illegal) || excType === EXC_ILLEG
+  val illegalFetch  = fetchFault || decodeIllegal
   val mduOperation  = Mux(illegalFetch, MDU_NOP, mduOp)
   val lsuOperation  = Mux(illegalFetch, LSU_NOP, lsuOp)
   val csrOperation  = Mux(illegalFetch, CSR_NOP, csrActOp)
