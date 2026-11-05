@@ -153,4 +153,66 @@ class RasPredictionTest extends AnyFunSuite {
       c => new RasPredictionTester(c)
     }
   }
+
+  test("select the redirect decision for RAS and BTB targets independently") {
+    TestDriver.run(new BranchPredictor) { c => new PredictorRedirectTester(c) }
+  }
+}
+
+class PredictorRedirectTester(c: BranchPredictor) extends PeekPokeTester(c) {
+  val mask = 0xffffffffL
+  poke(c.io.branchInfo.branch, false)
+  poke(c.io.branchInfo.jump, false)
+  poke(c.io.branchInfo.taken, true)
+  poke(c.io.branchInfo.index, 0)
+  poke(c.io.branchInfo.pc, 0)
+  poke(c.io.branchInfo.target, 0)
+  poke(c.io.lookupPc, 0)
+  poke(c.io.lookupInst, addi(0, 0, 0))
+  poke(c.io.lookupValid, false)
+  poke(c.io.advance, false)
+  poke(c.io.flush, false)
+
+  // Include aligned, halfword-aligned, and wrapping fall-through addresses.
+  // Opposing RAS/BTB decisions catch selecting either candidate unconditionally.
+  for (bytes <- Seq(2, 4); pc <- Seq(0x402L, (1L << 32) - bytes);
+       btbSequential <- Seq(false, true); rasKind <- Seq("empty", "sequential", "other")) {
+    val sequential = (pc + bytes) & mask
+    val btbTarget = if (btbSequential) sequential else 0xc00L
+    val rasTarget = if (rasKind == "sequential") sequential else 0xa02L
+    poke(c.io.flush, true)
+    poke(c.io.advance, false)
+    poke(c.io.branchInfo.branch, true)
+    poke(c.io.branchInfo.jump, true)
+    poke(c.io.branchInfo.pc, pc)
+    poke(c.io.branchInfo.target, btbTarget)
+    step(1)
+    poke(c.io.flush, false)
+    poke(c.io.branchInfo.branch, false)
+    poke(c.io.branchInfo.jump, false)
+    if (rasKind != "empty") {
+      poke(c.io.lookupPc, (rasTarget - 4) & mask)
+      poke(c.io.lookupInst, jal(1, 16))
+      poke(c.io.lookupValid, true)
+      poke(c.io.advance, true)
+      step(1)
+    }
+    poke(c.io.advance, false)
+    poke(c.io.lookupPc, pc)
+    for (isReturn <- Seq(false, true); valid <- Seq(false, true)) {
+      val inst = if (bytes == 2) {
+        if (isReturn) c_jr(1).toLong else c_addi(2, 1).toLong
+      } else {
+        if (isReturn) jalr(0, 1, 0) else addi(2, 2, 1)
+      }
+      poke(c.io.lookupInst, inst)
+      poke(c.io.lookupValid, valid)
+      val useRas = isReturn && valid && rasKind != "empty"
+      val target = if (useRas) rasTarget else btbTarget
+      expect(c.io.predTaken, true)
+      expect(c.io.predTarget, target)
+      expect(c.io.predRedirect, target != sequential)
+      expect(c.io.pmu.prediction.rasUsed, useRas)
+    }
+  }
 }
