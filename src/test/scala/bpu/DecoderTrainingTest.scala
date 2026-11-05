@@ -17,6 +17,9 @@ class DecoderTrainingHarness(implicit val p: Parameters) extends Module
   val io = IO(new Bundle {
     val valid = Input(Bool())
     val stalled = Input(Bool())
+    val flushed = Input(Bool())
+    val pageFault = Input(Bool())
+    val accessFault = Input(Bool())
     val inst = Input(UInt(32.W))
     val operand = Input(UInt(32.W))
     val branch = Output(Bool())
@@ -32,7 +35,9 @@ class DecoderTrainingHarness(implicit val p: Parameters) extends Module
   decoder.io.fetch.valid := io.valid
   decoder.io.fetch.pc := 0x200.U
   decoder.io.fetch.inst := io.inst
-  decoder.io.flush := false.B
+  decoder.io.fetch.pageFault := io.pageFault
+  decoder.io.fetch.accessFault := io.accessFault
+  decoder.io.flush := io.flushed
   decoder.io.stallId := io.stalled
   decoder.io.read1.data := io.operand
   decoder.io.read2.data := 0.U
@@ -55,6 +60,9 @@ class DecoderTrainingHarness(implicit val p: Parameters) extends Module
 class DecoderTrainingTester(c: DecoderTrainingHarness) extends PeekPokeTester(c) {
   poke(c.io.valid, true)
   poke(c.io.stalled, false)
+  poke(c.io.flushed, false)
+  poke(c.io.pageFault, false)
+  poke(c.io.accessFault, false)
   poke(c.io.inst, bne(1, 0, 8)) // bne x1, x0, +8
   poke(c.io.operand, 0)
   step(c.GHR_BITS + 1) // known history and strongly not-taken PHT entry
@@ -69,11 +77,27 @@ class DecoderTrainingTester(c: DecoderTrainingHarness) extends PeekPokeTester(c)
     poke(c.io.operand, operand)
     expect(c.io.branch, false)
     expect(c.io.jump, false)
-    expect(c.io.taken, false)
+    expect(c.io.taken, operand != 0)
     step(1)
     expect(c.io.predictionIndex, 0)
     expect(c.io.predictionTarget, 0x208)
     expect(c.io.predictionTaken, false)
+  }
+
+  // A live taken candidate must not train on flush or either fetch fault.
+  poke(c.io.stalled, false)
+  poke(c.io.operand, 1)
+  for (blocker <- Seq(c.io.flushed, c.io.pageFault, c.io.accessFault)) {
+    poke(blocker, true)
+    for (_ <- 0 until 3) {
+      expect(c.io.branch, false)
+      expect(c.io.taken, true)
+      step(1)
+      expect(c.io.predictionIndex, 0)
+      expect(c.io.predictionTarget, 0x208)
+      expect(c.io.predictionTaken, false)
+    }
+    poke(blocker, false)
   }
 
   // The resolved branch trains once on the cycle that ID can advance.
@@ -94,7 +118,7 @@ class DecoderTrainingTester(c: DecoderTrainingHarness) extends PeekPokeTester(c)
   for (_ <- 0 until 3) {
     expect(c.io.branch, false)
     expect(c.io.jump, false)
-    expect(c.io.taken, false)
+    expect(c.io.taken, true)
     step(1)
     expect(c.io.predictionIndex, 1)
     expect(c.io.predictionTarget, 0x208)

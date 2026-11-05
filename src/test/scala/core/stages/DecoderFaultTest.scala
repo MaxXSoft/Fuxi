@@ -45,7 +45,7 @@ class DecoderFaultTester(c: Decoder) extends PeekPokeTester(c) {
       expect(c.io.decoder.regWen, false)
       expect(c.io.branch.branch, false)
       expect(c.io.branch.jump, false)
-      expect(c.io.branch.taken, false)
+      // taken is an ungated candidate; branch=false must suppress training.
       expect(c.io.flushIf, false)
     }
   }

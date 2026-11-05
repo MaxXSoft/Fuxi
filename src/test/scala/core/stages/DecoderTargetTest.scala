@@ -94,7 +94,7 @@ private class DecoderTargetTester(c: Decoder) extends PeekPokeTester(c) {
       expect(c.io.flushIf, false)
       expect(c.io.branch.branch, false)
       expect(c.io.branch.jump, false)
-      expect(c.io.branch.taken, false)
+      expect(c.io.branch.taken, v.taken) // candidate stays live; branch gates training
     }
   }
 }
