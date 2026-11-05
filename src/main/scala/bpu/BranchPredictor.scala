@@ -20,6 +20,7 @@ class BranchPredictor(implicit val p: Parameters) extends Module with HasCorePar
     val flush       = Input(Bool()) // backend flush, not a predicted redirect
     val predTaken   = Output(Bool())
     val predTarget  = Output(UInt(ADDR_WIDTH.W))
+    val predTargetCandidate = Output(UInt(ADDR_WIDTH.W)) // consume only on redirect
     val predRedirect = Output(Bool()) // taken target differs from fall-through
     val predIndex   = Output(UInt(GHR_BITS.W))
     // performance monitoring
@@ -83,6 +84,7 @@ class BranchPredictor(implicit val p: Parameters) extends Module with HasCorePar
   val btbTaken = btb.io.lookupBranch && (pht.io.taken || btb.io.lookupJump)
   io.predTaken  := predictReturn || btbTaken
   io.predTarget := Mux(predictReturn, ras.io.top, btb.io.lookupTarget)
+  io.predTargetCandidate := Mux(predictReturn, ras.io.top, btb.io.lookupTargetCandidate)
   // Compare both registered target candidates before the late return predecode
   // selects one bit. Do not put a wide target mux in front of the comparison.
   // Length predecode is also late: compute both fall-through comparisons from
@@ -90,7 +92,9 @@ class BranchPredictor(implicit val p: Parameters) extends Module with HasCorePar
   def differsFromSequential(target: UInt): Bool =
     Mux(compressed, target =/= pcPlus2, target =/= pcPlus4)
   val rasRedirect = differsFromSequential(ras.io.top)
-  val btbRedirect = btbTaken && differsFromSequential(btb.io.lookupTarget)
+  // Do not wait for the BTB tag match before comparing its target. The hit
+  // qualifies the one-bit decision; metadata still reports zero on a BTB miss.
+  val btbRedirect = btbTaken && differsFromSequential(btb.io.lookupTargetCandidate)
   io.predRedirect := Mux(predictReturn, rasRedirect, btbRedirect)
   io.predIndex  := index
 

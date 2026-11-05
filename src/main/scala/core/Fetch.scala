@@ -91,7 +91,7 @@ class Fetch(implicit val p: Parameters) extends Module
   val alignedRecoveryTarget = Cat(recoveryTarget(ADDR_WIDTH - 1, 2), 0.U(2.W))
   // Global recovery is applied at the edge. Keep its late trap-vector address
   // out of the same-cycle MMU/cache lookup, even when Decode also redirects.
-  val issueTarget = Mux(io.decodeRedirect, io.decodeTarget, bpu.io.predTarget)
+  val issueTarget = Mux(io.decodeRedirect, io.decodeTarget, bpu.io.predTargetCandidate)
   val alignedIssueTarget = Cat(issueTarget(ADDR_WIDTH - 1, 2), 0.U(2.W))
   val stopOnFault = emit && instructionFault
   val cancel = redirect || stopOnFault
@@ -100,7 +100,7 @@ class Fetch(implicit val p: Parameters) extends Module
     pc := io.flushPc
     faultBlocked := false.B
   } .elsewhen (emit) {
-    pc := Mux(predictedRedirect, bpu.io.predTarget, sequentialPc)
+    pc := Mux(predictedRedirect, bpu.io.predTargetCandidate, sequentialPc)
     when (instructionFault) { faultBlocked := true.B }
   }
 
