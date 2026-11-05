@@ -41,11 +41,16 @@ class BTB(implicit val p: Parameters) extends Module with HasCoreParams {
   val linePc  = io.pc(ADDR_WIDTH - 1, BTB_INDEX_BITS + INST_ALIGN_WIDTH)
 
   // write to BTB lines
+  // Use one whole-line write and one shared asynchronous read. Repeated
+  // field accesses create separate memory ports and can prevent LUT RAM
+  // inference even though every field has the same address and enable.
+  val writeLine = Wire(new BtbLine)
+  writeLine.jump := io.jump
+  writeLine.pc := linePc
+  writeLine.target := io.target(ADDR_WIDTH - 1, INST_ALIGN_WIDTH)
   when (io.branch) {
-    valids(index)       := true.B
-    lines(index).jump   := io.jump
-    lines(index).pc     := linePc
-    lines(index).target := io.target(ADDR_WIDTH - 1, INST_ALIGN_WIDTH)
+    valids(index) := true.B
+    lines(index) := writeLine
   }
 
   // signals about BTB lookup
@@ -53,13 +58,14 @@ class BTB(implicit val p: Parameters) extends Module with HasCoreParams {
                                 INST_ALIGN_WIDTH)
   val lookupPcSel = io.lookupPc(ADDR_WIDTH - 1,
                                 BTB_INDEX_BITS + INST_ALIGN_WIDTH)
+  val readLine    = lines(lookupIndex)
   val btbHit      = valids(lookupIndex) &&
-                    lines(lookupIndex).pc === lookupPcSel
+                    readLine.pc === lookupPcSel
 
   // BTB lookup
   io.lookupBranch := btbHit
-  io.lookupJump   := Mux(btbHit, lines(lookupIndex).jump, false.B)
-  io.lookupTarget := Cat(Mux(btbHit, lines(lookupIndex).target, 0.U),
+  io.lookupJump   := Mux(btbHit, readLine.jump, false.B)
+  io.lookupTarget := Cat(Mux(btbHit, readLine.target, 0.U),
                          0.U(INST_ALIGN_WIDTH.W))
-  io.lookupTargetCandidate := Cat(lines(lookupIndex).target, 0.U(INST_ALIGN_WIDTH.W))
+  io.lookupTargetCandidate := Cat(readLine.target, 0.U(INST_ALIGN_WIDTH.W))
 }
