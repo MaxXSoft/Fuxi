@@ -122,10 +122,11 @@ class Fetch(implicit val p: Parameters) extends Module
     }
   }
 
-  // A global flush may also change privilege or translation state at the edge.
-  // Predictions and decode branch recovery retain the current MMU context.
-  val steerRequest = (io.decodeRedirect || predictedRedirect) &&
-                      !io.contextFlush && !requestActive
+  // Select a candidate VA without waiting for global exception/context checks.
+  // A context flush suppresses NEW requests through en, not the address mux;
+  // a held request must instead drain at its original VA before restarting.
+  val steerAddress = (io.decodeRedirect || predictedRedirect) && !requestActive
+  val steerRequest = steerAddress && !io.contextFlush
   val accepted = io.rom.en && io.rom.valid
   pending := accepted
   when (accepted) {
@@ -162,8 +163,9 @@ class Fetch(implicit val p: Parameters) extends Module
   // Reserve room before issuing. Drain old requests with their old VA so
   // neither their data nor their faults can join the redirected stream.
   val room = count +& responseValid.asUInt < FETCH_BUFFER_ENTRIES.U
-  io.rom.en := requestActive || steerRequest || (room && !faultBlocked)
-  io.rom.addr := Mux(steerRequest, alignedIssueTarget, requestAddr)
+  io.rom.en := requestActive ||
+               (!io.contextFlush && (steerAddress || (room && !faultBlocked)))
+  io.rom.addr := Mux(steerAddress, alignedIssueTarget, requestAddr)
   io.rom.wen := 0.U
   io.rom.size := log2Ceil(INST_WIDTH / 8).U
   io.rom.wdata := 0.U
