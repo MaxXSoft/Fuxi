@@ -152,7 +152,9 @@ class Decoder(implicit val p: Parameters) extends Module {
   val branchUpdate = io.fetch.valid && !io.flush && !io.stallId && !illegalFetch
   io.branch.branch  := isBranch && branchUpdate
   io.branch.jump    := isJump && branchUpdate
-  io.branch.taken   := branchTaken && branchUpdate
+  // GHR/PHT consume taken only when branch is asserted. Keep the late
+  // comparison result independent of the training enable, like target/pc.
+  io.branch.taken   := branchTaken
   io.branch.index   := io.fetch.predIndex
   io.branch.pc      := io.fetch.pc
   io.branch.target  := branchTarget
