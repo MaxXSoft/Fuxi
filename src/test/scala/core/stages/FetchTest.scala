@@ -83,6 +83,8 @@ class FetchUnitTester(c: FetchHarness, depth: Int) extends PeekPokeTester(c) {
     heldAddress.foreach { previous =>
       assert(enabled && addr == previous, "Pending SRAM request changed before completion")
     }
+    if (contextChange && redirect.nonEmpty && heldAddress.isEmpty)
+      assert(!enabled, "Context flush launched a new request in the outgoing MMU context")
     heldAddress = if (enabled && !ready) Some(addr) else None
     val packet = if (peek(c.io.fetch.valid) != 0 && !stall && redirect.isEmpty) {
       Some(Packet(peek(c.io.fetch.pc), peek(c.io.fetch.inst),
@@ -156,11 +158,11 @@ class FetchUnitTester(c: FetchHarness, depth: Int) extends PeekPokeTester(c) {
   // Both Decode and global recovery must drain an unaccepted request without
   // changing its address or exposing its eventual access fault. A global
   // recovery must also supersede a simultaneous, different Decode target.
-  for (contextChange <- Seq(false, true)) {
+  for (contextChange <- Seq(false, true); kind <- Seq(1, 2)) {
     tick(redirect = Some(0x600))
     tick(stall = true, ready = false)
     val oldAddress = peek(c.io.rom.addr)
-    faults(oldAddress) = 2
+    faults(oldAddress) = kind
     tick(stall = true, ready = false, redirect = Some(0x704), contextChange = contextChange)
     tick(stall = true, ready = false, redirect = Some(0x702), contextChange = contextChange,
          pendingDecode = if (contextChange) Some(0xbee2) else None)
@@ -169,7 +171,8 @@ class FetchUnitTester(c: FetchHarness, depth: Int) extends PeekPokeTester(c) {
     tick(stall = true)
     faults.clear()
     val redirected = nextPacket()
-    assert(redirected.pc == 0x702 && redirected.inst == c_addi(1, 1) && !redirected.access)
+    assert(redirected.pc == 0x702 && redirected.inst == c_addi(1, 1) &&
+           !redirected.page && !redirected.access)
   }
 
   // BTB steering keeps older FIFO entries, but skips sequential younger data.
@@ -211,7 +214,6 @@ class FetchUnitTester(c: FetchHarness, depth: Int) extends PeekPokeTester(c) {
   for (_ <- 0 until 8) tick()
   expect(c.io.rom.en, false)
   faults.clear()
-  val idleAddress = peek(c.io.rom.addr)
   poke(c.io.flush, true)
   poke(c.io.contextFlush, true)
   poke(c.io.decodeRedirect, true)
@@ -219,10 +221,17 @@ class FetchUnitTester(c: FetchHarness, depth: Int) extends PeekPokeTester(c) {
   for (target <- Seq(0xd02, 0x12345672, 0xfffffff2L)) {
     poke(c.io.flushPc, target)
     expect(c.io.rom.en, false)
-    expect(c.io.rom.addr, idleAddress)
+    expect(c.io.rom.addr, 0xbee0) // harmless candidate; no translation is requested
   }
-  tick(redirect = Some(0xd02), pendingDecode = Some(0xbee2))
-  assert(nextPacket().pc == 0xd02)
+  // A disabled candidate may fault or stall combinationally. Neither result
+  // can create an outstanding request, block recovery, or fault the new stream.
+  for (kind <- Seq(1, 2); ready <- Seq(false, true)) {
+    faults(0xbee0) = kind
+    tick(ready = ready, redirect = Some(0xd02), pendingDecode = Some(0xbee2))
+    faults.clear()
+    val recovered = nextPacket()
+    assert(recovered.pc == 0xd02 && !recovered.page && !recovered.access)
+  }
 
   // Decode branch recovery can still steer immediately without changing MMU state.
   poke(c.io.flush, true)

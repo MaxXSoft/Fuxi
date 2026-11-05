@@ -100,6 +100,8 @@ private class RedirectTester(c: RedirectHarness, program: CoreTraceProgram, trap
     val correction = peek(c.redirect.correction) != 0
     val pending = peek(c.redirect.pending) != 0
     val globalFlush = peek(c.redirect.globalFlush) != 0
+    if (globalFlush && peek(c.redirect.requestActive) == 0)
+      expect(c.redirect.request, false)
     expect(c.redirect.pending, previousCorrection)
     if (pending) {
       pendingCycles += 1
