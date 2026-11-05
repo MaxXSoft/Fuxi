@@ -79,7 +79,7 @@ class Fetch(implicit val p: Parameters) extends Module
   val instructionFault = pageFault || accessFault
   val instruction = Mux(compressed, Cat(0.U(16.W), parcel),
                     Mux(pc(1), Cat(second.data(15, 0), parcel), first.data))
-  val sequentialPc = pc + Mux(compressed, 2.U, 4.U)
+  val sequentialPc = Mux(compressed, pc + 2.U, pc + 4.U)
   val emit = instructionValid && !io.stall
   bpu.io.lookupInst := instruction
   bpu.io.lookupValid := instructionValid && !instructionFault

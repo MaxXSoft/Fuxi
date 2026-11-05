@@ -175,7 +175,8 @@ class PredictorRedirectTester(c: BranchPredictor) extends PeekPokeTester(c) {
 
   // Include aligned, halfword-aligned, and wrapping fall-through addresses.
   // Opposing RAS/BTB decisions catch selecting either candidate unconditionally.
-  for (bytes <- Seq(2, 4); pc <- Seq(0x402L, (1L << 32) - bytes);
+  for (bytes <- Seq(2, 4); pc <- Seq(0x400L, 0x402L, 0xffeL, 0x7ffffffeL,
+                                    0xfffffffcL, 0xfffffffeL);
        btbSequential <- Seq(false, true); rasKind <- Seq("empty", "sequential", "other")) {
     val sequential = (pc + bytes) & mask
     val btbTarget = if (btbSequential) sequential else 0xc00L
