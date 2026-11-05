@@ -179,7 +179,9 @@ class Mem extends Module {
 
   // pipeline control
   io.stallReq := stallReq
-  io.flushReq := !stallReq && (flushIc || flushIt)
+  // Maintenance waits for the cache and older CSR writes. Its redirect can
+  // be qualified independently of the ordinary load/store response.
+  io.flushReq := (flushIc || flushIt) && !fencStall && !io.csrBusy
   io.flushPc  := io.alu.currentPc + 4.U
 
   // RAM control signals
