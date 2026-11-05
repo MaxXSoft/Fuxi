@@ -73,8 +73,9 @@ class BranchPredictor(implicit val p: Parameters) extends Module with HasCorePar
   ras.io.flush := io.flush
   ras.io.push := updateRas && push
   ras.io.pop := updateRas && pop
-  val sequentialPc = Wire(UInt(ADDR_WIDTH.W))
-  sequentialPc := io.lookupPc + Mux(compressed, 2.U, 4.U)
+  val pcPlus2 = io.lookupPc + 2.U
+  val pcPlus4 = io.lookupPc + 4.U
+  val sequentialPc = Mux(compressed, pcPlus2, pcPlus4)
   ras.io.pushAddr := sequentialPc
   val predictReturn = io.lookupValid && pop && ras.io.valid
 
@@ -84,8 +85,12 @@ class BranchPredictor(implicit val p: Parameters) extends Module with HasCorePar
   io.predTarget := Mux(predictReturn, ras.io.top, btb.io.lookupTarget)
   // Compare both registered target candidates before the late return predecode
   // selects one bit. Do not put a wide target mux in front of the comparison.
-  val rasRedirect = ras.io.top =/= sequentialPc
-  val btbRedirect = btbTaken && btb.io.lookupTarget =/= sequentialPc
+  // Length predecode is also late: compute both fall-through comparisons from
+  // the registered PC, then select one bit rather than starting an adder.
+  def differsFromSequential(target: UInt): Bool =
+    Mux(compressed, target =/= pcPlus2, target =/= pcPlus4)
+  val rasRedirect = differsFromSequential(ras.io.top)
+  val btbRedirect = btbTaken && differsFromSequential(btb.io.lookupTarget)
   io.predRedirect := Mux(predictReturn, rasRedirect, btbRedirect)
   io.predIndex  := index
 
