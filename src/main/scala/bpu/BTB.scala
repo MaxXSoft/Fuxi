@@ -27,6 +27,8 @@ class BTB(implicit val p: Parameters) extends Module with HasCoreParams {
     val lookupBranch  = Output(Bool())
     val lookupJump    = Output(Bool())
     val lookupTarget  = Output(UInt(ADDR_WIDTH.W))
+    // Speculative candidate, valid only when lookupBranch is true.
+    val lookupTargetCandidate = Output(UInt(ADDR_WIDTH.W))
   })
 
   // definitions of BTB lines and valid bits
@@ -59,4 +61,5 @@ class BTB(implicit val p: Parameters) extends Module with HasCoreParams {
   io.lookupJump   := Mux(btbHit, lines(lookupIndex).jump, false.B)
   io.lookupTarget := Cat(Mux(btbHit, lines(lookupIndex).target, 0.U),
                          0.U(INST_ALIGN_WIDTH.W))
+  io.lookupTargetCandidate := Cat(lines(lookupIndex).target, 0.U(INST_ALIGN_WIDTH.W))
 }

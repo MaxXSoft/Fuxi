@@ -199,8 +199,10 @@ class PredictorRedirectTester(c: BranchPredictor) extends PeekPokeTester(c) {
       step(1)
     }
     poke(c.io.advance, false)
-    poke(c.io.lookupPc, pc)
-    for (isReturn <- Seq(false, true); valid <- Seq(false, true)) {
+    for (alias <- Seq(false, true); isReturn <- Seq(false, true); valid <- Seq(false, true)) {
+      // Same BTB index with a different tag must not redirect to stale data.
+      val lookupPc = if (alias) pc ^ 0x100000L else pc
+      poke(c.io.lookupPc, lookupPc)
       val inst = if (bytes == 2) {
         if (isReturn) c_jr(1).toLong else c_addi(2, 1).toLong
       } else {
@@ -209,10 +211,12 @@ class PredictorRedirectTester(c: BranchPredictor) extends PeekPokeTester(c) {
       poke(c.io.lookupInst, inst)
       poke(c.io.lookupValid, valid)
       val useRas = isReturn && valid && rasKind != "empty"
-      val target = if (useRas) rasTarget else btbTarget
-      expect(c.io.predTaken, true)
-      expect(c.io.predTarget, target)
-      expect(c.io.predRedirect, target != sequential)
+      val taken = useRas || !alias
+      val candidate = if (useRas) rasTarget else btbTarget
+      expect(c.io.predTaken, taken)
+      expect(c.io.predTarget, if (taken) candidate else 0)
+      expect(c.io.predTargetCandidate, candidate)
+      expect(c.io.predRedirect, taken && candidate != ((lookupPc + bytes) & mask))
       expect(c.io.pmu.prediction.rasUsed, useRas)
     }
   }
