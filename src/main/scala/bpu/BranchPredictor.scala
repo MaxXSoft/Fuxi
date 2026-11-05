@@ -61,14 +61,19 @@ class BranchPredictor(implicit val p: Parameters) extends Module with HasCorePar
   val cJrOrJalr = inst(1, 0) === 2.U && inst(15, 13) === 4.U &&
                   inst(6, 2) === 0.U && inst(11, 7) =/= 0.U
   val cJalr = cJrOrJalr && inst(12)
-  val jal = Mux(compressed, cJal, JAL === inst)
-  val jalr = Mux(compressed, cJrOrJalr, JALR === inst)
-  val rd = Mux(compressed, Mux(cJal || cJalr, 1.U, 0.U), inst(11, 7))
-  val rs1 = Mux(compressed, inst(11, 7), inst(19, 15))
+  // Decode each encoding directly. Selecting expanded rd/rs1 fields first
+  // would serialize length predecode, register muxes and link comparisons.
+  val rd = inst(11, 7)
+  val rs1 = inst(19, 15)
   val rdLink = rd === 1.U || rd === 5.U
   val rs1Link = rs1 === 1.U || rs1 === 5.U
-  val push = (jal || jalr) && rdLink
-  val pop = jalr && rs1Link && (!rdLink || rd =/= rs1)
+  val regularPush = (JAL === inst || JALR === inst) && rdLink
+  val regularPop = JALR === inst && rs1Link && (!rdLink || rd =/= rs1)
+  // C.JR uses rd=x0. C.JALR uses rd=x1, so only rs1=x5 pops as well as pushes.
+  val compressedPop = cJrOrJalr && rdLink && (!inst(12) || rd === 5.U)
+  // Opcode patterns already distinguish 16-bit and 32-bit encodings.
+  val push = cJal || cJalr || regularPush
+  val pop = compressedPop || regularPop
 
   val updateRas = io.lookupValid && io.advance
   ras.io.flush := io.flush
