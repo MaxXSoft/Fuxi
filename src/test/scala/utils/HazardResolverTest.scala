@@ -35,6 +35,35 @@ class HazardResolverTester(c: HazardResolver) extends PeekPokeTester(c) {
     poke(port.data, 0)
     poke(port.retired, false)
   }
+
+  // Both operand ports resolve their candidate independently of read.en.
+  // Exercise every producer enable/match combination, x0, and ALU > MEM > WB
+  // priority. A disabled operand must never create a load-use interlock.
+  val producers = Seq(c.io.aluReg, c.io.memReg, c.io.wbReg)
+  for ((read, rf) <- Seq((c.io.regRead1, c.io.rf1), (c.io.regRead2, c.io.rf2))) {
+    for (address <- Seq(0, 7, 31); enabled <- 0 until 8; matches <- 0 until 8) {
+      poke(read.addr, address)
+      poke(rf.data, 0x12345678)
+      for ((port, i) <- producers.zipWithIndex) {
+        poke(port.en, (enabled & (1 << i)) != 0)
+        poke(port.addr, if ((matches & (1 << i)) != 0) address else 21)
+        poke(port.data, 0x76543210L + i)
+        poke(port.load, i < 2)
+      }
+      val selected = (0 until 3).find(i => ((enabled & matches) & (1 << i)) != 0)
+      val expected = if (address == 0) 0L else selected.map(0x76543210L + _).getOrElse(0x12345678L)
+      for (consumed <- Seq(false, true)) {
+        poke(read.en, consumed)
+        expect(rf.en, true)
+        expect(rf.addr, address)
+        expect(read.data, expected)
+        expect(c.io.loadFlag, consumed && (matches & 3) != 0)
+      }
+    }
+    poke(read.en, false)
+  }
+  producers.foreach { port => poke(port.en, false); poke(port.load, false) }
+
   def read(addr: UInt, hazard: Boolean): Unit = {
     poke(c.io.csrRead.addr, addr)
     expect(c.io.csrFlag, hazard)

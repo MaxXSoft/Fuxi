@@ -37,7 +37,9 @@ class HazardResolver extends Module {
   })
 
   def forwardReg(read: RegReadIO, rf: RegReadIO) = {
-    when (read.en && read.addr =/= 0.U) {
+    // Produce operand candidates without waiting for Decode's read enable.
+    // The enable still qualifies consumption and load hazards, not data muxes.
+    when (read.addr =/= 0.U) {
       when (io.aluReg.en && read.addr === io.aluReg.addr) {
         read.data := io.aluReg.data
       } .elsewhen (io.memReg.en && read.addr === io.memReg.addr) {
@@ -122,9 +124,9 @@ class HazardResolver extends Module {
   val csrHazard   = resolveCsrHazard(io.csrRead)
 
   // regfile read signals
-  io.rf1.en   := io.regRead1.en
+  io.rf1.en   := true.B
   io.rf1.addr := io.regRead1.addr
-  io.rf2.en   := io.regRead2.en
+  io.rf2.en   := true.B
   io.rf2.addr := io.regRead2.addr
 
   // CSR read signals
