@@ -83,10 +83,14 @@ class CoreBus(implicit val p: Parameters) extends Module
 
   // demux for I-MMU's data interface & ROM interface
   val idemux = Module(new SramDemux2(ADDR_WIDTH, DATA_WIDTH))
-  idemux.io.sel2      := immu.io.valid
+  // The walker owns the address port only during a PTE request in Sv32.
+  // Otherwise the I-cache can index the demand address while the ITLB looks
+  // up its tag. Bare fetches have priority even over a paused walk.
+  val instWalkRequest = io.tlb.en && immu.io.data.en
+  idemux.io.sel2      := !instWalkRequest
   idemux.io.in1       <> immu.io.data
   idemux.io.in2       <> io.rom
-  idemux.io.in2.en    := io.rom.en && !immu.io.fault && !immu.io.accessFault
+  idemux.io.in2.en    := io.rom.en && immu.io.valid && !immu.io.fault && !immu.io.accessFault
   idemux.io.in2.addr  := immu.io.paddr
 
   // instruction cache
@@ -96,7 +100,9 @@ class CoreBus(implicit val p: Parameters) extends Module
   icache.io.axi   <> io.inst
 
   // ROM interface
-  io.rom.valid       := immu.io.fault || immu.io.accessFault || idemux.io.in2.valid
+  // A warm candidate line can hit before translation completes.
+  io.rom.valid       := immu.io.fault || immu.io.accessFault ||
+                        (immu.io.valid && idemux.io.in2.valid)
   io.rom.fault       := immu.io.fault
   io.rom.accessFault := immu.io.accessFault || idemux.io.in2.accessFault
 
@@ -145,8 +151,8 @@ class CoreBus(implicit val p: Parameters) extends Module
 
   // performance monitoring
   io.pmu.icache           := icache.io.pmu
-  io.pmu.icacheWalkAccess := icache.io.pmu.access && !idemux.io.sel2
-  io.pmu.icacheWalkMiss   := icache.io.pmu.miss && !idemux.io.sel2
+  io.pmu.icacheWalkAccess := icache.io.pmu.access && instWalkRequest
+  io.pmu.icacheWalkMiss   := icache.io.pmu.miss && instWalkRequest
   io.pmu.dcache           := dcache.io.pmu
   io.pmu.dcacheWalkAccess := dcache.io.pmu.access && !ddemux.io.sel2
   io.pmu.dcacheWalkMiss   := dcache.io.pmu.miss && !ddemux.io.sel2

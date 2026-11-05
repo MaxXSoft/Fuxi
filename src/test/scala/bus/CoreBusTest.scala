@@ -49,7 +49,7 @@ class CoreBusUnitTester(c: CoreBus) extends PeekPokeTester(c) with AxiTestSuppor
 }
 
 
-class CoreBusFenceTester(c: CoreBus) extends PeekPokeTester(c) with AxiTestSupport {
+class CoreBusInstructionTester(c: CoreBus) extends PeekPokeTester(c) with AxiTestSupport {
   val vaddr = BigInt("00400100", 16)
   val oldRoot = BigInt("00100000", 16)
   val newRoot = BigInt("00200000", 16)
@@ -129,7 +129,7 @@ class CoreBusFenceTester(c: CoreBus) extends PeekPokeTester(c) with AxiTestSuppo
     poke(c.io.inst.readData.valid, false)
   }
 
-  for ((phase, responseError) <- Seq(("address", false), ("data", false),
+  def checkFences(): Unit = for ((phase, responseError) <- Seq(("address", false), ("data", false),
                                      ("last", false), ("data", true))) {
     initialize()
     poke(c.io.rom.en, true)
@@ -203,6 +203,67 @@ class CoreBusFenceTester(c: CoreBus) extends PeekPokeTester(c) with AxiTestSuppo
     expect(c.io.data.readAddr.valid, false)
     expect(c.io.uncached.readAddr.valid, false)
   }
+
+  def checkWalkOwnership(): Unit = {
+    def fillLine(address: BigInt)(word: Int => BigInt): Unit = {
+      var wait = 0
+      while (peek(c.io.inst.readAddr.valid) == 0 && wait < 10) {
+        advance()
+        wait += 1
+      }
+      expect(c.io.inst.readAddr.bits.addr, address)
+      acceptAddress()
+      for (i <- 0 until 16) beat(i, word(i))
+      advance() // install the line
+    }
+
+    initialize()
+    val bare = vaddr & 0xfff
+    val bareWord = BigInt(InstEncoding.addi(1, 0, 7))
+    poke(c.io.rom.en, true)
+    poke(c.io.tlb.en, false)
+    poke(c.io.rom.addr, bare)
+    fillLine(bare)(_ => bareWord)
+    expect(c.io.rom.valid, true)
+    advance()
+    expect(c.io.rom.rdata, bareWord)
+
+    // The empty TLB returns PPN zero on a miss. This candidate address
+    // already hits the I-cache, but cannot complete the translated fetch.
+    poke(c.io.rom.addr, vaddr)
+    poke(c.io.tlb.en, true)
+    expect(c.io.pmu.itlb.miss, true)
+    expect(c.io.rom.valid, false)
+    expect(c.io.pmu.icache.access, false)
+    expect(c.io.pmu.icache.miss, false)
+    advance()
+
+    // Pause the pending PTE request with an immediately serviceable Bare
+    // fetch, then resume Sv32 with the original lookup still outstanding.
+    poke(c.io.tlb.en, false)
+    poke(c.io.rom.addr, bare)
+    expect(c.io.rom.valid, true)
+    expect(c.io.pmu.icacheWalkAccess, false)
+    advance()
+    expect(c.io.rom.rdata, bareWord)
+    expect(c.io.inst.readAddr.valid, false)
+    poke(c.io.tlb.en, true)
+    poke(c.io.rom.addr, vaddr)
+    fillLine(oldRoot)(i => if (i == 1) oldPte else BigInt(0))
+    expect(c.io.pmu.icacheWalkAccess, true)
+    expect(c.io.rom.valid, false)
+    advance() // accept the PTE; its data arrives in sRead
+    for (_ <- 0 until 2) { // sRead, sUpdate
+      expect(c.io.rom.valid, false)
+      expect(c.io.pmu.icache.miss, false)
+      advance()
+    }
+    fillLine(oldInstruction)(_ => instruction)
+    expect(c.io.rom.valid, true)
+    expect(c.io.pmu.icacheWalkAccess, false)
+    advance()
+    expect(c.io.rom.rdata, instruction)
+  }
 }
 
 class CoreBusTest extends AnyFunSuite {
@@ -211,7 +272,10 @@ class CoreBusTest extends AnyFunSuite {
       (c) => new CoreBusUnitTester(c)
     }
     TestDriver.run(new CoreBus) {
-      (c) => new CoreBusFenceTester(c)
+      (c) => new CoreBusInstructionTester(c).checkFences()
     }
+  }
+  test("qualify a warm instruction lookup and pause the page walker for Bare fetch") {
+    TestDriver.run(new CoreBus) { c => new CoreBusInstructionTester(c).checkWalkOwnership() }
   }
 }
