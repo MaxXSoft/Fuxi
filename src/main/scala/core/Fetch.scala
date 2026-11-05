@@ -85,8 +85,7 @@ class Fetch(implicit val p: Parameters) extends Module
   bpu.io.lookupValid := instructionValid && !instructionFault
   bpu.io.advance := emit && !io.flush
   bpu.io.flush := io.flush
-  val predictedRedirect = emit && !instructionFault && bpu.io.predTaken &&
-                          bpu.io.predTarget =/= sequentialPc
+  val predictedRedirect = emit && !instructionFault && bpu.io.predRedirect
   val redirect = io.flush || predictedRedirect
   val recoveryTarget = Mux(io.flush, io.flushPc, bpu.io.predTarget)
   val alignedRecoveryTarget = Cat(recoveryTarget(ADDR_WIDTH - 1, 2), 0.U(2.W))

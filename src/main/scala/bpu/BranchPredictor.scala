@@ -20,6 +20,7 @@ class BranchPredictor(implicit val p: Parameters) extends Module with HasCorePar
     val flush       = Input(Bool()) // backend flush, not a predicted redirect
     val predTaken   = Output(Bool())
     val predTarget  = Output(UInt(ADDR_WIDTH.W))
+    val predRedirect = Output(Bool()) // taken target differs from fall-through
     val predIndex   = Output(UInt(GHR_BITS.W))
     // performance monitoring
     val pmu = Output(new BpuPerformanceIO)
@@ -72,13 +73,20 @@ class BranchPredictor(implicit val p: Parameters) extends Module with HasCorePar
   ras.io.flush := io.flush
   ras.io.push := updateRas && push
   ras.io.pop := updateRas && pop
-  ras.io.pushAddr := io.lookupPc + Mux(compressed, 2.U, 4.U)
+  val sequentialPc = Wire(UInt(ADDR_WIDTH.W))
+  sequentialPc := io.lookupPc + Mux(compressed, 2.U, 4.U)
+  ras.io.pushAddr := sequentialPc
   val predictReturn = io.lookupValid && pop && ras.io.valid
 
   // wire output signals
-  io.predTaken  := predictReturn ||
-                   (btb.io.lookupBranch && (pht.io.taken || btb.io.lookupJump))
+  val btbTaken = btb.io.lookupBranch && (pht.io.taken || btb.io.lookupJump)
+  io.predTaken  := predictReturn || btbTaken
   io.predTarget := Mux(predictReturn, ras.io.top, btb.io.lookupTarget)
+  // Compare both registered target candidates before the late return predecode
+  // selects one bit. Do not put a wide target mux in front of the comparison.
+  val rasRedirect = ras.io.top =/= sequentialPc
+  val btbRedirect = btbTaken && btb.io.lookupTarget =/= sequentialPc
+  io.predRedirect := Mux(predictReturn, rasRedirect, btbRedirect)
   io.predIndex  := index
 
   // Capture these with the instruction: later speculative stack updates or
