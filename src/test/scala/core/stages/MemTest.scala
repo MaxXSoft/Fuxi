@@ -261,6 +261,23 @@ class MemUnitTester(c: core.Mem) extends PeekPokeTester(c) {
   expectExc()
   expectEm(false)
 
+  for ((op, exc) <- Seq(LSU_FENI -> EXC_NONE, LSU_FENV -> EXC_SPRIV)) {
+    pokeLsu(op, 0)
+    pokeExc(exc, 0x200, false, false)
+    for (done <- Seq(false, true); failed <- Seq(false, true);
+         csrBusy <- Seq(false, true); ramReady <- Seq(false, true)) {
+      poke(c.io.flushDcDone, done)
+      poke(c.io.flushDcAccessFault, failed)
+      poke(c.io.csrBusy, csrBusy)
+      poke(c.io.ram.valid, ramReady)
+      val complete = !csrBusy && (done || failed)
+      expect(c.io.flushReq, complete)
+      expect(c.io.stallReq, !complete)
+      expect(c.io.except.hasTrap, !csrBusy && failed)
+    }
+  }
+  poke(c.io.csrBusy, false)
+
   // FENCE.I
   pokeLsu(LSU_FENI, 0)
   pokeExc(EXC_NONE, 0x00000200, false, false)
