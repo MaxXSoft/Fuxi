@@ -4,7 +4,7 @@ ThisBuild / scalaVersion := "2.13.18"
 
 name := "Fuxi"
 
-version := "0.0.1"
+version := "0.0.3"
 
 val chiselVersion = "7.13.0"
 

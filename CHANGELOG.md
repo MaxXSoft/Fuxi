@@ -2,7 +2,7 @@
 
 All notable changes to the Fuxi will be documented in this file.
 
-## Unreleased
+## 0.0.3 - 2026-11-09
 
 ### Added
 
@@ -18,6 +18,9 @@ All notable changes to the Fuxi will be documented in this file.
 - Added MPRV and MXR data-access privilege control.
 - Added platform `time`/`timeh` CSR reads and a separate supervisor external interrupt input.
 - Added RV32 `mstatush` as a writable WARL-zero CSR.
+- Added read-only-zero `mconfigptr` CSR support.
+- Added RV32 `medelegh` as a writable WARL-zero CSR.
+- Added an ISA compatibility guide covering limitations and atomic memory integration requirements.
 - Added composable CDE configuration presets with shared `--config`, parameter
   overrides and `--dump-config` options for RTL generation and simulation.
 - Added `make CONFIG=...` preset selection with automatic RTL regeneration when
@@ -37,6 +40,14 @@ All notable changes to the Fuxi will be documented in this file.
 - Moved the command-line trace runner from `core.integration.CoreTest` to
   `sim.CoreRunner`, with bundled trace regressions in `CoreTraceTest`.
 - Reduced default BTB entries, RAS depth and IF/ID queue depth.
+- Expanded FENCE/FENCE.I decoding to ignore reserved operand fields and
+  treat FENCE.TSO and reserved FENCE modes as ordinary FENCE.
+- Made `mstatus.TW` writable; WFI still completes as a NOP.
+- Registered Decode corrections before redirecting instruction fetch.
+- Changed instruction FIFO input readiness to depend on registered occupancy;
+  a full queue accepts a replacement on the cycle after a dequeue.
+- Registered HPM events before counter selection, delaying event counting by one cycle.
+- Remove the old SoC design.
 
 ### Fixed
 
@@ -49,6 +60,8 @@ All notable changes to the Fuxi will be documented in this file.
 - Fixed uncached MMIO accesses to preserve byte addresses and byte/halfword/word transfer sizes.
 - Reject uncached region boundaries not aligned to the configured D-cache line
   size, preventing cached refills and writebacks from crossing into the region.
+- Raised page faults for non-leaf Sv32 PTEs with D, A or U set.
+- Preserved exception-code values 0–31 in `scause` writes.
 
 ## 0.0.2 - 2026-09-25
 
