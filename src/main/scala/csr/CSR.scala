@@ -147,7 +147,7 @@ class ScauseCsr extends CsrBundle {
   override def <=(data: UInt) = {
     requireWidth(data)
     int   := data(31)
-    code  := data(3, 0)
+    code  := data(4, 0)
   }
 }
 
@@ -201,6 +201,8 @@ class MstatusCsr extends CsrBundle {
 
   override def <=(data: UInt) = {
     requireWidth(data)
+    // WFI always completes as a NOP, including when TW is set.
+    tw    := data(21)
     mxr   := data(19)
     sum   := data(18)
     mprv  := data(17)
