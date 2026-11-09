@@ -72,6 +72,4 @@ arbitrary memory-mapped device registers.
 
 The [A extension](https://docs.riscv.org/reference/isa/unpriv/a-st-ext.html)
 does not require multiple harts. A single hart with exclusively owned memory
-can meet its atomicity requirements. The restrictions above also apply to the
-README's A 2.0 baseline; that version number does not authorize multi-master
-sharing without additional platform support.
+can meet its atomicity requirements.
