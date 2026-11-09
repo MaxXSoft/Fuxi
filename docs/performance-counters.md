@@ -49,8 +49,9 @@ Counter reads drain older writes to either half/alias and relevant control
 CSRs; instret/HPM reads also drain older retirements. This is not a separate
 drain of the HPM event pipeline described below.
 
-All 44 HPM event signals pass through one register stage before event selection
-and counting. An event sampled at an edge can increment an HPM counter on the
+All 44 HPM event signals pass through one register stage at the output of
+`PerformanceEvents`, before event selection and counting in `CsrFile`.
+An event sampled at an edge can increment an HPM counter on the
 following edge. Pulses still count once and sustained events still count once
 per active cycle, but observed HPM values lag the source activity by one cycle.
 Reset clears the pending sample. `mcycle`, `minstret`, and TIME are not delayed.

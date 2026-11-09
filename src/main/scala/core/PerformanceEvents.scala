@@ -6,7 +6,7 @@ import io._
 import consts.PerfEvent._
 import consts.PerfEvent.{Retired => R, Microarchitecture => U, Memory => M}
 
-// Purely combinational observation: retirement gates architectural events;
+// Observe and register events: retirement gates architectural events;
 // other sources include speculative work and overlapping waits.
 class PerformanceEvents extends Module {
   val io = IO(new Bundle {
@@ -28,12 +28,14 @@ class PerformanceEvents extends Module {
     // local subsystem events
     val ras            = Input(new RasPerformanceIO)
     val bus            = Input(new BusPerformanceIO)
-    // grouped events for CSR counters
+    // grouped events for CSR counters, delayed by one cycle
     val events         = Output(new PerformanceEventsIO)
   })
 
+  val rawEvents = Wire(new PerformanceEventsIO)
+
   // architectural events
-  val retiredEvents = io.events(Group.RETIRED)
+  val retiredEvents = rawEvents(Group.RETIRED)
   val retired = io.retired
   val p = io.retire
   retiredEvents(R.BRANCH.id) := retired && p.branch
@@ -55,7 +57,7 @@ class PerformanceEvents extends Module {
   retiredEvents(R.STORE.id) := retired && p.store
 
   // microarchitecture events
-  val microEvents = io.events(Group.MICROARCHITECTURE)
+  val microEvents = rawEvents(Group.MICROARCHITECTURE)
   microEvents(U.FRONTEND_EMPTY.id) := !io.flushIf && !io.stallId && !io.decodeValid
   microEvents(U.LOAD_USE_STALL.id) := !io.flush && io.loadHazard
   microEvents(U.MDU_STALL.id) := !io.flush && io.aluStall
@@ -70,7 +72,7 @@ class PerformanceEvents extends Module {
   microEvents(U.RAS_CLEAR_CONTEXT.id) := io.ras.clearNonempty && io.flush
 
   // memory subsystem events
-  val memoryEvents = io.events(Group.MEMORY)
+  val memoryEvents = rawEvents(Group.MEMORY)
   memoryEvents(M.ICACHE_ACCESS.id) := io.bus.icache.access
   memoryEvents(M.ICACHE_MISS.id) := io.bus.icache.miss
   memoryEvents(M.ICACHE_BUSY.id) := io.bus.icache.busy
@@ -86,4 +88,8 @@ class PerformanceEvents extends Module {
   memoryEvents(M.ITLB_WALK_CYCLE.id) := io.bus.itlb.walkCycle
   memoryEvents(M.DTLB_MISS.id) := io.bus.dtlb.miss
   memoryEvents(M.DTLB_WALK_CYCLE.id) := io.bus.dtlb.walkCycle
+
+  // Capture raw HPM events before CSR selector/inhibit logic. The next edge
+  // counts this sample using the controls then in force; reset discards it.
+  io.events := RegNext(rawEvents, 0.U.asTypeOf(new PerformanceEventsIO))
 }
