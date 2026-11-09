@@ -47,13 +47,6 @@ private class PerformanceTester(c: PerformanceHarness, ras: Boolean, fenceFault:
     poke(c.io.fenceStall, fenceWait > 0)
     memoryWait = math.max(0, memoryWait - 1)
     fenceWait = math.max(0, fenceWait - 1)
-    val bits = PerfEvent.groups.map { case (group, events) =>
-      group -> events.values.toSeq.map(e => peek(c.pmu(group)(e.id)) != 0)
-    }.toMap
-    def retiredEvent(event: R.Value): Boolean = bits(Group.RETIRED)(event.id)
-    def microEvent(event: U.Value): Boolean = bits(Group.MICROARCHITECTURE)(event.id)
-    for ((group, events) <- bits; id <- events.indices)
-      if (events(id)) totals(group)(id) += 1
     val retired = peek(c.io.observation.retired) != 0
     val pc = peek(c.io.observation.debug.pc)
     val branch = retired && pc == (if (ras) RasProgram.branch else RetirementProgram.pcAtWord(9))
@@ -63,6 +56,16 @@ private class PerformanceTester(c: PerformanceHarness, ras: Boolean, fenceFault:
     val store = retired && pc == (if (ras) BigInt(0x204) else RetirementProgram.pcAtWord(3))
     val compressed = retired && ras && Set(RasProgram.decrement, BigInt(0x302),
                                             BigInt(0x308), BigInt(0x34a), BigInt(0x34c))(pc)
+    val debug = sampleDebug(c.io.observation.debug)
+    // The event output registers the activity observed before this edge.
+    step(1)
+    val bits = PerfEvent.groups.map { case (group, events) =>
+      group -> events.values.toSeq.map(e => peek(c.pmu(group)(e.id)) != 0)
+    }.toMap
+    def retiredEvent(event: R.Value): Boolean = bits(Group.RETIRED)(event.id)
+    def microEvent(event: U.Value): Boolean = bits(Group.MICROARCHITECTURE)(event.id)
+    for ((group, events) <- bits; id <- events.indices)
+      if (events(id)) totals(group)(id) += 1
     for ((id, wanted) <- Seq(R.BRANCH -> branch, R.JAL -> jal, R.JALR -> jalr,
                              R.RAS_CANDIDATE -> jalr, R.COMPRESSED -> compressed,
                              R.LOAD -> load, R.STORE -> store)) {
@@ -79,10 +82,9 @@ private class PerformanceTester(c: PerformanceHarness, ras: Boolean, fenceFault:
     assert(!(microEvent(U.RAS_CLEAR_MISPREDICT) && microEvent(U.RAS_CLEAR_CONTEXT)))
     var done = false
     if (retired) {
-      checker.observe(sampleDebug(c.io.observation.debug))
+      checker.observe(debug)
       done = pc == donePc
     }
-    step(1)
     done
   }
   checker.checkComplete()

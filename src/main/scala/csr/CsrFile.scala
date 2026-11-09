@@ -251,13 +251,9 @@ class CsrFile(val hpmCount: Int, val hartId: BigInt) extends Module {
   when (io.write.retired && !mcountinhibit.data(2)) {
     minstret.data := minstret.data + 1.U
   }
-  // Capture raw HPM events before selector/inhibit logic. The next edge counts
-  // this sample using the controls then in force; reset discards the sample.
-  // Architectural cycle/instret counters keep their original timing.
-  val hpmEvents = RegNext(io.perfEvents, 0.U.asTypeOf(new PerformanceEventsIO))
   for (i <- 0 until hpmCount) {
     val selected = PerfEvent.groups.map { case (group, _) =>
-      val events = hpmEvents(group)
+      val events = io.perfEvents(group)
       // WARL validation checks the full local ID before it is stored.
       val hit = if (events.size == 1) events.head
                 else events(mhpmevents(i).event(log2Ceil(events.size) - 1, 0))

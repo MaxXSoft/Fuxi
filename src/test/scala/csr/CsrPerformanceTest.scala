@@ -64,8 +64,6 @@ class CsrPerformanceTester(c: CsrFile) extends CsrRegressionTester(c) {
   step(3)
   counter(3, BigInt("212345679", 16))
   driveEvent(Group.RETIRED, R.BRANCH_MISS)
-  step(1)
-  counter(3, BigInt("212345679", 16)) // Capture; the old branch sample is unselected.
   step(2)
   counter(3, BigInt("21234567b", 16))
   write(mhpmEventAddr(3), 0)
@@ -87,8 +85,6 @@ class CsrPerformanceTester(c: CsrFile) extends CsrRegressionTester(c) {
   // number of implemented counters. Upper local-ID bits must not alias it.
   write(mhpmEventAddr(3), 0x0300000e)
   driveEvent(Group.MEMORY, M.DTLB_WALK_CYCLE)
-  step(1)
-  counter(3, BigInt("21234567c", 16))
   step(1)
   counter(3, BigInt("21234567d", 16))
   write(CSR_MCOUNTINHIBIT, 8, CSR_RS)
@@ -117,17 +113,14 @@ class CsrPerformanceTester(c: CsrFile) extends CsrRegressionTester(c) {
     read(mhpmEventAddr(3), encoded)
     write(CSR_MCOUNTINHIBIT, mask & ~BigInt(8))
     var expected = BigInt(0)
-    var previousSelected = false
     for ((group, events) <- PerfEvent.groups; event <- events.values) {
       driveEvent(group, event)
       step(1)
-      if (previousSelected) expected += 1
-      previousSelected = group == selectedGroup && event == selectedEvent
+      if (group == selectedGroup && event == selectedEvent) expected += 1
       counter(3, expected)
     }
     clearEvents()
-    step(1) // Drain the last sample, including the final local event ID.
-    if (previousSelected) expected += 1
+    step(1)
     counter(3, expected)
     assert(expected == 1)
   }
@@ -142,8 +135,6 @@ class CsrPerformanceTester(c: CsrFile) extends CsrRegressionTester(c) {
   step(1)
   counter(3, 1)
   driveEvent(Group.MICROARCHITECTURE, PerfEvent.Microarchitecture.FRONTEND_EMPTY)
-  step(1)
-  counter(3, 1)
   step(1)
   counter(3, 2)
   // CSRRS that produces an unsupported local ID disables the entire selector.
@@ -217,69 +208,7 @@ class CsrPerformanceConfigurationTester(c: CsrFile) extends CsrRegressionTester(
   read(mhpmCounterHighAddr(last), 0)
 }
 
-class HpmEventDelayTester(c: CsrFile) extends CsrRegressionTester(c) {
-  resetCsr()
-  write(mhpmEventAddr(3), PerfEvent.encode(Group.RETIRED, R.BRANCH))
-  driveEvent(Group.RETIRED, R.BRANCH)
-  step(1)
-  read(mhpmCounterAddr(3), 0)
-  clearEvents()
-  step(1)
-  read(mhpmCounterAddr(3), 1)
-  step(2)
-  read(mhpmCounterAddr(3), 1) // A one-cycle pulse counts exactly once.
-
-  driveEvent(Group.RETIRED, R.BRANCH)
-  step(3)
-  read(mhpmCounterAddr(3), 3)
-  clearEvents()
-  step(1)
-  read(mhpmCounterAddr(3), 4) // Consecutive active cycles are all retained.
-
-  driveEvent(Group.RETIRED, R.BRANCH)
-  write(CSR_MCOUNTINHIBIT, 8)
-  clearEvents()
-  step(1)
-  read(mhpmCounterAddr(3), 4) // Newly inhibited counter drops the pending sample.
-  write(CSR_MCOUNTINHIBIT, 0)
-  step(1)
-  read(mhpmCounterAddr(3), 4) // No replay on unfreeze.
-
-  write(CSR_MCOUNTINHIBIT, 8)
-  driveEvent(Group.RETIRED, R.BRANCH)
-  write(CSR_MCOUNTINHIBIT, 0)
-  clearEvents()
-  step(1)
-  read(mhpmCounterAddr(3), 5) // The unfreezing edge's sample counts next cycle.
-
-  driveEvent(Group.RETIRED, R.BRANCH)
-  step(1)
-  clearEvents()
-  write(mhpmCounterAddr(3), 42)
-  step(1)
-  read(mhpmCounterAddr(3), 42) // Explicit writes override delayed increments too.
-
-  driveEvent(Group.RETIRED, R.BRANCH_MISS)
-  write(mhpmEventAddr(3), PerfEvent.encode(Group.RETIRED, R.BRANCH_MISS))
-  clearEvents()
-  step(1)
-  read(mhpmCounterAddr(3), 43) // Select with the controls at the counting edge.
-
-  driveEvent(Group.RETIRED, R.BRANCH_MISS)
-  step(1)
-  resetCsr()
-  write(mhpmEventAddr(3), PerfEvent.encode(Group.RETIRED, R.BRANCH_MISS))
-  step(1)
-  read(mhpmCounterAddr(3), 0) // Reset clears an event still in flight.
-}
-
 class CsrPerformanceTest extends AnyFunSuite {
-  test("delay HPM events by one cycle without losing or replaying samples") {
-    TestDriver.run(new CsrFile(1, p(PlatformParamsKey).hartId)) { c =>
-      new HpmEventDelayTester(c)
-    }
-  }
-
   test("count events and support boundary HPM configurations") {
     TestDriver.run(new CsrFile(p(CoreParamsKey).hpmCounters, p(PlatformParamsKey).hartId)) { c =>
       new CsrPerformanceTester(c)
