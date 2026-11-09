@@ -10,16 +10,13 @@ Machine/Supervisor ISA 1.13 support or unrestricted shared-memory atomics.
 
 ## Instruction fences
 
-FENCE accepts only encodings with `fm=0`, `rs1=0` and `rd=0`. FENCE.TSO and
-encodings with nonzero reserved fields raise an illegal-instruction exception.
-FENCE.I accepts only its canonical encoding; nonzero `funct12`, `rs1` or `rd`
-also raises an illegal-instruction exception. These differ from the
+FENCE.TSO and reserved FENCE modes use ordinary FENCE semantics. FENCE ignores
+`rs1`/`rd`, and FENCE.I ignores `funct12`/`rs1`/`rd`, as required by
 [RV32I](https://docs.riscv.org/reference/isa/unpriv/rv32.html) and
-[Zifencei](https://docs.riscv.org/reference/isa/unpriv/zifencei.html) requirements
-to accept those fence encodings and ignore the unused fields.
+[Zifencei](https://docs.riscv.org/reference/isa/unpriv/zifencei.html).
 
-Canonical FENCE.I writes back dirty data, invalidates the instruction cache
-and synchronizes instruction fetch. Ordinary FENCE does not perform cache
+FENCE.I writes back dirty data, invalidates the instruction cache and
+synchronizes instruction fetch. Ordinary FENCE does not perform cache
 maintenance; see the external-memory restrictions below.
 
 ## Privileged architecture
@@ -29,16 +26,19 @@ The following requirements of the
 [Supervisor](https://docs.riscv.org/reference/isa/priv/supervisor.html)
 architectures are not implemented:
 
-* `mstatus.TVM`, `TW` and `TSR` are hardwired to zero. Machine software cannot
-  use TVM/TSR to intercept S-mode `satp` accesses, SFENCE.VMA or SRET. WFI
-  completes as a NOP, which is permitted, but TW is not writable.
-* `mconfigptr`, `menvcfg`, `menvcfgh`, `senvcfg` and RV32 `medelegh` are absent;
+* `mstatus.TVM` and `TSR` are hardwired to zero. Machine software cannot
+  use them to intercept S-mode `satp` accesses, SFENCE.VMA or SRET.
+* `menvcfg`, `menvcfgh` and `senvcfg` are absent;
   accessing them raises an illegal-instruction exception. FIOM control of
   lower-privilege I/O and memory ordering is not supported.
-* Software writes to `scause` retain only four exception-code bits. Codes
-  16–31 cannot be represented, although the specification requires them.
 * Non-leaf Sv32 PTEs with `D`, `A` or `U` set are accepted instead of causing
   a page fault.
+
+`mconfigptr` is read-only zero: no configuration structure is exposed through
+that CSR. RV32 `medelegh` is writable zero because no high exception-delegation
+bits are implemented. `scause` supports exception-code values 0–31.
+`mstatus.TW` is writable; WFI completes immediately as a NOP in M/S/U mode,
+including when TW is set, so it does not exceed the permitted time bound.
 
 PMP is not implemented: the exposed PMP registers read as zero and ignore
 writes, and physical accesses are not restricted by PMP. Zero PMP entries are
