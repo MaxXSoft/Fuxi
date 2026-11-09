@@ -47,12 +47,9 @@ See the [configuration guide](docs/configuration.md) for the parameter table, cu
 * Machine-level ISA 1.11
 * Supervisor-level ISA 1.11
 
-## Unimplemented Features
-
-Fuxi processor is designed for running [GeeOS](https://github.com/MaxXSoft/GeeOS), or other simple operating systems or bare-metal software. Considering the complexity, the following functions has not yet been implemented:
-
-* Virtualization support in `mstatus` register: `TVM` bit, `TW` bit and `TSR` bit are hardwired to 0.
-* Physical Memory Protection: all PMP registers are hardwired to 0.
+See [ISA support and limitations](docs/isa-compatibility.md) for privileged
+architecture differences, unsupported features and atomic memory integration
+requirements.
 
 ## Platform Integration
 
