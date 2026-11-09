@@ -61,12 +61,12 @@ class DataCache(implicit val p: Parameters) extends Module with HasCoreParams {
 
   // Query tags/valid/dirty directly with the current request. Maintenance
   // uses the saved miss address and must not lengthen this lookup path.
-  val lookupTag  = io.sram.addr(ADDR_WIDTH - 1,
-                                DCACHE_INDEX_BITS + DCACHE_OFFSET_BITS)
-  val lookupLine = io.sram.addr(DCACHE_INDEX_BITS + DCACHE_OFFSET_BITS - 1,
-                                DCACHE_OFFSET_BITS)
-  val victimTag  = tag(lookupLine)
-  val cacheHit   = valid(lookupLine) && victimTag === lookupTag
+  val lookupTag   = io.sram.addr(ADDR_WIDTH - 1,
+                                 DCACHE_INDEX_BITS + DCACHE_OFFSET_BITS)
+  val lookupLine  = io.sram.addr(DCACHE_INDEX_BITS + DCACHE_OFFSET_BITS - 1,
+                                 DCACHE_OFFSET_BITS)
+  val victimTag   = tag(lookupLine)
+  val cacheHit    = valid(lookupLine) && victimTag === lookupTag
   val sramAddr    = Reg(UInt(ADDR_WIDTH.W))
   val tagSel      = sramAddr(ADDR_WIDTH - 1,
                             DCACHE_INDEX_BITS + DCACHE_OFFSET_BITS)
@@ -108,7 +108,7 @@ class DataCache(implicit val p: Parameters) extends Module with HasCoreParams {
   // Choose data using the registered FSM state. Hit/permission-dependent
   // CPU enables still gate writes, but no longer feed the BRAM data mux.
   lines.io.wdata  := Mux(state === sIdle, io.sram.wdata,
-                                    io.axi.readData.bits.data)
+                                          io.axi.readData.bits.data)
 
   // main finite state machine
   switch (state) {

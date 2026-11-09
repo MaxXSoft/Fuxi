@@ -85,11 +85,7 @@ class BranchPredictor(implicit val p: Parameters) extends Module with HasCorePar
   ras.io.pushAddr := sequentialPc
   val predictReturn = io.lookupValid && pop && ras.io.valid
 
-  // wire output signals
   val btbTaken = btb.io.lookupBranch && (pht.io.taken || btb.io.lookupJump)
-  io.predTaken  := predictReturn || btbTaken
-  io.predTarget := Mux(predictReturn, ras.io.top, btb.io.lookupTarget)
-  io.predTargetCandidate := Mux(predictReturn, ras.io.top, btb.io.lookupTargetCandidate)
   // Compare both registered target candidates before the late return predecode
   // selects one bit. Do not put a wide target mux in front of the comparison.
   // Length predecode is also late: compute both fall-through comparisons from
@@ -100,6 +96,11 @@ class BranchPredictor(implicit val p: Parameters) extends Module with HasCorePar
   // Do not wait for the BTB tag match before comparing its target. The hit
   // qualifies the one-bit decision; metadata still reports zero on a BTB miss.
   val btbRedirect = btbTaken && differsFromSequential(btb.io.lookupTargetCandidate)
+
+  // wire output signals
+  io.predTaken  := predictReturn || btbTaken
+  io.predTarget := Mux(predictReturn, ras.io.top, btb.io.lookupTarget)
+  io.predTargetCandidate := Mux(predictReturn, ras.io.top, btb.io.lookupTargetCandidate)
   io.predRedirect := Mux(predictReturn, rasRedirect, btbRedirect)
   io.predIndex  := index
 

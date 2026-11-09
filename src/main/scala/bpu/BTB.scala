@@ -40,7 +40,6 @@ class BTB(implicit val p: Parameters) extends Module with HasCoreParams {
                       INST_ALIGN_WIDTH)
   val linePc  = io.pc(ADDR_WIDTH - 1, BTB_INDEX_BITS + INST_ALIGN_WIDTH)
 
-  // write to BTB lines
   // Use one whole-line write and one shared asynchronous read. Repeated
   // field accesses create separate memory ports and can prevent LUT RAM
   // inference even though every field has the same address and enable.
@@ -48,6 +47,8 @@ class BTB(implicit val p: Parameters) extends Module with HasCoreParams {
   writeLine.jump := io.jump
   writeLine.pc := linePc
   writeLine.target := io.target(ADDR_WIDTH - 1, INST_ALIGN_WIDTH)
+
+  // write to BTB lines
   when (io.branch) {
     valids(index) := true.B
     lines(index) := writeLine
@@ -59,8 +60,7 @@ class BTB(implicit val p: Parameters) extends Module with HasCoreParams {
   val lookupPcSel = io.lookupPc(ADDR_WIDTH - 1,
                                 BTB_INDEX_BITS + INST_ALIGN_WIDTH)
   val readLine    = lines(lookupIndex)
-  val btbHit      = valids(lookupIndex) &&
-                    readLine.pc === lookupPcSel
+  val btbHit      = valids(lookupIndex) && readLine.pc === lookupPcSel
 
   // BTB lookup
   io.lookupBranch := btbHit
