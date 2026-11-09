@@ -2,7 +2,7 @@
 
 [<img alt="build status" src="https://img.shields.io/github/actions/workflow/status/MaxXSoft/Fuxi/test.yml?branch=master&style=for-the-badge&label=ci">](https://github.com/MaxXSoft/Fuxi/actions?query=branch%3Amaster)
 
-Fuxi (伏羲) is a 32-bit pipelined RISC-V processor written in Chisel.
+Fuxi (伏羲) is a 32-bit pipelined RISC-V processor written in Chisel, it's synthesizable and capable of booting Linux.
 
 ![datapath](img/datapath.svg)
 
@@ -42,14 +42,12 @@ See the [configuration guide](docs/configuration.md) for the parameter table, cu
 * Zifencei extension 2.0
 * Zicsr extension 2.0
 * M extension 2.0
-* A extension 2.0
+* A extension 2.1
 * C extension 2.0 (RV32 integer instructions)
-* Machine-level ISA 1.11
-* Supervisor-level ISA 1.11
+* Machine-level ISA 1.13
+* Supervisor-level ISA 1.13
 
-See [ISA support and limitations](docs/isa-compatibility.md) for privileged
-architecture differences, unsupported features and atomic memory integration
-requirements.
+See [ISA support and limitations](docs/isa-compatibility.md) for privileged architecture differences, unsupported features and atomic memory integration requirements.
 
 ## Platform Integration
 
@@ -69,7 +67,7 @@ Machine firmware forwards timer/software events to supervisor mode through the w
 
 ## Performance
 
-With default configuration (historical data, evaluated on Fuxi 0.0.1):
+With default configuration (historical data, evaluated on Fuxi v0.0.1):
 
 * **Dhrystone 2.1**: 0.60 DMIPS/MHz.
 * **CoreMark**: 2.15 CoreMark/MHz.
