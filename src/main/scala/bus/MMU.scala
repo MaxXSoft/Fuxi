@@ -161,8 +161,8 @@ class MMU(val size: Int, val isInst: Boolean) extends Module {
             entry.ppn := getSuperPpn(pte.ppn, walkVaddr, level - 1.U)
           }
         }
-      } .elsewhen (level === 0.U) {
-        // leaf PTE not found
+      } .elsewhen (pte.d || pte.a || pte.u || level === 0.U) {
+        // Non-leaf D/A/U are reserved; a pointer at the last level is invalid.
         raisePageFault()
       } .otherwise {
         // fetch next PTE
