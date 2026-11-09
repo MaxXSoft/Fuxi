@@ -31,8 +31,6 @@ architectures are not implemented:
 * `menvcfg`, `menvcfgh` and `senvcfg` are absent;
   accessing them raises an illegal-instruction exception. FIOM control of
   lower-privilege I/O and memory ordering is not supported.
-* Non-leaf Sv32 PTEs with `D`, `A` or `U` set are accepted instead of causing
-  a page fault.
 
 `mconfigptr` is read-only zero: no configuration structure is exposed through
 that CSR. RV32 `medelegh` is writable zero because no high exception-delegation
@@ -47,6 +45,7 @@ must account for this limitation.
 
 Sv32 uses software-managed accessed/dirty bits (Svade). Software must handle
 page faults to set leaf PTE A/D bits; hardware PTE updates are not supported.
+Non-leaf PTEs must have D/A/U clear; setting any of these bits causes a page fault.
 ASIDs are fixed to zero, and SFENCE.VMA invalidates all translations regardless
 of its address and ASID operands. These are permitted implementation choices.
 The hart is little-endian in all modes; `mstatush` is writable zero. MRET/SRET
