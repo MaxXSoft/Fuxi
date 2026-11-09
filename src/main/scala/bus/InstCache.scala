@@ -50,11 +50,11 @@ class InstCache(implicit val p: Parameters) extends Module with HasCoreParams {
 
   // Lookup follows the current request directly. Refill selectors use only
   // the saved miss address, so the FSM address mux is outside the tag path.
-  val lookupTag  = io.sram.addr(ADDR_WIDTH - 1,
-                                ICACHE_INDEX_BITS + ICACHE_OFFSET_BITS)
-  val lookupLine = io.sram.addr(ICACHE_INDEX_BITS + ICACHE_OFFSET_BITS - 1,
-                                ICACHE_OFFSET_BITS)
-  val cacheHit   = valid(lookupLine) && tag(lookupLine) === lookupTag
+  val lookupTag   = io.sram.addr(ADDR_WIDTH - 1,
+                                 ICACHE_INDEX_BITS + ICACHE_OFFSET_BITS)
+  val lookupLine  = io.sram.addr(ICACHE_INDEX_BITS + ICACHE_OFFSET_BITS - 1,
+                                 ICACHE_OFFSET_BITS)
+  val cacheHit    = valid(lookupLine) && tag(lookupLine) === lookupTag
   val sramAddr    = Reg(UInt(ADDR_WIDTH.W))
   val tagSel      = sramAddr(ADDR_WIDTH - 1,
                             ICACHE_INDEX_BITS + ICACHE_OFFSET_BITS)
